@@ -166,6 +166,12 @@
     "sitemap.xml": "agency-home/preserved/sitemap.xml",
     "terms/index.html": "agency-home/preserved/terms/index.html",
     "vendor/three.module.min.js": "agency-home/vendor/three.module.min.js",
-    "work/index.html": "agency-home/preserved/work/index.html"
+    "work/index.html": "agency-home/preserved/work/index.html",
+    "pavilion/assets/chips-color.webp": "agency-home/pavilion/assets/chips-color.webp",
+    "pavilion/assets/chips-relief.webp": "agency-home/pavilion/assets/chips-relief.webp",
+    "pavilion/assets/chips-roughness.webp": "agency-home/pavilion/assets/chips-roughness.webp",
+    "pavilion/assets/upholstery-relief.webp": "agency-home/pavilion/assets/upholstery-relief.webp",
+    "pavilion/assets/upholstery-roughness.webp": "agency-home/pavilion/assets/upholstery-roughness.webp",
+    "pavilion/assets/upholstery-yarn.webp": "agency-home/pavilion/assets/upholstery-yarn.webp"
   }
 }

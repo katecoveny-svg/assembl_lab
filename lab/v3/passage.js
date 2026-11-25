@@ -12,7 +12,7 @@ function paint(){
  passage.style.setProperty('--wipe',((1-blend*blend*(3-2*blend))*100)+'%');
  const index=progress<.49?0:1;
  document.querySelector('#plate-kicker').textContent=index?'16A plan study / 16D':'Waitematā Harbour';
- document.querySelector('#plate-title').textContent=index?'Across the roofline.':'At water level.';
+ document.querySelector('#plate-title').textContent=index?'Across the roofline.':'Drag the boat.';
  link.textContent=index?'Explore roof solar ↗':'Explore the tide ↗';link.href=index?'/roof-solar/':harbour;
  const visible=rect.top<innerHeight*.93&&rect.bottom>0&&!document.hidden;
  const next=visible&&!paused&&!navigator.connection?.saveData?index:-1;
@@ -21,7 +21,7 @@ function paint(){
    frame?.remove();frame=null;surfaces.forEach(x=>x.classList.remove('ready'));active=next;shot=null;
    if(next>=0){
     const item=document.createElement('iframe');frame=item;
-    item.inert=true;item.tabIndex=-1;item.setAttribute('aria-hidden','true');item.title=next?'Modelled solar roof':'Illustrative harbour water';
+    item.inert=!!next;item.tabIndex=next?-1:0;item.setAttribute('aria-hidden',String(!!next));item.title=next?'Modelled solar roof':'Waitematā Harbour. Drag the boat, or focus it and use the arrow keys.';
     item.src=next?'/roof-solar/?view=plate':harbour+'?view=harbour&plate=1';
     surfaces[next].append(item);
     timeout=setTimeout(()=>{if(frame===item&&!surfaces[next].classList.contains('ready')){item.remove();frame=null}},35000);

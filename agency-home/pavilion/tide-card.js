@@ -3,7 +3,7 @@ export function tideCard(asset){
  let days=JSON.parse(byId('tide-data').textContent),keys=Object.keys(days);
  const host=byId('water-host'),slider=byId('tide-event'),open=byId('water-open'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
  const tool='https://assembl-waitemata-tides.pages.dev/';
- let day=1,index=0,visible=false,frame=null,renderTimer=0,explicit=false,selectedHeight=0;
+ let day=1,index=0,visible=false,frame=null,renderTimer=0,explicit=false,showStill=false,selectedHeight=0;
  function destination(embed){
   const url=new URL(tool);if(embed)url.searchParams.set('view','harbour');
   url.searchParams.set('date',keys[day]);url.searchParams.set('event',String(index));
@@ -14,10 +14,12 @@ export function tideCard(asset){
    ||!(navigator.gpu||window.WebGL2RenderingContext);
  }
  function inputMode(){
-  host.dataset.interactive=String(explicit);
-  open.setAttribute('aria-pressed',String(explicit));
-  open.textContent=explicit?'Leave harbour':'Explore the harbour ↗';
-  if(frame){frame.inert=!explicit;frame.tabIndex=explicit?0:-1}
+  const live=!!frame&&!showStill;
+  host.dataset.interactive=String(live);
+  open.setAttribute('aria-pressed',String(live));
+  open.textContent=live?'Show still':'Load water';
+  if(frame){frame.inert=false;frame.tabIndex=0}
+
  }
  function mount(){
   if(!visible||document.hidden)return;inputMode();
@@ -25,8 +27,8 @@ export function tideCard(asset){
    host.dataset.renderer='still';byId('water-fallback').hidden=false;return;
   }
   open.hidden=false;
-  if(!explicit&&conservative()){
-   frame?.remove();frame=null;delete host.dataset.renderer;return;
+  if(showStill||!explicit&&conservative()){
+   frame?.remove();frame=null;delete host.dataset.renderer;inputMode();return;
   }
   const src=destination(true);
   if(frame?.src===src)return;
@@ -42,7 +44,7 @@ export function tideCard(asset){
   byId('tide-link').href=destination(false);
   clearTimeout(renderTimer);if(visible)renderTimer=setTimeout(mount,140);
  }
- open.onclick=()=>{explicit=!explicit;mount()};
+ open.onclick=()=>{showStill=!!frame;explicit=!showStill;mount()};
  function setEvent(i){
   index=Math.max(0,Math.min(i,days[keys[day]].length-1));const [time,height,,zone,kind]=days[keys[day]][index];
   selectedHeight=Number(height);const label=kind+' tide · '+time+' '+zone+' · '+height+' m';
