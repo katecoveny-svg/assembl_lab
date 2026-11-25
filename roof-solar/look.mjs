@@ -44,18 +44,27 @@ export function roofHeights(dsm, grid, planes, rings = null) {
   const sm = rings ? roofSurface(dsm, rings) : dsm;
   return (e, n, qe = e, qn = n) => {
     let ds = heightAt(sm, qe, qn); if (ds !== ds) ds = heightAt(sm, e, n); if (ds !== ds) ds = heightAt(dsm, e, n);
-    const ci = Math.round(qe - grid.originE), cj = Math.round(grid.originN - qn);
-    if (ci >= 0 && cj >= 0 && ci < grid.n && cj < grid.n) {
-      const owner = planes[own[cj * grid.n + ci]];
-      if (owner && Math.abs(planeZ(owner, qe, qn) - ds) < 0.25) return { z: planeZ(owner, e, n), plane: owner };
-    }
-    let best = null, bd = Infinity;
+    const ci = Math.round(qe - grid.originE), cj = Math.round(grid.originN - qn); let best = null, bd = Infinity;
     for (let w = 1; w <= 2 && !best; w++) for (let dj = -w; dj <= w; dj++) for (let di = -w; di <= w; di++) {
       const i = ci + di, j = cj + dj; if (i < 0 || j < 0 || i >= grid.n || j >= grid.n) continue; const id = own[j * grid.n + i]; if (id < 0) continue;
       const p = planes[id], d = Math.abs(planeZ(p, qe, qn) - (ds === ds ? ds : planeZ(p, qe, qn))); if (d < bd && d < (w === 1 ? 1.2 : 0.6)) { bd = d; best = p; }
     }
     if (best) return { z: planeZ(best, e, n), plane: best };
-    return { z: ds, plane: null };
+    // A supporting plane can be a better drawing proxy for an isolated low
+    // return, particularly near a ridge or eave. Bound both horizontal reach
+    // and height difference, and use only detected roof planes.
+    let recover = null, score = Infinity;
+    for (let j = Math.max(0,cj-2); j <= Math.min(grid.n-1,cj+2); j++) for (let i = Math.max(0,ci-2); i <= Math.min(grid.n-1,ci+2); i++) {
+      const k=j*grid.n+i, id=own[k]; if(id<0) continue;
+      const plane=planes[id], distance=Math.hypot(qe-(grid.originE+i),qn-(grid.originN-j));
+      if(distance>2.0) continue;
+      const z=planeZ(plane,qe,qn), delta=z-ds;
+      if (!Number.isFinite(ds) || (delta>0 && delta<2.8)) {
+        const fit=distance+.14*(Number.isFinite(delta)?delta:0);
+        if(fit<score) {score=fit;recover={z:planeZ(plane,e,n),plane};}
+      }
+    }
+    return recover || { z: ds, plane: null };
   };
 }
 
@@ -71,6 +80,23 @@ export function roofSurface(dsm, rings) {
     const k = j * N + i; if (!inside[k]) continue; const v = [];
     for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) { const ii = i + di, jj = j + dj; if (ii >= 0 && jj >= 0 && ii < N && jj < N && inside[jj * N + ii]) v.push(g.data[jj * N + ii]); }
     v.sort((a, b) => a - b); out[k] = v[v.length >> 1];
+  }
+  // Fill isolated low returns retained by the first pass, e.g. gutter returns or
+  // intervening tree-shadowed scan cells. Never use outside-footprint cells.
+  // Keep continuous pitched slopes: a candidate needs elevated opposed neighbours.
+  const stable = out.slice();
+  const pairs = [[1,0],[0,1],[1,1],[1,-1]];
+  for (let j = 2; j < N - 2; j++) for (let i = 2; i < N - 2; i++) {
+    const k = j*N+i, z = stable[k]; if (!Number.isFinite(z)) continue;
+    const support = [];
+    for (const [di,dj] of pairs) {
+      const d = dj*N+di, z1=stable[k-d], z2=stable[k+d], z3=stable[k-2*d], z4=stable[k+2*d];
+      if (Number.isFinite(z1) && Number.isFinite(z2) && Math.min(z1,z2)>z+.28) support.push((z1+z2)/2);
+      else if ([z1,z2,z3,z4].every(Number.isFinite) && Math.min(z3,z4)>z+.5 && Math.max(z1,z2)>z+.26) support.push((z3+z4)/2);
+    }
+    if (support.length>=2) {
+      support.sort((a,b)=>a-b); out[k]=Math.min(z+1.4,support[support.length>>1]);
+    }
   }
   for (let pass = 0; pass < 2; pass++) { const prev = out.slice(); for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const k = j * N + i; if (prev[k] === prev[k]) continue; let s = 0, c = 0; for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) { const ii = i + di, jj = j + dj; if (ii >= 0 && jj >= 0 && ii < N && jj < N && prev[jj * N + ii] === prev[jj * N + ii]) { s += prev[jj * N + ii]; c++; } } if (c) out[k] = s / c; } }
   return { n: N, originE: g.originE, originN: g.originN, data: out };

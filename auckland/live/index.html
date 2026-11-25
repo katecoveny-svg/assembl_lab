@@ -18,9 +18,10 @@
 
 <header class="top">
   <a class="brand" href="/">assembl <span>lab</span></a>
-  <h1>Auckland live</h1>
+  <h1 class="vh">Auckland live</h1>
   <a class="switch-view" id="switch-view" href="?view=3d">Open 3D city</a>
   <div class="search" role="search">
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="10.5" cy="10.5" r="5.75"/><path d="m15 15 5 5"/></svg>
     <label for="q" class="vh">Search a route, stop or ferry terminal</label>
     <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Route, stop or ferry terminal" aria-controls="results" aria-expanded="false">
     <ul id="results" role="listbox" hidden></ul>
@@ -33,21 +34,24 @@
   </div>
 </header>
 
-<aside id="panel" class="panel" aria-live="polite">
-  <button class="grip" id="grip" aria-label="Show more or less"><span></span></button>
-  <div id="detail"><p class="muted">Loading the city and the live positions…</p></div>
+<aside id="panel" class="panel" aria-label="Transit results">
+  <button class="grip" id="grip" aria-expanded="true" aria-controls="detail">Minimise</button>
+  <div id="detail" aria-live="polite"><p class="muted">Loading the city and the live positions…</p></div>
+</aside>
+
+<details class="status-key"><summary>Status key</summary>
   <div class="legend" id="legend">
     <span><i style="--c:#2fbf71"></i>On time</span><span><i style="--c:#f2a33a"></i>Late</span><span><i style="--c:#e5533d"></i>10+ min late</span><span><i style="--c:#3aa0e8"></i>Early</span><span><i style="--c:#c3c7cc"></i>Not known</span>
     <small>On time here means up to 1 min early or 5 min late. Our band, not AT's measure.</small>
   </div>
-</aside>
+</details>
 
 <div class="views" role="group" aria-label="Camera">
   <button data-view="harbour">Harbour</button><button data-view="city">City</button><button data-view="overview">Whole area</button>
 </div>
 <div id="weather" class="chip weather" hidden></div>
 
-<footer id="truth" class="truth" role="contentinfo"><span id="truth-live">Positions: loading…</span></footer>
+<footer id="truth" class="truth" role="contentinfo"><span id="truth-live">Positions: loading…</span><details class="data-sources"><summary>Data sources</summary><div id="source-detail"></div></details></footer>
 
 <noscript><p class="noscript">This page needs JavaScript and WebGL to show the city.</p></noscript>
 <script type="module" src="./app.js"></script>
