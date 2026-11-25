@@ -63,3 +63,22 @@ Open **Model → Planting brush**. It uses the plan's existing local metres, nor
 **Plant schedule** opens on demand and shows project-wide accepted quantities and shares, with a CSV matching the table. It does not represent bed ownership, an estimate, planting suitability or a supplier specification. The ordinary proposed JSON remains the source for positions; no new export includes proposed elements in IFC or GLB.
 
 **Season look** is an optional illustrative view. It shows spring flowering and summer seed detail on the same plant positions without changing a saved plant, quantity, model dimension or surveyed object. Species/source links: NZPCN [harakeke](https://www.nzpcn.org.nz/flora/species/phormium-tenax/), [coastal toetoe](https://www.nzpcn.org.nz/flora/species/austroderia-splendens/) and [tī kōuka](https://www.nzpcn.org.nz/flora/species/cordyline-australis/). Harakeke and coastal toetoe provide the seasonal variation in this slice; legacy generic toetoe is not mapped to a species or a flowering calendar. These are example months, not an exact site forecast.
+
+### Site context and Nīkau
+
+In the Studio's Model tab, **LINZ site context** uses the Lab's existing Cloudflare
+`/api/live/` parcel and footprint feeds. Enter a WGS84 latitude and longitude
+to get a north-up reference map and publisher source dates. The map isn't joined
+to plan coordinates automatically; use verified control before aligning a
+project, and use the twin's existing Real ground panel for elevation. A successful
+empty result and an unavailable feed are explicitly different. No API key is
+accepted by the browser. The map isn't included in IFC or drawing exports.
+
+In the Planting brush, choose **Nīkau palm** for a proposed canopy layer. It uses
+the supplied Blender GLB at `media/plants/nikau-hero-blender.glb`
+(SHA-256 `16317c5c2d79db86032eab89a8212c375aa10b5df93d76f66b2dd4c8ef5d99ad`).
+The browser adds a ringed bark material to the original untextured trunk geometry.
+The 186 KB source loads only after the first accepted palm placement and is drawn
+as five instanced parts. Existing project saves and the plant schedule recognise
+Nīkau; old layered mixes are unchanged. Width, growing conditions and specimen
+selection still need site-specific landscape review.

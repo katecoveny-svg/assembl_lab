@@ -46,7 +46,7 @@ export function createPlanting(stage,{save,onExit,showSolid}){
   function remove(o){if(o){stage.scene.remove(o);o.userData.dispose?.();}}
   function syncPlants(){
     remove(plants);plants=null;
-    if(f && count()){plants=layer(f.y,state.plants,+season.value);plants.visible=visible||active;stage.scene.add(plants);}
+    if(f && count()){plants=layer(f.y,state.plants,+season.value,()=>{if(plants?.userData.nikauUnavailable)banner.textContent="Nīkau placement saved. Its 3D mesh could not load.";stage.render();});plants.visible=visible||active;stage.scene.add(plants);}
     q("#plantCount").textContent=count()+ (count()===1?" plant":" plants");q("#plantViewBed").hidden=!count();style.hidden=!count();renderSchedule();
   }
   function radius(){return +q("#plantRadius").value||1;}
