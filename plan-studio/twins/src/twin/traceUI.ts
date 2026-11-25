@@ -1,8 +1,10 @@
 // The trace card on the drop page: a PDF sheet or a picture of a plan in, a plan model out, with every step shown.
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import type { App } from './app';
-import { openPdf, planModel, readImage, readSheet, sheetThumb, surveySheets, toBuilding, type Built, type BuildOpts, type SheetInfo, type TraceRead } from './planTrace';
+import { openPdf, pageText, planModel, readImage, readSheet, sheetThumb, surveySheets, toBuilding, type Built, type BuildOpts, type SheetInfo, type TraceRead } from './planTrace';
 import { defaultRoles, fallPlane, guessHigh, interpretElevations, readElevSheet, readSiteSheet, registerSite, type ElevRead, type ElevResult, type Role, type SiteRead, type SiteResult } from './planSet';
+import { extractPdfSetNarrative, saveNarrative, type CulturalNarrative } from './culturalNarrative';
+import { BRAND_KEY } from './practiceLook';
 import { applyNameEdits } from './roomNames';
 import type { RoomSpec } from './homes';
 import { modelFingerprint } from './approvals';
@@ -81,7 +83,8 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
       <p class="small" id="trStatus">Opening the drawing…</p>
       <div class="tr-sheet" id="trSheetRow" hidden><label class="slider">Sheet <select id="trSheet"></select></label><canvas id="trThumb" class="tr-thumb"></canvas></div>
       <div id="trAsk" class="tr-ask" hidden><p id="trAskText"></p><button class="pill solid" id="trAi">Read it with the AI plan reader</button></div>
-      <div id="trSet" class="tr-set" hidden><p class="small"><b>The rest of the set.</b> The AI plan reader can also read a site plan (decks, stairs, paths, planting) and elevations (roof, heights, ground). Change what each sheet is for, or skip it.</p><div id="trSetList"></div></div>
+      <div id="trNarrative" class="tr-extra" hidden style="border-left:3px solid #916A70;padding-left:10px;margin:8px 0"></div>
+      <div id="trSet" class="tr-set" hidden><p class="small"><b>The rest of the set.</b> The AI plan reader can also read a site plan (decks, stairs, paths, planting) and elevations (roof, heights, ground). Narrative and reference render sheets are extracted automatically.</p><div id="trSetList"></div></div>
       <div id="trPlans" class="tr-plans"></div>
       <div id="trExtra" class="tr-extra" hidden></div>
       <div id="trOpts" class="tr-opts" hidden>
@@ -346,8 +349,37 @@ export function traceDrawing(app: App, file: File, host: HTMLElement): Promise<{
       try {
         if (isPdf) {
           doc = await openPdf(await file.arrayBuffer());
-          status(`Looking through ${doc.numPages} sheet${doc.numPages > 1 ? 's' : ''} for the floor plan…`);
+          status(`Looking through ${doc.numPages} sheet${doc.numPages > 1 ? 's' : ''} for floor plans, site context & cultural narrative…`);
           sheets = await surveySheets(doc);
+          // Scan all PDF pages for cultural narrative, motifs, practice brand, seating variants & reference render sheets
+          try {
+            const rawPages: { page: number; items: string[] }[] = [];
+            for (let pNo = 1; pNo <= doc.numPages; pNo++) {
+              const items = await pageText(await doc.getPage(pNo));
+              rawPages.push({ page: pNo, items: items.map((x) => x.str) });
+            }
+            const { narrative, sheets: classified } = extractPdfSetNarrative(rawPages, file.name);
+            saveNarrative(narrative);
+            if (narrative.practiceName) {
+              try {
+                const existing = JSON.parse(localStorage.getItem(BRAND_KEY) ?? 'null') as { name?: string; logo?: string } | null;
+                if (!existing?.name) localStorage.setItem(BRAND_KEY, JSON.stringify({ ...(existing ?? {}), name: narrative.practiceName, at: Date.now() }));
+              } catch { /* ignore storage */ }
+            }
+            // Capture first reference render sheet (if present) for Look Check / Photoreal benchmark
+            if (narrative.renderPages.length) {
+              try {
+                const rc = await sheetThumb(await doc.getPage(narrative.renderPages[0]), 960);
+                sessionStorage.setItem('assembl.nz.pdf-ref-render', rc.toDataURL('image/jpeg', 0.86));
+              } catch { /* optional benchmark */ }
+            }
+            const narEl = $('trNarrative');
+            const motifBadges = narrative.motifs.map((m) => `<b>${esc(m.term)}</b>`).join(' · ');
+            const varText = narrative.layoutVariants.length ? `<br><span class="mono">Layouts detected: ${narrative.layoutVariants.map((v) => `${esc(v.code)} ${esc(v.mode)} (${v.seats} seats)`).join(' · ')}</span>` : '';
+            const renText = narrative.renderPages.length ? ` · ${narrative.renderPages.length} reference render sheet${narrative.renderPages.length > 1 ? 's' : ''} linked` : '';
+            narEl.innerHTML = `<p class="small"><b>Document &amp; Cultural Narrative Intake (${classified.length} pages scanned${renText})</b><br>${narrative.practiceName ? `Practice: <b>${esc(narrative.practiceName)}</b> · ` : ''}Place: ${esc(narrative.roheOrPlace)}<br>Motifs intertwined: ${motifBadges || 'Manaakitanga · Kaitiakitanga'}<br><i>${esc(narrative.summary.slice(0, 220))}${narrative.summary.length > 220 ? '…' : ''}</i>${varText}</p>`;
+            narEl.hidden = false;
+          } catch (narErr) { console.warn('narrative scan skipped:', narErr); }
           const best = [...sheets].sort((a, b) => b.score - a.score)[0];
           page = best.page;
           roles = defaultRoles(sheets, page);

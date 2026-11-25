@@ -44,6 +44,9 @@ import { buildFreeform, isFreeform } from './freeform'; // free-form buildings (
 import { bbox as fpBox, inside as inPoly } from './freeformGeom';
 import { navFromPlan } from './walkNav';
 import { dressModel, type Dressed } from './dressModel'; // the finished look for an opened IFC or GLB (agent/model-dress-1123): this import and the lines marked model-dress
+import { mountNzSpecifier } from './nzSpecifierUI';
+import { mountPracticeBrandAndAgents } from './practiceBrandVoice';
+import type { DrawingRoom } from './workingDrawings';
 
 // The tool's front door: drop a plan model (assembl.plan-model.v1, as Plan to 4D saves it) and
 // get a furnished, finished twin to render. An IFC or GLB (from Revit, ArchiCAD or Blender) is
@@ -1167,9 +1170,46 @@ export const projectPlan: Project = {
     // the Real ground card rests the 3D view while LINZ's files arrive, and gives it back as it found it
     let pausedBefore = false;
     const groundPause = (on: boolean) => { if (on) { pausedBefore = app.paused; app.paused = true; } else app.paused = pausedBefore; };
-    if (input.kind === 'plan') void import('./photoUI').then((m) => m.mountPhoto(app));   // "Make it a photo" (agent/render-1122): card after Stills, button on the view, viewer
+    void import('./photoUI').then((m) => m.mountPhoto(app));   // "Make it a photo" (4K Nano Banana Pro): available for plans, IFCs and GLBs
     void import('./agents/mount').then((m) => m.mountAgents(app as never, model, input.kind === 'plan' ? (input.plan as never) : undefined));   // the interior agent and the look expert (feat/agents-interior-1123): this line only
     void import('./siteBrief').then((m) => m.mountSiteBrief(app as never, handed && handed.id === new URLSearchParams(location.search).get(HANDOFF_PARAM) ? (handed.site as never) : null, input.kind));   // the site agent's brief, site.brief (feat/site-agent): this line only
+
+    // Live NZ Architectural Specifier (Cost + Delay + Client Share) & Working Drawings / Cultural Narrative / Te Reo Voice Suite
+    const modelWorldBounds = ownBox ? ownBox.clone() : new THREE.Box3().setFromObject(model);
+    const extractedRooms: DrawingRoom[] =
+      input.kind === 'plan'
+        ? input.plan.buildings.flatMap((b) =>
+            ((b.levels?.[0] as unknown as { rooms?: { name: string; u: number; v: number; w: number; d: number }[] })?.rooms ?? []).map((r) => ({
+              name: r.name,
+              x: Math.max(0, r.u),
+              z: Math.max(0, r.v),
+              w: Math.max(1, r.w),
+              d: Math.max(1, r.d),
+            })),
+          )
+        : [];
+    const projDisplayTitle = input.kind === 'plan' ? input.plan.job?.title ?? input.name : input.name;
+    let brandSuiteRef: ReturnType<typeof mountPracticeBrandAndAgents> | null = null;
+    const nzSpecifier = mountNzSpecifier({
+      app,
+      model,
+      bounds: modelWorldBounds,
+      projectTitle: projDisplayTitle,
+      groundAt: (x, z) => (onModelGround ? onModelGround.yAt(x, z) : groundAt(x, -z)),
+      onChange: () => brandSuiteRef?.refresh(),
+    });
+    const brandSuite = mountPracticeBrandAndAgents({
+      app,
+      model,
+      bounds: modelWorldBounds,
+      inputKind: input.kind,
+      inputName: projDisplayTitle,
+      rooms: extractedRooms,
+      getSelections: nzSpecifier.getSelections,
+      getSpecImpact: nzSpecifier.getImpact,
+      keys,
+    });
+    brandSuiteRef = brandSuite;
     const layers: Layer[] = [
       { id: 'model', label: input.kind === 'plan' ? 'Generated homes, fitted out' : 'Model', visible: true, object: model, model: true },
       realGround ? { id: 'ground', label: 'Ground', note: terrain?.layerNote ?? (terrain?.photo ? 'LiDAR ground and aerial photo; cut to a platform under the house' : 'surveyed ground with contour lines drawn from it; cut to a platform under the house'), visible: true, object: realGround }
@@ -1223,7 +1263,9 @@ export const projectPlan: Project = {
       sharePlan: input.kind === 'plan' ? () => asDropped : undefined,   // the plan as dropped: ground fetched for a point is never part of a share
       // the approval record and the pre-check name the version of the plan as dropped, the same code the run report and the
       // ops page use; the pre-check still measures falls on whatever ground is showing
-      panels: input.kind !== 'plan' ? (setTimeout(() => startSite?.(), 0), modelCards) : input.kind === 'plan' ? [finishesPanel(app, sched.s, input.plan.job?.title ?? input.name), approvalPanel(app, asDropped ?? input.plan), codeChecksPanel(app, input.plan, asDropped ? modelFingerprint(asDropped) : undefined), groundPanel((m) => app.log(m), asDropped, onGround, groundFailed, groundPause), ...(planFlight ? [planFlight] : [])] : [],
+      panels: input.kind !== 'plan'
+        ? (setTimeout(() => startSite?.(), 0), [nzSpecifier.el, brandSuite.el, ...modelCards])
+        : [nzSpecifier.el, brandSuite.el, finishesPanel(app, sched.s, input.plan.job?.title ?? input.name), approvalPanel(app, asDropped ?? input.plan), codeChecksPanel(app, input.plan, asDropped ? modelFingerprint(asDropped) : undefined), groundPanel((m) => app.log(m), asDropped, onGround, groundFailed, groundPause), ...(planFlight ? [planFlight] : [])],
       topPanels: input.kind === 'plan' ? [planRunPanel(app, { plan: asDropped ?? input.plan, shown: input.plan, onGround, pause: groundPause })] : [],
       layers,
       focus: centre,

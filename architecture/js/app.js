@@ -235,8 +235,8 @@ async function projectsView() {
   if (!ui.wallAt) ui.wallAt = now;
   const anim = now - ui.wallAt < 900 ? ' rise' : '';
   const band = artHero();
-  return `<div class="wrap">
-    <section class="hero${band ? ' art-hero' : ''}">${band}<p class="label">Projects</p><h1><span class="accent">From the first site visit</span> to completion.</h1>
+  return `<div data-arch-stage-slot></div><div class="wrap">
+    <section class="hero${band ? ' art-hero' : ''}">${band}<p class="label">Practice Workspace</p><h1><span class="accent">Projects, stages &amp; client sign-offs</span> in one studio.</h1>
       <dl class="bignums"><div><dt>Projects</dt><dd>${projects.length}</dd></div><div><dt><span class="dot go" aria-hidden="true"></span>Under way</dt><dd>${count('go')}</dd></div>
         <div><dt><span class="dot needs" aria-hidden="true"></span>Need something</dt><dd>${count('needs')}</dd></div><div><dt><span class="dot waiting" aria-hidden="true"></span>Waiting on a person</dt><dd>${count('waiting')}</dd></div></dl></section>
     ${flashHtml()}${incomingHtml(projects)}
@@ -773,6 +773,8 @@ async function drawAddons(r, project, alive = () => true) {
   const part = async (host, id, fn, ...args) => { if (!alive()) return; const el = document.createElement('div'); el.dataset.part = id; host.append(el); await mount(el, fn, ...args); };
   if (r.view === 'settings') { const host = $app.querySelector('[data-mod-settings]'); if (host) for (const s of settingsParts()) await part(host, s.id, s.render); return; }
   if (r.view === 'projects') {
+    const stageSlot = $app.querySelector('[data-arch-stage-slot]');
+    if (stageSlot) await mount(stageSlot, (el, c) => import('./immersive-stage.js').then((m) => m.mountImmersiveStage(el, c, { fullPage: false })));
     const top = $app.querySelector('[data-mod-wall]'), els = Object.fromEntries([...$app.querySelectorAll('[data-mod-tile]')].map((el) => [el.dataset.modTile, el]));
     for (const w of wallParts()) {
       if (w.top && top) await part(top, w.id, w.top);
