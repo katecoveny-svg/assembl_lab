@@ -1,6 +1,7 @@
 // assembl lab · Auckland live: the 3D city. Real ground (LINZ heights, OSM land cover), OSM building heights, a sky and sun
 // set by the real time in Auckland, a moving harbour, and the live vehicles (vehicles.js). Natural colours only.
 import * as T from 'three';
+import { cameraPose, flightPose } from './camera-flight.mjs';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { Sky } from 'three/addons/objects/Sky.js';
@@ -339,13 +340,30 @@ export async function createWorld(canvas, { phone = false, capture = false, time
   // ---------------------------------------------------------------- camera
   const views = {
     harbour: { t: [-2040, 55, -15], p: [-1520, 275, -1365] },
+    waterfront: { t: [-1880, 71, -358], p: [-1540, 184, -869] },
     city: { t: [-2150, 45, 315], p: [-1450, 420, -690] },
     overview: { t: [-900, 0, 1500], p: [5200, 9000, -9500] },
   };
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-  let fly = null, follow = null;
-  function setView(v) { controls.target.set(...v.t); camera.position.set(...v.p); controls.update(); }
+  let fly = null, follow = null, cinematic = null;
+  const stopFlight = () => {
+    if (cinematic) { camera.fov = canvas.clientWidth < canvas.clientHeight ? 55 : 42; camera.updateProjectionMatrix(); }
+    cinematic = null; fly = null;
+  };
+  function flyCinematic(v) {
+    stopFlight(); follow = null;
+    if (reducedMotion.matches) { setView(v); return; }
+    cinematic = {
+      started: performance.now(), duration: phone ? 2150 : 2600,
+      from: cameraPose(controls.target.toArray(),camera.position.toArray(),camera.fov),
+      to: cameraPose(v.t,v.p,canvas.clientWidth < canvas.clientHeight ? 55 : 42),
+    };
+  }
+  controls.addEventListener('start',stopFlight);
+  reducedMotion.addEventListener('change', () => { if (reducedMotion.matches) stopFlight(); });
+  function setView(v) { stopFlight(); controls.target.set(...v.t); camera.position.set(...v.p); controls.update(); }
   function flyTo(t, dist = 900, pitch = 0.5) {
+    stopFlight();
     const to = new T.Vector3(t[0], t[1] ?? 0, t[2]), off = camera.position.clone().sub(controls.target); off.y = 0; if (off.lengthSq() < 1) off.set(0.6, 0, -1);
     off.normalize().multiplyScalar(Math.cos(pitch) * dist); off.y = Math.sin(pitch) * dist;
     if (reducedMotion.matches) { fly = null; controls.target.copy(to); camera.position.copy(to).add(off); controls.update(); return; }
@@ -395,8 +413,15 @@ export async function createWorld(canvas, { phone = false, capture = false, time
     if (!running) return; requestAnimationFrame(loop);
     if (phone && t - last < 30) return; last = t; frames++;
     if (fly) { const k = Math.min(1, (t - fly.t0) / fly.dur), e = 1 - Math.pow(1 - k, 3); controls.target.lerpVectors(fly.fromT, fly.toT, e); camera.position.lerpVectors(fly.fromP, fly.toP, e); if (k >= 1) fly = null; }
+    if (cinematic) {
+      const k = Math.min(1, (t - cinematic.started) / cinematic.duration);
+      const p = flightPose(cinematic.from, cinematic.to, k);
+      controls.target.set(...p.target); camera.position.set(...p.position);
+      camera.fov = p.fov; camera.updateProjectionMatrix();
+      if (k >= 1) cinematic = null;
+    }
     stepVehicles(t);
-    if (follow && !fly) { const s = state.get(follow); if (s) { const d = new T.Vector3(s.x, s.y, s.z).sub(controls.target); controls.target.add(d.multiplyScalar(0.08)); camera.position.add(d); } }
+    if (follow && !fly && !cinematic) { const s = state.get(follow); if (s) { const d = new T.Vector3(s.x, s.y, s.z).sub(controls.target); controls.target.add(d.multiplyScalar(0.08)); camera.position.add(d); } }
     controls.update();
     // the sun's shadow box follows what the camera is looking at
     const dir = sun.userData.dir || new T.Vector3(0, 1, 0); sun.target.position.copy(controls.target); sun.position.copy(controls.target).addScaledVector(dir, 6000);
@@ -425,7 +450,8 @@ export async function createWorld(canvas, { phone = false, capture = false, time
 
   const sunNow = setTime(timeMs ?? Date.now());
   return {
-    renderer, scene, camera, controls, heightAt, isLand, setTime, setVehicles, pick, screenOf, showRoute, showStop, flyTo, views, setView,
+    renderer, scene, camera, controls, heightAt, isLand, setTime, setVehicles, pick, screenOf, showRoute, showStop, flyTo, flyCinematic, stopFlight, views, setView,
+    get flying() { return !!cinematic; },
     get sun() { return sunState; }, get frames() { return frames; }, set onFrame(f) { onFrame = f; },
     select(id) { selectedId = id; follow = id; },
     unfollow() { follow = null; },

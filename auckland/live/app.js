@@ -118,6 +118,7 @@ function pushVehicles() {
 
 // ------------------------------------------------------------------------------------------------ selection
 async function select(sel, { fly = true } = {}) { // a later choice always wins over a slower earlier one (S.sel !== sel checks)
+  S.world?.stopFlight();
   S.sel = sel; S.arrivals = null; setPanelSmall(false);
   const w = S.world;
   if (w) { w.select(sel?.kind === 'vehicle' ? sel.id : null); if (sel?.kind !== 'vehicle') w.unfollow(); }
@@ -290,7 +291,23 @@ function wireUi() {
   list.addEventListener('pointerdown', (e) => { const li = e.target.closest('li'); if (li) { e.preventDefault(); choose(items[+li.dataset.i]); } });
   document.addEventListener('pointerdown', (e) => { if (!e.target.closest('.search')) { list.hidden = true; q.setAttribute('aria-expanded', 'false'); } });
   document.querySelectorAll('[data-mode]').forEach((b) => b.onclick = () => { S.mode = b.dataset.mode; document.querySelectorAll('[data-mode]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); pushVehicles(); if (listOnly) render(); });
-  document.querySelectorAll('[data-view]').forEach((b) => b.onclick = () => { S.world?.unfollow(); const v = S.world?.views[b.dataset.view]; if (v) S.world.flyTo(v.t, Math.hypot(v.p[0] - v.t[0], v.p[1], v.p[2] - v.t[2]), Math.asin(v.p[1] / Math.hypot(v.p[0] - v.t[0], v.p[1], v.p[2] - v.t[2]))); });
+  const flyIn = $('#fly-in');
+  flyIn.onclick = () => {
+    const w = S.world; if (!w) return;
+    if (w.flying) { w.stopFlight(); return; }
+    let dest = w.views.waterfront;
+    const stop = S.sel?.kind === 'stop' ? S.index.stops.get(S.sel.id) : null;
+    if (stop && X.inArea(stop.lat, stop.lon)) {
+      const {x,z} = X.toWorld(stop.lat,stop.lon), y = w.heightAt(x,z);
+      dest = {t:[x,y+5,z],p:[x+125,y+140,z-320]};
+    }
+    w.flyCinematic(dest);
+  };
+  document.querySelectorAll('[data-view]').forEach((b) => b.onclick = () => {
+    const w = S.world, view = w?.views[b.dataset.view]; if (!view) return; w.unfollow(); w.setView(view);
+  });
+  canvas.addEventListener('keydown', () => S.world?.stopFlight());
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') S.world?.stopFlight(); });
   $('#grip').onclick = () => setPanelSmall(!$('#panel').classList.contains('small'));
   $('#detail').addEventListener('click', (e) => {
     const t = e.target.closest('[data-vehicle],[data-route],[data-clear],[data-try]'); if (!t) return;
@@ -310,6 +327,9 @@ function wireUi() {
   // label over the chosen vehicle
   const label = $('#label');
   if (S.world) S.world.onFrame = () => {
+    if (flyIn.dataset.flying !== String(S.world.flying)) {
+      flyIn.dataset.flying = String(S.world.flying); flyIn.textContent = S.world.flying ? 'Stop flight' : 'Fly in';
+    }
     if (S.sel?.kind !== 'vehicle') { label.hidden = true; return; }
     const p = S.world.screenOf(S.sel.id), v = S.positions?.vehicles.find((x) => x.id === S.sel.id);
     if (!p || !v) { label.hidden = true; return; }

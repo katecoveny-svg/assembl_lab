@@ -37,3 +37,7 @@ curl -sSL -o /tmp/gtfs.zip https://gtfs.at.govt.nz/gtfs.zip && unzip -o /tmp/gtf
 node tools/transit/bake-at.mjs /tmp/at-gtfs
 node tools/transit/bake-ground.mjs /tmp/assembl-tiles && python3 tools/transit/paint-ground.py /tmp/assembl-tiles/ground-draw.json
 ```
+
+## Optional camera flight
+
+“Fly in” is an optional, cancellable camera move from the current map angle to a composed waterfront view, or to a selected mapped stop. It does not move a vehicle marker, change the transit selection, simulate data or change the time of day. Chrome’s mobile view uses the same approach with a shorter duration; reduce-motion moves straight to the destination. The separate camera channels and log-distance approach were inspired by [Makio64’s Cinematic Zoom](https://github.com/Makio64/threejs-cinematic-world-zoom); this implementation uses the existing Assembl/LINZ/OSM scene and does not import its source code, Google tiles, Cesium or token workflow. The closer view retains approximate building façades and terrain, not a textured scan.
