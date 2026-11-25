@@ -14,14 +14,19 @@ import {buildCoast,addSedges,grade,plantable,pathX} from './landscape.js';
 import {buildBoards} from './metric.js';
 import {houseParts} from './house-parts.js';
 
-export async function openPavilion(host,asset,forceGL=false){
+export async function openPavilion(host,asset,forceGL=false,signal){
  const renderer=new T.WebGPURenderer({antialias:true,forceWebGL:forceGL,alpha:false});
- await renderer.init();renderer.setPixelRatio(Math.min(devicePixelRatio,host.clientWidth<=680?1.15:1.55));renderer.shadowMap.enabled=true;
+ const manager=new T.LoadingManager();let initialized=false;
+ const abort=()=>manager.abort();
+ signal?.addEventListener('abort',abort,{once:true});
+ try {
+ signal?.throwIfAborted();
+ await renderer.init();initialized=true;signal?.throwIfAborted();renderer.setPixelRatio(Math.min(devicePixelRatio,host.clientWidth<=680?1.15:1.55));renderer.shadowMap.enabled=true;
  renderer.shadowMap.type=T.PCFShadowMap;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.13;
  const scene=new T.Scene(), camera=new T.PerspectiveCamera(45,1,.065,1000),cube=new T.BoxGeometry(),matrix=new T.Matrix4(),q=new T.Quaternion();
  const v=(x=0,y=0,z=0)=>new T.Vector3(x,y,z);
  let seed=92731;const rand=()=>((seed=Math.imul(seed,1664525)+1013904223>>>0)/4294967296),range=(a,b)=>a+(b-a)*rand();
- const texLoader=new T.TextureLoader(),glLoader=new GLTFLoader();
+ const texLoader=new T.TextureLoader(manager),glLoader=new GLTFLoader(manager);
  const refinements=[];
  const flatNormals=new Map();
  function surface(name){
@@ -41,15 +46,17 @@ export async function openPavilion(host,asset,forceGL=false){
    while(refinements.length){await Promise.allSettled(refinements.splice(0,2).map(load=>load()))}
  }
  const [sky,wood,blackwood,grit,chair,fern,shrub,grass,terrain]=await Promise.all([
-   new HDRLoader().loadAsync(asset('kloofendal_38d_partly_cloudy_puresky.hdr')),
+   new HDRLoader(manager).loadAsync(asset('kloofendal_38d_partly_cloudy_puresky.hdr')),
    ...['cedar','charred','sandy_gravel'].map(n=>surface(n+'.webp')),
    ...['mid_century_lounge_chair','fern_02','shrub_03','grass_medium_01','gulf-terrain'].map(n=>glLoader.loadAsync(asset(n+'.glb')))
  ]);
+ signal?.throwIfAborted();
  sky.mapping=T.EquirectangularReflectionMapping;scene.environment=sky;scene.background=sky;scene.backgroundRotation.y=scene.environmentRotation.y=0;
  scene.backgroundIntensity=1.22;scene.environmentIntensity=1.15;
  for(const t of [wood,blackwood,grit]){t.colorSpace=T.SRGBColorSpace;t.wrapS=t.wrapT=T.RepeatWrapping;t.anisotropy=6}
  const mat=(c,r=.8,map=null,extra={})=>new T.MeshStandardMaterial({color:c,roughness:r,map,...extra});
  const [brick,brickN,rockTex,rockN,deckMap]=await Promise.all(['dark_brick_wall','dark_brick_wall-normal','rock_face_03','rock_face_03-normal','deck'].map(n=>surface(n+'.webp')));
+ signal?.throwIfAborted();
  for(const tex of [brick,brickN,rockTex,rockN,deckMap]){tex.wrapS=tex.wrapT=T.RepeatWrapping;tex.anisotropy=6}
  for(const tex of [brick,rockTex,deckMap])tex.colorSpace=T.SRGBColorSpace;
  const newNames=['rough_linen','rough_linen-n','brown_planks_08','brown_planks_08-n','plastered_wall_04','plastered_wall_04-n','aerial_grass_rock','aerial_grass_rock-n','concrete_wall_006','concrete_wall_006-n','plan16a'];
@@ -58,6 +65,7 @@ export async function openPavilion(host,asset,forceGL=false){
    t.wrapS=t.wrapT=T.RepeatWrapping;t.anisotropy=8;if(!newNames[i].endsWith('-n'))t.colorSpace=T.SRGBColorSpace
  }
  fabric.repeat.set(5,5);fabricN.repeat.set(5,5);
+ signal?.throwIfAborted();
  const [floorAO,wallAO,ripple,landcover,seaPhoto]=await Promise.all(['floor-ao.png','wall-ao.png','bay-ripple.png','gulf-landcover.webp','gulf-water.webp'].map(n=>surface(n)));
  landcover.colorSpace=seaPhoto.colorSpace=T.SRGBColorSpace;landcover.anisotropy=seaPhoto.anisotropy=8;
  ripple.wrapS=ripple.wrapT=T.RepeatWrapping;ripple.repeat.set(205,205);ripple.anisotropy=8;
@@ -239,6 +247,7 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  const flower=new T.BufferGeometry();flower.setAttribute('position',new T.Float32BufferAttribute(plumes,3));flower.setAttribute('color',new T.Float32BufferAttribute(bladeColours,3));flower.setIndex(plumeIndex);flower.computeVertexNormals();
  const plants=[[8.5,11.85,1.17],[8.92,12.18,1.13],[6.65,10.67,1],[10.63,8.91,1.12],[-4.5,6.8,.91],[-5.8,7.9,1.03],[3.5,6.7,.94],[-7.5,7.2,1.09]];
  instantiate(flower,mat(0xf6ebce,.88,null,{vertexColors:true,side:T.DoubleSide}),plants.map(([x,z,k])=>[x,ground(x,z),z,k,range(0,6)]),.11);
+ signal?.throwIfAborted();
  await plantPohutukawa(scene,ground,name=>texLoader.loadAsync(asset(name)),host.clientWidth<=680);
  // This Three revision chooses a uniform block for up to 1,000 instances. Some WebGL 2 devices
  // allow only 256 mat4 values. Give larger batches vertex-attribute storage while keeping the draw count.
@@ -253,6 +262,7 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  }
  let triangleCount=0;scene.traverse(o=>{if(o.isMesh)triangleCount+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3*(o.isInstancedMesh?o.count:1)});
  const backend=renderer.backend.isWebGPUBackend?'WebGPU':'WebGL 2';
+ signal?.throwIfAborted();
  host.replaceChildren(renderer.domElement);renderer.domElement.setAttribute('aria-hidden','true');
  const match=new URLSearchParams(location.search).has('match');
  const positions=[v(12.1,.67,13.8),v(5.8,.73,8.45),(match?v(1.55,1.40,1.48):v(.89,1.49,1.69))],targets=[v(.02,1.02,.65),v(.07,1.21,.12),(match?v(4.28,1.27,-1.25):v(4.08,1.14,-.78))];
@@ -306,4 +316,8 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
    renderer.render(scene,camera)
  }
  size();return {backend,draw,size,refine,step,furnishLivingRoom,inside:()=>indoors,resetWalk:()=>displacement.set(0,0,0),setDetail(value){detail=value;displacement.set(0,0,0)},setExplore(view){explorePose=view;if(!view)displacement.set(0,0,0)},renderer,triangleCount,pose:()=>({position:camera.position.toArray(),quaternion:camera.quaternion.toArray(),fov:camera.fov,aspect:camera.aspect})}
+ } catch(error) {
+   if(initialized)renderer.dispose();
+   throw error;
+ } finally {signal?.removeEventListener('abort',abort)}
 }

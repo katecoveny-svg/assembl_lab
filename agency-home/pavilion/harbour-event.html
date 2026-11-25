@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en-NZ"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><base href="https://assembl-waitemata-tides.pages.dev/"><title>Selected Auckland tide</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;color:#654a4e;background:#fbf6f6;font:15px/1.35 system-ui,sans-serif}body{display:flex;flex-direction:column}#view{flex:1;min-height:140px;background:center/cover url(media/skyline-and-bridge.webp)}#view canvas{display:block;width:100%;height:100%}nav{display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:8px 14px}button{min-height:42px;border:1px solid #654a4e55;border-radius:2px;color:inherit;background:transparent;padding:4px 12px;font:inherit}button:focus-visible{outline:2px solid #654a4e}#sceneNote{margin:0;padding:0 14px 9px}
+</style></head>
+<body><div id="view"></div><nav aria-label="Harbour camera"><button id="reverse">Face Devonport</button><button id="closer" aria-label="Zoom in">＋</button><button id="wider" aria-label="Zoom out">−</button><button id="reset">Reset view</button><button id="wind">Pause water</button></nav><p id="sceneNote" role="status">Opening harbour…</p>
+<script type="module">
+// This sandbox uses the published renderer and its own relative texture URLs.
+// Prediction selection stays with the homepage table and its single LINZ data source.
+const holder=document.getElementById('view'),note=document.getElementById('sceneNote');
+let scene,selection,reverse=false,paused=matchMedia('(prefers-reduced-motion:reduce)').matches;
+function paint(){if(scene&&selection){scene.setHeight(selection.height);note.textContent=selection.label}}
+addEventListener('message',e=>{
+ if(e.source!==parent||e.data?.type!=='assembl:prediction')return;
+ const {height,label}=e.data;if(!Number.isFinite(height)||typeof label!=='string')return;
+ selection={height,label};paint();
+});
+parent.postMessage({type:'assembl:harbour-listening'},'*');
+try{
+ const {createHarbour}=await import('https://assembl-waitemata-tides.pages.dev/harbour.js');
+ scene=await createHarbour(holder);scene.pause(paused);paint();
+ const $=id=>document.getElementById(id);const label=()=>{$('wind').textContent=paused?'Animate water':'Pause water'};label();
+ $('wind').onclick=()=>{paused=!paused;scene.pause(paused);label()};
+ $('reverse').onclick=()=>{reverse=!reverse;scene.setView(reverse);$('reverse').textContent=reverse?'Face the city':'Face Devonport'};
+ $('closer').onclick=()=>scene.zoom(.85);$('wider').onclick=()=>scene.zoom(1.15);$('reset').onclick=()=>scene.reset();
+ matchMedia('(prefers-reduced-motion:reduce)').addEventListener('change',e=>{paused=e.matches;scene.pause(paused);label()});
+ parent.postMessage({type:'assembl:harbour-ready'},'*');
+}catch{document.querySelector('nav').hidden=true;note.textContent='Archived shoreline. The published tide selection is available below.';parent.postMessage({type:'assembl:harbour-still'},'*')}
+</script></body></html>

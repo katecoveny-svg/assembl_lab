@@ -1,56 +1,96 @@
 export function setupPlanReveal(asset) {
- const section=document.querySelector('#plan-study'),field=document.querySelector('#plan-field'),host=document.querySelector('#plan-geometry');
- const slider=document.querySelector('#plan-scrub'),output=document.querySelector('#plan-value'),heading=document.querySelector('#folio-stage');
- const top=field.querySelector('.section-still'),beauty=field.querySelector('.beauty-still'),hint=document.querySelector('#model-hint');
- const reduced=matchMedia('(prefers-reduced-motion: reduce)');
- let engine,started,loaded=false,still=false,pointer=null,drawId=0,amount=0;
- function images(){if(loaded)return;loaded=true;field.querySelector('.plan-paper').src=asset('16c-ink.webp');top.src=asset('section16c.webp');beauty.src=asset('16c-cutaway.webp')}
- function paint(){
-  drawId=0;if(!engine||!field.clientWidth)return;
-  const style=getComputedStyle(field),r=field.querySelector('.folio-lens').getBoundingClientRect().width/2;
-  engine.reveal(parseFloat(style.getPropertyValue('--px'))/100,parseFloat(style.getPropertyValue('--py'))/100,r/field.clientWidth,amount<42?1:1-(amount-42)/58);
+ const section=document.querySelector('#plan-study'), field=document.querySelector('#plan-field');
+ const host=document.querySelector('#plan-geometry'), slider=document.querySelector('#plan-scrub');
+ const top=field.querySelector('.section-still'), beauty=field.querySelector('.beauty-still');
+ const paper=field.querySelector('.plan-paper'), turn=document.querySelector('#turn-cutaway');
+ const output=document.querySelector('#plan-value'), heading=document.querySelector('#folio-stage');
+ const hint=document.querySelector('#model-hint'), mode=document.querySelector('#section-mode');
+ let orbit=false,engine,loading,pointer=null,x=50,y=50;
+ function responsiveModel(image,stem){
+  image.sizes='(max-width: 680px) 100vw, min(100vw, 116svh)';
+  image.srcset=asset(stem+'-phone.webp')+' 539w, '+asset(stem+'.webp')+' 1060w';
+  image.src=asset(stem+'.webp');
  }
- function schedule(){if(engine&&!drawId)drawId=requestAnimationFrame(paint)}
- function display(){
-  amount=Number(slider.value);const t=Math.max(0,1-amount/42),lift=t*t*(3-2*t),cover=Math.max(0,(amount-42)/58);
-  field.classList.toggle('orbiting',amount===0);field.classList.toggle('all-plan',amount===100);
-  field.style.setProperty('--uncover',((1-cover)*100)+'%');field.style.setProperty('--plate-alpha',amount>=42?'1':'0');
-  if(amount<=42)field.classList.remove('has-lens');
-  if(engine){engine.stage(lift);schedule()}
-  beauty.hidden=!!engine;beauty.style.opacity=String(lift);
-  const name=amount===0?'Cutaway':amount<42?'Changing view':amount===42?'Overhead':amount<100?'Revealing plan':'Floor plan';
-  output.value=name;heading.textContent=amount===0?'Furnished cutaway':amount<=42?'Over the rooms':'The original drawing';
-  slider.setAttribute('aria-valuetext',name+', '+amount+' percent');
-  hint.firstChild.textContent=still?'Saved model views.':amount===0?'Drag the cutaway to turn it.':amount>=42?'Move across the rooms to inspect the drawing.':'Keep dragging to meet the plan.';
-  field.tabIndex=0;field.setAttribute('aria-label',amount===0?'Furnished 16C cutaway. Drag or use arrow keys to turn.':'16C floor plan and model. Use the slider to compare.');
+ function images(){
+  if(!top.hasAttribute('src'))responsiveModel(top,'section16c');
+  if(!paper.hasAttribute('src'))paper.src=asset('16c-ink.webp');
  }
- function fallback(){engine=null;still=true;host.replaceChildren();section.dataset.renderer='still';document.querySelector('#section-mode').textContent=' · Still view';display()}
- async function load(){
-  images();const choice=new URLSearchParams(location.search).get('renderer');if(choice==='still'){fallback();return}
-  try{const {sectionModel}=await import('./section-model.js');
-   try{engine=await sectionModel(host,asset,choice==='webgl',fallback)}catch(error){if(choice==='webgl')throw error;engine=await sectionModel(host,asset,true,fallback)}
-   section.dataset.renderer=engine.backend;display()
+ function lens(left,down){
+  x=Math.round(Math.max(0,Math.min(100,left)));y=Math.round(Math.max(0,Math.min(100,down)));
+  field.style.setProperty('--px',x+'%');field.style.setProperty('--py',y+'%');
+  field.classList.add('has-lens');slider.value=x;output.value=x+'%';
+  slider.setAttribute('aria-valuetext',x+' percent across, '+y+' percent down the floor plan');
+ }
+ function atPoint(e){
+  const r=field.getBoundingClientRect();lens(100*(e.clientX-r.left)/r.width,100*(e.clientY-r.top)/r.height);
+ }
+ function hideLens(){field.classList.remove('has-lens')}
+ function layout(){
+  hideLens();pointer=null;field.classList.toggle('orbiting',orbit);
+  // The first overhead plate is a capture of this projection. After opening 3D,
+  // keep the live orthographic model under the same fixed drawing coordinates.
+  host.hidden=!orbit&&!engine;beauty.hidden=!orbit||!!engine;top.hidden=orbit||!!engine;
+  slider.disabled=orbit;turn.setAttribute('aria-pressed',String(orbit));
+  turn.textContent=orbit?'Back to plan lens':'Turn the cutaway';
+  heading.textContent=orbit?'Furnished cutaway':'Model and original plan';
+  hint.firstChild.textContent=orbit?(engine?'Drag or use the arrow keys to turn.':'Furnished view. '):'Move over the house to reveal its plan. On touch, drag sideways.';
+  field.setAttribute('aria-label',orbit?'Furnished 16C cutaway. Use arrow keys to turn.':'16C model. Arrow keys move the circular plan lens. Escape clears it.');
+  if(engine){engine.stage(orbit?1:0);engine.reveal(.5,.5,0,1)}
+ }
+ function fallback(){
+  engine=null;host.replaceChildren();section.dataset.renderer='still';mode.textContent=' · Still view';layout();
+ }
+ async function openModel(){
+  const choice=new URLSearchParams(location.search).get('renderer');
+  if(choice==='still'){fallback();return}
+  try{
+   const {sectionModel}=await import('./section-model.js');
+   try{engine=await sectionModel(host,asset,choice==='webgl',fallback)}
+   catch(error){if(choice==='webgl')throw error;engine=await sectionModel(host,asset,true,fallback)}
+   section.dataset.renderer=engine.backend;layout();
   }catch{fallback()}
  }
- function ensure(){return started??=load()}
- slider.addEventListener('input',()=>{field.classList.remove('has-lens');display();ensure()});
- function lens(e){if(amount<42)return;const r=field.getBoundingClientRect();field.style.setProperty('--px',100*(e.clientX-r.x)/r.width+'%');field.style.setProperty('--py',100*(e.clientY-r.y)/r.height+'%');field.classList.add('has-lens');ensure();schedule()}
- field.addEventListener('pointerdown',e=>{if(e.button!==0)return;pointer={id:e.pointerId,x:e.clientX,y:e.clientY,armed:false};ensure()});
+ turn.onclick=()=>{
+  orbit=!orbit;
+  if(orbit&&!beauty.hasAttribute('src'))responsiveModel(beauty,'16c-cutaway');
+  layout();if(orbit)loading??=openModel();
+ };
+ slider.addEventListener('focus',()=>lens(Number(slider.value),y));
+ slider.addEventListener('input',()=>lens(Number(slider.value),y));
+ slider.addEventListener('keydown',e=>{
+  if(e.key==='ArrowUp'||e.key==='ArrowDown'){
+   e.preventDefault();lens(Number(slider.value),y+(e.key==='ArrowDown'?5:-5));
+  }else if(e.key==='Escape')hideLens();
+ });
+ field.addEventListener('pointerenter',e=>{if(e.pointerType!=='touch'&&!orbit)atPoint(e)});
+ field.addEventListener('pointerdown',e=>{
+  if(!e.isPrimary||e.button!==0)return;
+  pointer={id:e.pointerId,x:e.clientX,y:e.clientY,armed:false};
+  if(!orbit)atPoint(e);
+ });
  field.addEventListener('pointermove',e=>{
-  if(amount>=42&&e.pointerType==='mouse'){if(!reduced.matches)lens(e);return}
-  if(!pointer||e.pointerId!==pointer.id)return;const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;
-  if(!pointer.armed&&e.pointerType!=='mouse'&&Math.abs(dy)>Math.abs(dx)+5){pointer=null;return}
-  if(Math.abs(dx)>4||e.pointerType==='mouse')pointer.armed=true;if(!pointer.armed)return;
-  if(amount===0){engine?.turn(-dx*.009,e.pointerType==='mouse'?dy*.006:0);pointer.x=e.clientX;pointer.y=e.clientY}
-  else lens(e);
+  if(!orbit&&e.pointerType!=='touch'){atPoint(e);return}
+  if(!pointer||pointer.id!==e.pointerId)return;
+  const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;
+  if(!pointer.armed){
+   if(e.pointerType==='touch'&&Math.abs(dy)>Math.abs(dx)+4){pointer=null;hideLens();return}
+   if(Math.abs(dx)<4&&Math.abs(dy)<4)return;
+   pointer.armed=true;field.setPointerCapture(e.pointerId);
+  }
+  if(orbit){engine?.turn(-dx*.009,dy*.006);pointer.x=e.clientX;pointer.y=e.clientY}
+  else atPoint(e);
  });
- field.addEventListener('pointerup',e=>{if(pointer&&amount>=42&&!pointer.armed)lens(e);pointer=null});
- function clear(){pointer=null;field.classList.remove('has-lens');schedule()}
- field.addEventListener('pointercancel',clear);field.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')clear()});
- field.addEventListener('keydown',async e=>{if(e.key==='Escape'){clear();slider.focus({preventScroll:true});return}
-  const move={ArrowLeft:[.11,0],ArrowRight:[-.11,0],ArrowUp:[0,.08],ArrowDown:[0,-.08]}[e.key];
-  if(move&&amount===0){e.preventDefault();await ensure();engine?.turn(...move)}
+ field.addEventListener('pointerup',()=>{pointer=null});
+ field.addEventListener('pointercancel',()=>{pointer=null;hideLens()});
+ field.addEventListener('pointerleave',e=>{if(e.pointerType!=='touch'&&!pointer)hideLens()});
+ field.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){hideLens();return}
+  const move={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
+  if(!move)return;e.preventDefault();
+  if(orbit)engine?.turn(-move[0]*.11,-move[1]*.08);else lens(x+move[0]*5,y+move[1]*5);
  });
- new IntersectionObserver(([e])=>{if(e.isIntersecting)images();else clear()},{rootMargin:'140px'}).observe(section);
- return visible=>{if(!visible)clear();section.hidden=!visible;document.querySelector('.plate-img').hidden=visible;if(visible)display()};
+ field.addEventListener('blur',hideLens);
+ new IntersectionObserver(([e])=>{if(e.isIntersecting)images();else hideLens()},{rootMargin:'180px'}).observe(section);
+ layout();
+ return visible=>{if(!visible)hideLens();section.hidden=!visible;document.querySelector('.plate-img').hidden=visible};
 }

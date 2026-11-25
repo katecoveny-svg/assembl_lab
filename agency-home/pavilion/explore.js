@@ -3,13 +3,19 @@ export function installExplore(vista,options) {
  const entry=document.getElementById('free-enter'),bar=document.getElementById('free-bar');
  const exit=bar.querySelector('[data-exit]'),reset=bar.querySelector('[data-reset]'),pause=bar.querySelector('[data-wind]');
  const pointers=new Map();
+ // Outside full Explore, one horizontal drag looks around. Vertical gestures remain native.
+ let glance=null,glanceYaw=0,glancePitch=0;
+ function releaseGlance(){
+  glance=null;glanceYaw=0;glancePitch=0;
+  if(!active){options.setCamera(null);options.repaint()}
+ }
  let active=false,anchorY=0,yaw=0,pitch=0,travel=0;
  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
  function turn(to){return options.inside()?Math.atan2(Math.sin(to),Math.cos(to)):clamp(to,-.68,.68)}
  function takeStep(f,r){options.step(f,r);options.repaint()}
  for(const b of bar.querySelectorAll('[data-step]'))b.onclick=()=>takeStep(Number(b.dataset.step),0);
  function update(){options.setCamera(active?{yaw,pitch,travel}:null);options.repaint()}
- function resetView(){options.resetWalk();yaw=0;pitch=0;travel=0;update()}
+ function resetView(){glance=null;glanceYaw=glancePitch=0;options.resetWalk();yaw=0;pitch=0;travel=0;update()}
  function windLabel(){pause.textContent=options.paused()?'Resume wind':'Pause wind';pause.setAttribute('aria-pressed',String(options.paused()))}
  function leave(focus=true){
   if(!active)return;active=false;pointers.clear();vista.classList.remove('free-camera');bar.hidden=true;entry.hidden=false;entry.setAttribute('aria-expanded','false');options.lock(false);resetView();
@@ -24,11 +30,26 @@ export function installExplore(vista,options) {
  const separation=()=>{const [a,b]=pointers.values();return Math.hypot(a.x-b.x,a.y-b.y)};
  const surface=document.getElementById('gpu');
  surface.addEventListener('pointerdown',e=>{
-  if(!active||e.button!==0||pointers.size>=2)return;
+  if(e.button!==0||pointers.size>=2||!options.available())return;
+  if(!active){
+   if(!e.isPrimary){releaseGlance();return}
+   glance={id:e.pointerId,x:e.clientX,y:e.clientY,yaw:glanceYaw,pitch:glancePitch,armed:false};
+   return;
+  }
   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});surface.setPointerCapture(e.pointerId);
   vista.focus({preventScroll:true})
  });
  surface.addEventListener('pointermove',e=>{
+  if(!active&&glance?.id===e.pointerId){
+   const dx=e.clientX-glance.x,dy=e.clientY-glance.y;
+   if(!glance.armed){
+    if(Math.abs(dy)>Math.abs(dx)+4){glance=null;return}
+    if(Math.abs(dx)<5)return;
+    glance.armed=true;surface.setPointerCapture(e.pointerId);
+   }
+   glanceYaw=turn(glance.yaw-dx*.0045);glancePitch=clamp(glance.pitch+dy*.0018,-.13,.16);
+   options.setCamera({yaw:glanceYaw,pitch:glancePitch,travel:0});options.repaint();return;
+  }
   const previous=pointers.get(e.pointerId);if(!active||!previous)return;
   const oldSpan=pointers.size===2?separation():0;
   const x=e.clientX,y=e.clientY;pointers.set(e.pointerId,{x,y});
@@ -36,7 +57,7 @@ export function installExplore(vista,options) {
   else{yaw=turn(yaw-(x-previous.x)*.0032);pitch=clamp(pitch+(y-previous.y)*.0019,-.18,.22)}
   update()
  });
- for(const type of ['pointerup','pointercancel','lostpointercapture'])surface.addEventListener(type,e=>pointers.delete(e.pointerId));
+ for(const type of ['pointerup','pointercancel','lostpointercapture'])surface.addEventListener(type,e=>{pointers.delete(e.pointerId);if(glance?.id===e.pointerId)glance=null});
  surface.addEventListener('wheel',e=>{
   if(!active)return;e.preventDefault();const unit=e.deltaMode===1?16:e.deltaMode===2?vista.clientHeight:1;travel=clamp(travel-e.deltaY*unit*.00055,-.35,.35);update()
  },{passive:false});
@@ -59,6 +80,6 @@ export function installExplore(vista,options) {
   e.preventDefault();e.stopImmediatePropagation();update()
  },true);
  vista.addEventListener('focusout',e=>{if(active&&e.relatedTarget&&!vista.contains(e.relatedTarget))leave(false)});
- window.addEventListener('scroll',()=>{if(active&&Math.abs(scrollY-anchorY)>14)leave(false)},{passive:true});
- return {ready(){entry.hidden=false},lost(){leave(false);entry.hidden=true},isActive:()=>active,leave,windLabel}
+ window.addEventListener('scroll',()=>{if(!active&&(glance||glanceYaw||glancePitch))releaseGlance();if(active&&Math.abs(scrollY-anchorY)>14)leave(false)},{passive:true});
+ return {releaseGlance,ready(){entry.hidden=false},lost(){leave(false);entry.hidden=true},isActive:()=>active,leave,windLabel}
 }
