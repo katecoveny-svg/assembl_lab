@@ -50,7 +50,24 @@ function furnishInterior(){
  const current=world;furnishedWorld=current;
  current.furnishLivingRoom().then(()=>{if(world===current){dirty=true;wake()}}).catch(()=>{});
 }
-function sync(){if(!room&&!garden?.active&&!touring&&!exploring&&!paused&&manual===null){p=Math.max(0,Math.min(1,scrollPosition()+carry*Math.max(0,1-Math.abs(scrollY-carryOrigin)/300)))}furnishInterior();document.querySelectorAll('[data-shot]').forEach(b=>b.setAttribute('aria-pressed',String(!garden?.active&&!detail&&Math.abs(p-Number(b.dataset.shot))<=.25)));dirty=true;wake()}
+function sync(){if(!room&&!garden?.active&&!touring&&!exploring&&!paused&&manual===null){p=Math.max(0,Math.min(1,scrollPosition()+carry*Math.max(0,1-Math.abs(scrollY-carryOrigin)/300)))}furnishInterior();document.querySelectorAll('[data-shot]').forEach(b=>b.setAttribute('aria-pressed',String(!garden?.active&&!detail&&Math.abs(p-Number(b.dataset.shot))<.13)));dirty=true;wake()}
+const titleLayer=$('.scene-titles');
+function easeBetween(value,low,high){
+ const t=Math.min(1,Math.max(0,(value-low)/(high-low)));return t*t*(3-2*t);
+}
+function liftAt(value){
+ if(exploring||garden?.active||detail||room||settings.has('match'))return 0;
+ return easeBetween(value,.055,.30)*(1-easeBetween(value,.42,.65));
+}
+function titleFrame(value,lift){
+ const fade=easeBetween(value,.018,.17);
+ titleLayer.style.setProperty('--title-alpha',(1-fade).toFixed(3));
+ titleLayer.style.setProperty('--title-shift',(-60*fade).toFixed(1)+'px');
+ titleLayer.style.setProperty('--line-shift',(44*fade).toFixed(1)+'px');
+ titleLayer.style.setProperty('--roof-alpha',easeBetween(lift,.57,.94).toFixed(3));
+ titleLayer.style.setProperty('--roof-shift',((1-lift)*28).toFixed(1)+'px');
+ vista.toggleAttribute('data-manual-detail',!!detail);
+}
 function frame(now){id=0;if(!world||!visible||document.hidden)return;const delta=Math.min(.1,Math.max(0,(now-prev)/1000));const active=!paused||time-gustAt<3.6;
  furnishExterior();
  if(dirty||(active&&now-prev>=(1000/30-.6))){if(active)time+=delta;
@@ -60,7 +77,7 @@ function frame(now){id=0;if(!world||!visible||document.hidden)return;const delta
   p=tourFrom+(.56-tourFrom)*(t*t*(3-2*t)*.55+t*.45);
   if(t===1)stopTour();
  }
- prev=now;world.draw(p,time,Math.max(0,1-(time-gustAt)/3.6));if(settings.has('profile')){if(lastPaint&&now-lastPaint<250)intervals.push(now-lastPaint);if(intervals.length>500)intervals.shift();lastPaint=now}dirty=false;vista.dataset.position=p.toFixed(3)}
+ const lift=liftAt(p);prev=now;world.draw(p,time,Math.max(0,1-(time-gustAt)/3.6),lift);titleFrame(p,lift);if(settings.has('profile')){if(lastPaint&&now-lastPaint<250)intervals.push(now-lastPaint);if(intervals.length>500)intervals.shift();lastPaint=now}dirty=false;vista.dataset.position=p.toFixed(3)}
  if(active)id=requestAnimationFrame(frame)}
 function wake(){if(!id)id=requestAnimationFrame(frame)}
 function jump(t,view=null){finishGarden();setRoom(view==='kitchen'?'kitchen':t===1&&!view?'living':null);stopTour();carry=0;free.leave(false);free.releaseGlance();detail=view;world?.setDetail(view);document.querySelectorAll("[data-detail]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.detail===view)));manual=t;p=t;if(!paused&&!reduced.matches){const b=bounds();let u=t<.5?t*2:(t-.5)*2;const inv=.5-Math.sin(Math.asin(1-2*u)/3);const coordinate=settings.has('match')?t:(t<.5?inv*.5:.5+inv*.5);window.scrollTo(0,b.top+coordinate*b.range+(t===1&&!settings.has('match')?Math.min(95,innerHeight*.09):0))}sync();event('pavilion_view',view??t)}
@@ -80,7 +97,7 @@ $('#gust').onclick=()=>{gustAt=time;dirty=true;wake();event('pavilion_gust',true
 function staticMode(reason){
  finishGarden();garden=null;gardenButton.hidden=true;stopTour();
  free.lost();world=null;window.pavilionStatus=undefined;
- vista.dataset.renderer='still';delete vista.dataset.ready;
+ titleFrame(0,0);vista.dataset.renderer='still';delete vista.dataset.ready;
  $('#gpu').replaceChildren();journey.classList.add('still');
  $('.scene-controls').hidden=true;enter.hidden=false;enter.disabled=false;
  note.textContent=reason==='slow'?'Still view · Open 3D when you’re ready.':'Still view · You can try 3D again.';
@@ -89,7 +106,7 @@ window.addEventListener('scroll',()=>{if(Math.abs(scrollY-scrolled)>1){stopTour(
 new ResizeObserver(()=>{world?.size();sync()}).observe(vista);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){dirty=true;wake()}});
 reduced.addEventListener('change',()=>{paused=reduced.matches;if(paused)stopTour();motionLabel();dirty=true;wake()});
-document.addEventListener('click',e=>{let a=e.target.closest('a');if(a?.closest('#lab'))event(a.target==='_blank'?'demo_launch':'brief_selected',a.href);if(a?.href.startsWith('mailto:'))event('contact_open',a.hash||'email')});
+document.addEventListener('click',e=>{let a=e.target.closest('a');if(a?.closest('#lab,#architecture'))event(a.target==='_blank'?'demo_launch':'brief_selected',a.href);if(a?.href.startsWith('mailto:'))event('contact_open',a.hash||'email')});
 async function start(signal){
  if(settings.get('renderer')==='still')throw new Error('Still view requested');
  const {openPavilion}=await import('./world.js');signal.throwIfAborted();
@@ -120,7 +137,7 @@ async function start(signal){
  vista.dataset.ready='true';vista.dataset.renderer=world.backend;journey.classList.remove('still');
  document.documentElement.classList.remove('no-js');$('#backend').textContent=world.backend;
  $('.scene-controls').hidden=false;gardenButton.hidden=false;enter.hidden=true;note.textContent='';motionLabel();free.ready();sync();
- window.pavilionStatus=()=>({touring,exploring,detail,garden:garden?{active:garden.active,planted:garden.count()}:null,backend:world.backend,draw:world.renderer.info.render,position:p,paused,visible,triangles:Math.round(world.triangleCount),pose:world.pose(),intervals});
+ window.pavilionStatus=()=>({touring,exploring,detail,roofLift:liftAt(p),garden:garden?{active:garden.active,planted:garden.count()}:null,backend:world.backend,draw:world.renderer.info.render,position:p,paused,visible,triangles:Math.round(world.triangleCount),pose:world.pose(),intervals});
  requestAnimationFrame(()=>{if(world!==candidate)return;
   candidate.refine().then(()=>{if(world===candidate){dirty=true;wake()}}).catch(()=>{});
  });

@@ -86,8 +86,9 @@ export async function openPavilion(host,asset,forceGL=false,signal){
  const {normalView,positionViewDirection,float}=T.TSL;
  const grazing=float(1).sub(normalView.dot(positionViewDirection).abs().clamp()).pow(4);
  glass.opacityNode=float(.012).add(grazing.mul(.21));
- const boxes=new Map();
- function register(m,transform){if(!boxes.has(m))boxes.set(m,[]);boxes.get(m).push(transform.clone())}
+ const boxes=new Map(), roofParts=new Map();
+ let sheet=boxes;
+ function register(m,transform){if(!sheet.has(m))sheet.set(m,[]);sheet.get(m).push(transform.clone())}
  function box(x,y,z,w,h,d,m,rx=0,ry=0,rz=0){q.setFromEuler(new T.Euler(rx,ry,rz));register(m,matrix.compose(v(x,y,z),q,v(w,h,d)))}
  function mesh(geo,m,x=0,y=0,z=0){const o=new T.Mesh(geo,m);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;scene.add(o);return o}
  function cylinder(x,y,z,r1,r2,h,m,sides=24){return mesh(new T.CylinderGeometry(r1,r2,h,sides),m,x,y,z)}
@@ -100,11 +101,13 @@ export async function openPavilion(host,asset,forceGL=false,signal){
     }else register(step==='floor'?cedar:step==='dboards'?deck:pine,t)
  }
  // Deep standing-seam canopy, with the joinery set well back behind the eave.
+ sheet=roofParts;
  const pitch=.085,roof=z=>2.91+z*pitch;
  box(0,roof(.55)+.10,.55,15.44,.2,6.13,edge,-Math.atan(pitch));
  for(let i=0;i<122;i++){const x=-7.64+i*.126;box(x,roof(.53)-.028,.53,.123,.045,6.1,cedar,-Math.atan(pitch))}
  for(let i=0;i<29;i++){const x=-7.53+i*.54;box(x,roof(.55)+.218,.55,.022,.043,6.08,metal,-Math.atan(pitch))}
  box(0,roof(3.6)+.065,3.61,15.5,.245,.052,metal);
+ sheet=boxes;
  // Continuous weatherboard screen on each end and a recessed solid service bay.
  function cladEnd(x){box(x,1.37,-.04,.13,2.76,4.22,dark);for(let i=0;i<34;i++){const z=-2.09+i*.126,h=roof(z)-.04;box(x+Math.sign(x)*.087,h/2,z,.045,h,.118,dark)}}
  cladEnd(-7.14);
@@ -196,6 +199,7 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  box(0,-.137,4.499,14.41,.116,.028,deck);box(0,-.204,4.49,14.36,.012,.018,metal);
  deckFixings(scene);deckGarden({scene,mesh,box,grade,trim:deck,grit});
  buildBoards(boxes,scene,glass);
+ const roofStudy=new T.Group();scene.add(roofStudy);buildBoards(roofParts,roofStudy,glass);
 
  const contactCanvas=document.createElement('canvas');contactCanvas.width=contactCanvas.height=128;const cc=contactCanvas.getContext('2d'),gradient=cc.createRadialGradient(64,64,1,64,64,64);gradient.addColorStop(0,'rgba(28,25,20,.67)');gradient.addColorStop(.55,'rgba(28,25,20,.36)');gradient.addColorStop(1,'rgba(28,25,20,0)');cc.fillStyle=gradient;cc.fillRect(0,0,128,128);const contactMap=new T.CanvasTexture(contactCanvas);
  for(const [x,z,w,d,yy] of [[3.42,-1.34,2.65,1.02,.069],[3.64,.19,1.83,.99,.094],[5.88,.26,1.09,1.04,.092]]){
@@ -302,7 +306,10 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
   scene.add(shade,model);
  }
  function size(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
- function draw(progress,time,gust){windTime.value=time;gustStrength.value=gust;let p=Math.max(0,Math.min(1,progress));const cp=camPath.getPoint(p),aim=aimPath.getPoint(p);
+ function draw(progress,time,gust,roofLift=0){windTime.value=time;gustStrength.value=gust;let p=Math.max(0,Math.min(1,progress));const cp=camPath.getPoint(p),aim=aimPath.getPoint(p);
+   // Lift only the existing canopy, its lining and seams. Both still cast shadows on the rooms.
+   roofStudy.position.set(0,roofLift*3.2,-roofLift*2.1);
+   if(roofLift){cp.lerp(v(13.4,10.1,18.9),roofLift);aim.lerp(v(.1,2.65,0),roofLift)}
    if(camera.aspect<1.24){const f=Math.max(0,1.24-camera.aspect);cp.z+=17.8*f*(1-p)**1.5;cp.x+=4.9*f*(1-p);aim.x+=.65*f}
    camera.fov=match?42-3*p:42+14*p*p;camera.updateProjectionMatrix();
    if(detail==='kitchen'){cp.set(-.28,1.39,1.64);aim.set(-2.40,1.10,-.95);camera.fov=camera.aspect<1?69:51}

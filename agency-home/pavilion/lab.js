@@ -19,22 +19,31 @@ function showPlate(key,action){
 }
 document.querySelectorAll('[data-plate]').forEach(b=>b.onclick=()=>showPlate(b.dataset.plate,true));
 showPlate('exterior',false);
-const filmWrap=$('.film-wrap'),copyBlocks=[$('.opening'),$('.film-caption'),$('.lab-intro'),filmWrap];
-let editorialFrame=0;
-function editorialScroll(){
- if(!editorialFrame)editorialFrame=requestAnimationFrame(()=>{
-  editorialFrame=0;
-  if(activeMotion.matches)return;
-  for(const block of copyBlocks){
-   const r=block.getBoundingClientRect();if(r.bottom<0||r.top>innerHeight)continue;
-   const progress=Math.max(-1,Math.min(1,(innerHeight/2-r.top-r.height/2)/(innerHeight/2+r.height/2)));
-   block.style.setProperty('--text-drift',(progress*(innerWidth<=680?8:17)).toFixed(1)+'px');
-   if(block===filmWrap)block.style.setProperty('--film-drift',(progress*1.8).toFixed(2)+'%');
-  }
- });
-
+const filmWrap=$('.film-wrap');
+const platesFrame=$('#architecture .plate-img');
+const groups=[...document.querySelectorAll('.intro-title,#waiheke-title,.lab-lines')].map(el=>{
+ const lines=[...el.querySelectorAll('span')];lines.forEach(line=>line.classList.add('motion-line'));return {el,lines};
+});
+const active=new Set(), watched=[filmWrap,platesFrame,...groups.map(g=>g.el)];
+const bounded=x=>Math.max(-1,Math.min(1,x));
+let tick=0;
+function paint(){
+ tick=0;
+ for(const el of active){
+  const r=el.getBoundingClientRect(),t=bounded((innerHeight/2-r.top-r.height/2)/((innerHeight+r.height)/2));
+  if(el===filmWrap){el.style.setProperty('--film-shift',(t*5.7).toFixed(2)+'%');continue}
+  if(el===platesFrame){el.style.setProperty('--plate-shift',(t*3.8).toFixed(2)+'%');continue}
+  const lines=groups.find(g=>g.el===el).lines;
+  lines.forEach((line,i)=>{
+   line.style.setProperty('--type-x',(t*(i-(lines.length-1)/2)*(innerWidth<681?15:47)).toFixed(1)+'px');
+   line.style.setProperty('--type-y',(-t*(i+1)*8).toFixed(1)+'px');
+  });
+ }
 }
-window.addEventListener('scroll',editorialScroll,{passive:true});window.addEventListener('resize',editorialScroll);editorialScroll();
+function update(){if(!activeMotion.matches&&!tick&&active.size)tick=requestAnimationFrame(paint)}
+const observer=new IntersectionObserver(entries=>{for(const e of entries){if(e.isIntersecting)active.add(e.target);else active.delete(e.target)}update()});
+watched.forEach(el=>observer.observe(el));
+window.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);activeMotion.addEventListener('change',update);
 tideCard(asset);
 let audioContext,soundOn=false;
 const soundControl=$('#sound');
