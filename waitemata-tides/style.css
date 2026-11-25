@@ -15,3 +15,20 @@ canvas{height:clamp(330px,43vw,510px);touch-action:pan-y;cursor:grab}
 @media(max-width:720px){.harbour{padding:14px;margin-bottom:24px}.harbour-title h2{font-size:27px}.harbour-title>p:not(.eyebrow){font-size:13px}.intro{padding:22px 0 20px}.scene-toolbar{gap:4px}.scene-toolbar label{width:100%}#sceneBox select{margin:4px 0;max-width:100%;font-size:14px}.scene-toolbar a{font-size:12px}canvas{height:370px}.context{grid-template-columns:1fr;gap:26px}.scene-actions span{width:100%}.harbour>button{font-size:12px;padding:8px 12px;min-height:44px}}
 
 .context iframe{width:100%;height:285px;border:1px solid var(--line);border-radius:8px;margin:16px 0 8px}
+
+/* Water to both edges, not a framed model. Keep station information in normal flow. */
+:root{--ink:#3b3334;--sub:#655a5b;--paper:#fffdfb;--line:#dcd2d0}
+body{overflow-x:clip}header,footer{background:#463b3d}.brand{height:48px}
+.harbour{position:relative;display:block;background:#eff0ed;color:var(--ink);box-shadow:none;border:0;border-radius:0;width:100vw;margin:0 calc(50% - 50vw) 30px;padding:0}.intro{padding:18px 0 20px}.intro h1{font:500 clamp(46px,6vw,78px)/1.02 "Helvetica Neue",Arial,sans-serif;letter-spacing:-.075em}.introtext{margin-top:8px}
+.harbour-title{padding:16px max(16px,calc((100vw - 1120px)/2));background:#f2edeb}.harbour-title h2{font:500 clamp(22px,3vw,32px)/1.1 "Helvetica Neue",Arial,sans-serif;letter-spacing:-.045em;margin:4px 0 0}.harbour-title .eyebrow{color:#655a5b}
+#sceneBox{display:flex;flex-direction:column;position:relative}#sceneBox[hidden]{display:none}
+#canvasHolder{order:-1;margin:0;border-radius:0;height:clamp(350px,56vh,670px);background:#7d989e url(media/skyline-and-bridge.webp) center 74% /cover no-repeat;min-height:0}
+#canvasHolder canvas{display:block;height:100%;width:100%}
+.scene-toolbar,.scene-actions,.scene-disclosure,.harbour #sceneNote{padding-inline:max(16px,calc((100vw - 1120px)/2));margin-block:0}
+.scene-toolbar{padding-block:8px;background:#f2edeb}.scene-toolbar a,.harbour .scene-disclosure a,.embed-link{color:#3b4444}
+.scene-actions{padding-block:4px 0}.scene-actions span,.harbour p:not(.eyebrow){color:#4b4746}
+.harbour button{background:#fffcf9;color:#423b39;border:1px solid #c2b7b6}.harbour>button{position:absolute;right:max(16px,calc((100vw - 1120px)/2));top:14px;min-height:40px;font-size:12px}
+.harbour #sceneNote{padding-block:6px;font-size:13px}.harbour .scene-disclosure{padding-block:4px 14px;color:#504748!important}.embed-link{display:none}
+.harbour-embed body{background:#e8e6e2}.harbour-embed :is(header,footer,.intro,.next,#events,.context,.notes,.skip,.harbour-title,.harbour>button,.scene-toolbar){display:none}
+.harbour-embed main{width:100%;margin:0}.harbour-embed .harbour{margin:0;width:100%}.harbour-embed #canvasHolder{height:76vh;min-height:170px}.harbour-embed .embed-link{display:block;align-self:flex-end;margin:4px 14px 0;font-size:12px}.harbour-embed .scene-actions{max-width:100%;padding:4px 12px;flex-wrap:nowrap}.harbour-embed .scene-actions{flex-wrap:wrap}.harbour-embed .scene-actions span{width:auto}.harbour-embed .scene-disclosure,.harbour-embed #sceneNote{padding-inline:14px}.harbour-embed .scene-disclosure{padding-bottom:8px}
+@media(max-width:720px){.harbour-title{padding:12px 16px}.harbour-title .eyebrow{max-width:55%;font-size:9px}.harbour>button{right:12px;top:14px}.harbour-title h2{font-size:22px}#canvasHolder{height:clamp(340px,48svh,470px)}.scene-actions span{width:auto}.scene-actions button{padding:6px 9px}.scene-toolbar label{width:auto}.intro h1{font-size:46px}.harbour-embed .scene-disclosure{font-size:10px!important}}

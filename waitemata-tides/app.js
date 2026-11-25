@@ -78,7 +78,7 @@ async function toggleScene() {
   el('sceneBox').hidden = !sceneOpen;
   scene?.setActive(sceneOpen);
   if (!sceneOpen) { const url=new URL(location.href);url.searchParams.set('view','table');history.replaceState(null,'',url);return; }
-  const viewUrl=new URL(location.href);viewUrl.searchParams.delete('view');history.replaceState(null,'',viewUrl);
+  const viewUrl=new URL(location.href);if(!document.documentElement.classList.contains('harbour-embed'))viewUrl.searchParams.delete('view');history.replaceState(null,'',viewUrl);
   el('sceneNote').textContent = 'Opening harbour view…';
   try {
     sceneTask ??= import('./harbour.js').then(mod => mod.createHarbour(el('canvasHolder')));
@@ -87,7 +87,7 @@ async function toggleScene() {
     updateScene();
   } catch {
     sceneTask = null;
-    el('sceneNote').textContent = '3D is unavailable in this browser. The selected tide is listed in the table below.';
+    el('sceneNote').textContent = 'Photo view: 3D is unavailable in this browser. The tide tables still work.';
   }
 }
 try {
@@ -109,6 +109,7 @@ try {
   let motionPaused=matchMedia('(prefers-reduced-motion: reduce)').matches;
   el('motion').textContent=motionPaused?'Animate water':'Pause water';
   el('motion').onclick=()=>{motionPaused=!motionPaused;scene?.pause(motionPaused);el('motion').textContent=motionPaused?'Animate water':'Pause water';};
+  let reverse=false;el('bearingBtn').onclick=()=>{reverse=!reverse;scene?.setView(reverse);el('bearingBtn').setAttribute('aria-pressed',String(reverse));el('bearingBtn').textContent=reverse?'Face the city':'Face Devonport';el('bearing').textContent=reverse?'QUEENS WHARF / LOOKING NORTHEAST':'WAITEMATĀ / LOOKING TOWARD THE CITY';};
   el('zoomIn').onclick=()=>scene?.zoom(.85);
   el('zoomOut').onclick=()=>scene?.zoom(1.15);
   el('resetView').onclick=()=>scene?.reset();
