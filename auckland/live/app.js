@@ -292,16 +292,29 @@ function wireUi() {
   document.addEventListener('pointerdown', (e) => { if (!e.target.closest('.search')) { list.hidden = true; q.setAttribute('aria-expanded', 'false'); } });
   document.querySelectorAll('[data-mode]').forEach((b) => b.onclick = () => { S.mode = b.dataset.mode; document.querySelectorAll('[data-mode]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); pushVehicles(); if (listOnly) render(); });
   const flyIn = $('#fly-in');
+  function flightSubject() {
+    if (S.sel?.kind === 'stop') {
+      const stop = S.index.stops.get(S.sel.id);
+      if (stop && X.inArea(stop.lat, stop.lon)) return {kind:'stop', lat:stop.lat, lon:stop.lon};
+    }
+    if (S.sel?.kind === 'vehicle' && S.posSource === 'live' && !S.posError) {
+      const v = S.positions?.vehicles.find((x) => x.id === S.sel.id);
+      if (v && S.index.routes.get(v.routeId)?.mode === 'ferry' && X.inArea(v.lat, v.lon) && X.timestampFresh(v.ts, Math.round(Date.now()/1000))) {
+        return {kind:'ferry', lat:v.lat, lon:v.lon};
+      }
+    }
+    return null;
+  }
   flyIn.onclick = () => {
     const w = S.world; if (!w) return;
     if (w.flying) { w.stopFlight(); return; }
     let dest = w.views.waterfront;
-    const stop = S.sel?.kind === 'stop' ? S.index.stops.get(S.sel.id) : null;
-    if (stop && X.inArea(stop.lat, stop.lon)) {
-      const {x,z} = X.toWorld(stop.lat,stop.lon), y = w.heightAt(x,z);
+    const subject = flightSubject();
+    if (subject) {
+      const {x,z} = X.toWorld(subject.lat,subject.lon), y = subject.kind === 'ferry' ? 0 : w.heightAt(x,z);
       dest = {t:[x,y+5,z],p:[x+125,y+140,z-320]};
     }
-    w.flyCinematic(dest, { fromHarbour: !!stop && X.inArea(stop.lat, stop.lon) });
+    w.flyCinematic(dest, { fromHarbour: !!subject });
   };
   document.querySelectorAll('[data-view]').forEach((b) => b.onclick = () => {
     const w = S.world, view = w?.views[b.dataset.view]; if (!view) return; w.unfollow(); w.setView(view);
@@ -327,12 +340,11 @@ function wireUi() {
   // label over the chosen vehicle
   const label = $('#label');
   if (S.world) S.world.onFrame = () => {
-    const cameraStop = S.sel?.kind === 'stop' ? S.index.stops.get(S.sel.id) : null;
-    const fromHarbour = cameraStop && X.inArea(cameraStop.lat, cameraStop.lon);
-    const cameraLabel = S.world.flying ? 'Stop flight' : fromHarbour ? 'Fly to stop' : 'Fly in';
+    const subject = flightSubject();
+    const cameraLabel = S.world.flying ? 'Stop flight' : subject?.kind === 'ferry' ? 'Fly to ferry' : subject ? 'Fly to stop' : 'Fly in';
     if (flyIn.textContent !== cameraLabel) {
       flyIn.textContent = cameraLabel;
-      flyIn.title = fromHarbour ? 'Fly from Waitematā Harbour to the selected stop or ferry terminal' : 'Fly closer to the Auckland waterfront';
+      flyIn.title = subject?.kind === 'ferry' ? 'Fly from Waitematā Harbour to the ferry’s latest reported position' : subject ? 'Fly from Waitematā Harbour to the selected stop or ferry terminal' : 'Fly closer to the Auckland waterfront';
     }
     if (S.sel?.kind !== 'vehicle') { label.hidden = true; return; }
     const p = S.world.screenOf(S.sel.id), v = S.positions?.vehicles.find((x) => x.id === S.sel.id);
