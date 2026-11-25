@@ -84,6 +84,9 @@ async function toggleScene() {
     sceneTask ??= import('./harbour.js').then(mod => mod.createHarbour(el('canvasHolder')));
     scene = await sceneTask;
     scene.setActive(sceneOpen);
+    if(document.documentElement.classList.contains('harbour-plate')&&document.referrer){
+      parent.postMessage({type:'assembl:plate-ready'},new URL(document.referrer).origin);
+    }
     updateScene();
   } catch {
     sceneTask = null;

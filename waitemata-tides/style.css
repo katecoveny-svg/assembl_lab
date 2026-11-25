@@ -42,3 +42,5 @@ body{overflow-x:clip}header,footer{background:#463b3d}.brand{height:48px}
 .harbour .boat-grip:focus-visible{outline:2px solid #fff;box-shadow:0 0 0 4px #253740}
 .boat-grip[data-grabbing=true]{cursor:grabbing}
 .boat-grip[data-grabbing=true] span{visibility:hidden}
+.harbour-plate #canvasHolder{height:100dvh;min-height:0}
+.harbour-plate :is(.scene-actions,.scene-disclosure,#sceneNote,.embed-link,.boat-grip){display:none!important}
