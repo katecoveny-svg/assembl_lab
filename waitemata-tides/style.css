@@ -43,8 +43,7 @@ body{overflow-x:clip}header,footer{background:#463b3d}.brand{height:48px}
 .boat-grip[data-grabbing=true]{cursor:grabbing}
 .boat-grip[data-grabbing=true] span{visibility:hidden}
 .harbour-plate #canvasHolder{height:100dvh;min-height:0}
-.harbour-plate :is(.scene-actions,.scene-disclosure,#sceneNote,.embed-link,.boat-grip){display:none!important}
+.harbour-plate :is(.scene-actions,.scene-disclosure,#sceneNote,.embed-link){display:none!important}
 
 .harbour .boat-grip{transform:none;border-radius:0}
-.harbour-plate .harbour .boat-grip{display:block!important}
 .harbour .boat-grip span{color:#fffdfb;background:#654a4e;font:500 12px/1.3 system-ui,sans-serif;letter-spacing:0;padding:4px 7px;border-radius:0;text-shadow:none}
