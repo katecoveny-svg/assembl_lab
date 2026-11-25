@@ -1,4 +1,5 @@
 import * as T from './vendor/three.webgpu.min.js';
+import {HDRLoader} from './vendor/HDRLoader.js';
 import {shadeSection} from './folio-shading.js';
 
 async function unpack(url){
@@ -32,7 +33,7 @@ export async function sectionModel(host,asset,forceGL,onLoss){
  }
  const [geometry,runs,light,timber,cloth]=await Promise.all([
   unpack(asset('section16c.bin.gz')).then(readMesh),fetch(asset('section16c-surfaces.json')).then(r=>r.json()),
-  unpack(asset('section16c-light.bin.gz')).then(b=>new Uint8Array(b)),surface('cedar.webp',true),surface('rough_linen.webp',true)
+  unpack(asset('section16c-light.bin.gz')).then(b=>new Uint8Array(b)),surface('brown_planks_08.webp',true),surface('rough_linen.webp',true)
  ]);
  if(new DataView(light.buffer).getUint32(0,true)!==geometry.attributes.position.count)throw Error('Mismatched section lighting');
  const scene=new T.Scene();scene.background=new T.Color(0xe3d0d2);
@@ -41,13 +42,32 @@ export async function sectionModel(host,asset,forceGL,onLoss){
  const envC=document.createElement('canvas');envC.width=256;envC.height=128;const pen=envC.getContext('2d');
  const skyGradient=pen.createLinearGradient(0,0,0,128);skyGradient.addColorStop(0,'#bed2de');skyGradient.addColorStop(.51,'#f9f5ec');skyGradient.addColorStop(1,'#aa9992');pen.fillStyle=skyGradient;pen.fillRect(0,0,256,128);pen.fillStyle='#fffdf8';pen.fillRect(58,20,45,28);
  const environment=new T.CanvasTexture(envC);environment.colorSpace=T.SRGBColorSpace;environment.mapping=T.EquirectangularReflectionMapping;scene.environment=environment;scene.environmentIntensity=.42;
- const mesh=new T.Mesh(geometry,shadeSection(geometry,runs,light,timber,cloth,lift,aperture));mesh.castShadow=true;mesh.receiveShadow=false;scene.add(mesh);
- const hemi=new T.HemisphereLight(0xf8fbff,0xc4b4bd,.91);
- const sunlight=new T.DirectionalLight(0xfff6e9,1.78);
+ const [originals,uvs,atlas]=await Promise.all([fetch(asset('section16c-room-materials.json')).then(r=>r.json()),unpack(asset('section16c-uv.bin.gz')).then(b=>new Float32Array(b)),surface('section16c-originals.webp')]);
+ const opaque=shadeSection(geometry,runs,light,timber,cloth,lift,aperture,originals,uvs,atlas);
+ // Separate only the original glazing triangles. No copied or invented window faces.
+ const flags=new Uint8Array(geometry.attributes.position.count);let first=0;
+ for(const [end,name] of runs){if(/glass_double_glazed|shower_glass|oven_window/.test(name))flags.fill(1,first,end);first=end}
+ const original=geometry.index.array,solid=[],panes=[];
+ for(let f=0;f<original.length;f+=3)(flags[original[f]]?panes:solid).push(original[f],original[f+1],original[f+2]);
+ const paneGeometry=new T.BufferGeometry();
+ for(const name of ['position','normal','sectionWall'])paneGeometry.setAttribute(name,geometry.attributes[name]);
+ geometry.setIndex(solid);paneGeometry.setIndex(panes);
+ const paneMat=new T.MeshPhysicalNodeMaterial({color:0xbdccc6,metalness:.26,roughness:.055,transparent:true,opacity:.15,depthWrite:false,side:T.FrontSide});
+ // The shared wall display cut also applies to glass in front of the cut plane.
+ const pn=T.TSL.positionLocal,nearSide=pn.z.greaterThan(5.79).or(pn.x.lessThan(.18));
+ paneMat.maskNode=T.TSL.attribute('sectionWall','float').lessThan(.5).or(nearSide.not()).or(pn.y.lessThanEqual(T.TSL.mix(4,.83,lift)));
+ const mesh=new T.Mesh(geometry,opaque);mesh.castShadow=true;mesh.receiveShadow=true;scene.add(mesh);
+ const panesMesh=new T.Mesh(paneGeometry,paneMat);panesMesh.renderOrder=2;mesh.add(panesMesh);
+ // Reuse a small derivative of the licensed daylight already shipped with the pavilion.
+ const hdr=await new HDRLoader().loadAsync(asset('section16c-daylight.hdr')).catch(()=>null);
+ if(hdr){hdr.mapping=T.EquirectangularReflectionMapping;scene.environment=hdr;scene.environmentIntensity=.68}
+
+ const hemi=new T.HemisphereLight(0xf1f1eb,0xd9bfa6,1.8);
+ const sunlight=new T.DirectionalLight(0xffeedc,2.05);
  sunlight.position.set(-6,14,-7);sunlight.target.position.set(4,0,2);sunlight.castShadow=true;
  Object.assign(sunlight.shadow.camera,{left:-11,right:11,top:10,bottom:-10,near:.1,far:40});
- sunlight.shadow.mapSize.set(host.clientWidth<600?1024:2048,host.clientWidth<600?1024:2048);sunlight.shadow.normalBias=.009;sunlight.shadow.intensity=.20;sunlight.shadow.radius=3;
- const skylight=new T.DirectionalLight(0xe6ebf4,.32);skylight.position.set(9,6,-8);
+ sunlight.shadow.mapSize.set(host.clientWidth<600?1024:2048,host.clientWidth<600?1024:2048);sunlight.shadow.normalBias=.005;sunlight.shadow.intensity=.50;sunlight.shadow.radius=3;
+ const skylight=new T.DirectionalLight(0xfff2dc,1.65);skylight.position.set(-2,9,15);
  scene.add(hemi,sunlight,sunlight.target,skylight);
  // The print and the model share their published footprint. Only the camera and the display cut move.
  const metres=10.8/508,W=660*metres,H=495*metres,cx=W/2-79*metres,cz=H/2-128*metres;
@@ -59,7 +79,7 @@ export async function sectionModel(host,asset,forceGL,onLoss){
  const shadowUV=vec2(world.x.add(6).div(22),world.z.add(8).div(20));
  const shadow=texture(grainShadow,shadowUV).r;
  const fade=smoothstep(1,11,vec2(world.x.sub(4.4),world.z.sub(1.8)).length());
- groundMat.colorNode=mix(color(0xf5e8e9),color(0xe3d0d2),fade).mul(shadow.mul(.22).add(.78));
+ groundMat.colorNode=mix(color(0xe8ded7),color(0xe3d0d2),fade).mul(shadow.mul(.43).add(.57));
  const ground=new T.Mesh(new T.PlaneGeometry(500,500),groundMat);ground.rotation.x=-Math.PI/2;ground.position.y=-1.53;scene.add(ground);
  const top=new T.OrthographicCamera(-W/2,W/2,H/2,-H/2,.1,45);
  top.up.set(0,0,-1);top.position.set(cx,20,cz);top.lookAt(cx,0,cz);

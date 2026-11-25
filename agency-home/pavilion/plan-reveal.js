@@ -6,8 +6,13 @@ export function setupPlanReveal(asset) {
  const output=document.querySelector('#plan-value'), heading=document.querySelector('#folio-stage');
  const hint=document.querySelector('#model-hint'), mode=document.querySelector('#section-mode');
  let orbit=false,engine,loading,pointer=null,x=50,y=50;
+ function responsiveModel(image,stem){
+  image.sizes='(max-width: 680px) 100vw, min(100vw, 116svh)';
+  image.srcset=asset(stem+'-phone.webp')+' 539w, '+asset(stem+'.webp')+' 1060w';
+  image.src=asset(stem+'.webp');
+ }
  function images(){
-  if(!top.hasAttribute('src'))top.src=asset('section16c.webp');
+  if(!top.hasAttribute('src'))responsiveModel(top,'section16c');
   if(!paper.hasAttribute('src'))paper.src=asset('16c-ink.webp');
  }
  function lens(left,down){
@@ -22,13 +27,15 @@ export function setupPlanReveal(asset) {
  function hideLens(){field.classList.remove('has-lens')}
  function layout(){
   hideLens();pointer=null;field.classList.toggle('orbiting',orbit);
-  host.hidden=!orbit;beauty.hidden=!orbit||!!engine;top.hidden=orbit;
+  // The first overhead plate is a capture of this projection. After opening 3D,
+  // keep the live orthographic model under the same fixed drawing coordinates.
+  host.hidden=!orbit&&!engine;beauty.hidden=!orbit||!!engine;top.hidden=orbit||!!engine;
   slider.disabled=orbit;turn.setAttribute('aria-pressed',String(orbit));
   turn.textContent=orbit?'Back to plan lens':'Turn the cutaway';
   heading.textContent=orbit?'Furnished cutaway':'Model and original plan';
   hint.firstChild.textContent=orbit?(engine?'Drag or use the arrow keys to turn.':'Furnished view. '):'Move over the house to reveal its plan. On touch, drag sideways.';
   field.setAttribute('aria-label',orbit?'Furnished 16C cutaway. Use arrow keys to turn.':'16C model. Arrow keys move the circular plan lens. Escape clears it.');
-  if(orbit&&engine){engine.stage(1);engine.reveal(.5,.5,0,1)}
+  if(engine){engine.stage(orbit?1:0);engine.reveal(.5,.5,0,1)}
  }
  function fallback(){
   engine=null;host.replaceChildren();section.dataset.renderer='still';mode.textContent=' · Still view';layout();
@@ -45,7 +52,7 @@ export function setupPlanReveal(asset) {
  }
  turn.onclick=()=>{
   orbit=!orbit;
-  if(orbit&&!beauty.hasAttribute('src'))beauty.src=asset('16c-cutaway.webp');
+  if(orbit&&!beauty.hasAttribute('src'))responsiveModel(beauty,'16c-cutaway');
   layout();if(orbit)loading??=openModel();
  };
  slider.addEventListener('focus',()=>lens(Number(slider.value),y));
