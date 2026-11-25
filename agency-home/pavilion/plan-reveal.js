@@ -14,7 +14,7 @@ export function setupPlanReveal(asset) {
   x=Math.round(Math.max(0,Math.min(100,left)));y=Math.round(Math.max(0,Math.min(100,down)));
   field.style.setProperty('--px',x+'%');field.style.setProperty('--py',y+'%');
   field.classList.add('has-lens');slider.value=x;output.value=x+'%';
-  slider.setAttribute('aria-valuetext',x+' percent across the floor plan');
+  slider.setAttribute('aria-valuetext',x+' percent across, '+y+' percent down the floor plan');
  }
  function atPoint(e){
   const r=field.getBoundingClientRect();lens(100*(e.clientX-r.left)/r.width,100*(e.clientY-r.top)/r.height);
@@ -50,6 +50,11 @@ export function setupPlanReveal(asset) {
  };
  slider.addEventListener('focus',()=>lens(Number(slider.value),y));
  slider.addEventListener('input',()=>lens(Number(slider.value),y));
+ slider.addEventListener('keydown',e=>{
+  if(e.key==='ArrowUp'||e.key==='ArrowDown'){
+   e.preventDefault();lens(Number(slider.value),y+(e.key==='ArrowDown'?5:-5));
+  }else if(e.key==='Escape')hideLens();
+ });
  field.addEventListener('pointerenter',e=>{if(e.pointerType!=='touch'&&!orbit)atPoint(e)});
  field.addEventListener('pointerdown',e=>{
   if(!e.isPrimary||e.button!==0)return;
