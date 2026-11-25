@@ -39,3 +39,27 @@ export function folioBoard() {
     `
   });
 }
+
+// Soft printed wash, no graph paper in the exhibition view. World-space placement
+// keeps the pool of light stable as the viewport changes.
+export function exhibitionBackdrop(cx, cz, span) {
+  return new T.ShaderMaterial({
+    toneMapped:false, uniforms:{
+      centre:{value:new T.Vector2(cx,cz)}, falloff:{value:span},
+      light:{value:new T.Color("#967983")}, dark:{value:new T.Color("#362733")}
+    },
+    vertexShader:`
+      varying vec2 xz;
+      void main(){vec4 p=modelMatrix*vec4(position,1.);xz=p.xz;gl_Position=projectionMatrix*viewMatrix*p;}
+    `,
+    fragmentShader:`
+      uniform vec2 centre;uniform float falloff;uniform vec3 light,dark;varying vec2 xz;
+      void main(){
+        vec2 p=(xz-centre)/falloff;
+        float wash=exp(-dot(p,p)*1.7);
+        gl_FragColor=vec4(mix(dark,light,wash),1.);
+        #include <colorspace_fragment>
+      }
+    `
+  });
+}

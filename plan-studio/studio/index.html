@@ -65,8 +65,8 @@
     <!-- 2 · model -->
     <section class="panel" data-panel="model" aria-label="Model" hidden>
       <div class="build-menu">
-        <button id="showBuild" disabled class="btn" type="button" aria-expanded="false" aria-controls="buildControls">Compare drawing &amp; model</button>
-        <span class="hint">Slide across the same footprint, then see how the model fits together.</span>
+        <button id="showBuild" disabled class="btn" type="button" aria-expanded="false" aria-controls="buildControls">Open model study</button>
+        <span class="hint">See the cutaway, then compare it with the drawing.</span>
       </div>
       <div id="drawingFolio">
       <header class="folio-head" id="folioHead" hidden aria-label="Plan folio">
@@ -85,10 +85,10 @@
         </div>
       </div>
       <div id="buildControls" hidden>
-        <div class="row"><div class="seg" aria-label="Drawing display"><button id="compareMode" aria-pressed="true" type="button">Compare</button><button id="assembleMode" aria-pressed="false" type="button">Build sequence</button></div><button class="btn ghost sm" id="leaveBuild" type="button">Explore finished model <span aria-hidden="true">↗</span></button></div>
+        <div class="row"><div class="seg" role="group" aria-label="Model study view"><button id="showcaseMode" aria-pressed="true" type="button">Cutaway</button><button id="compareMode" aria-pressed="false" type="button">Compare drawing</button><button id="assembleMode" aria-pressed="false" type="button">Build stages</button></div><button class="btn ghost sm" id="leaveBuild" type="button">Explore finished model <span aria-hidden="true">↗</span></button></div>
         <label for="buildScrub" id="buildLabel">Drawing on the left · model on the right</label>
         <input id="buildScrub" type="range" min="0" max="100" value="50" step="1">
-        <div class="row"><output id="buildBeat" for="buildScrub"></output><button id="playBuild" hidden type="button" class="btn ghost sm">Play stages</button></div>
+        <div id="buildReadout" class="row"><output id="buildBeat" for="buildScrub"></output><button id="playBuild" hidden type="button" class="btn ghost sm">Play stages</button></div>
         <div id="folioSteps" class="folio-steps" hidden aria-label="Build stages"></div>
         <details class="folio-evidence"><summary>What’s measured and what’s assumed</summary><p id="buildEvidence" class="hint"></p></details>
       </div>

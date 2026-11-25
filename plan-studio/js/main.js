@@ -158,12 +158,13 @@ $("#views").addEventListener("click", (e) => { const b = e.target.closest("butto
 $("#lights").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b || !stage) return; $$("#lights button").forEach((x) => x.classList.toggle("on", x === b)); stage.light(b.dataset.light); stage.render(); });
 
 // The original PDF is owned by this particular accepted project, never reused for another.
-let sourceSheet=null, inspection=null, tick=0, originalRender=null, compare=true, previousLook="solid", inspectToken=0;
+let sourceSheet=null, inspection=null, tick=0, originalRender=null, compare=false, showcase=true, previousLook="solid", inspectToken=0;
 const stopBuild = () => { clearInterval(tick); tick=0; $("#playBuild").textContent="Play stages"; };
 function paintBuild() {
   if (!inspection) return;
   const slider=$("#buildScrub"), value=Number(slider.value);
-  inspection.draw({compare,split:value,beat:value});
+  inspection.draw({compare,showcase,split:value,beat:value});
+  if(showcase)return;
   $("#buildDivider").style.setProperty("--split",value+"%");
   $("#folioSides").classList.toggle("hide-left",value<22);
   $("#folioSides").classList.toggle("hide-right",value>78);
@@ -171,17 +172,24 @@ function paintBuild() {
   const label=compare ? value+"% drawing · "+(100-value)+"% model" : (value+1)+" / "+BEATS.length+" · "+BEATS[value];
   $("#buildBeat").textContent=label;slider.setAttribute("aria-valuetext",label);
 }
-function selectBuildMode(isCompare) {
-  stopBuild(); compare=isCompare;const slider=$("#buildScrub");slider.max=isCompare?"100":"5";slider.value=isCompare?"50":"0";
-  $("#buildLabel").textContent=isCompare?"Drawing on the left · model on the right":"Scrub from the drawing to the finished model";
-  $("#buildDivider").hidden=!isCompare;$("#playBuild").hidden=isCompare;$("#folioSides").hidden=!isCompare;$("#folioSteps").hidden=isCompare;
-  $("#compareMode").setAttribute("aria-pressed",String(isCompare));$("#assembleMode").setAttribute("aria-pressed",String(!isCompare));
-  paintBuild();
+function selectBuildMode(mode) {
+  stopBuild();
+  compare=mode==="compare";showcase=mode==="showcase";
+  const folio=$("#drawingFolio");
+  folio.classList.toggle("is-showcase",showcase);
+  const slider=$("#buildScrub");slider.max=compare?"100":"5";slider.value=compare?"50":"0";slider.hidden=showcase;
+  $("#buildLabel").hidden=$("#buildReadout").hidden=showcase;
+  $("#buildLabel").textContent=compare?"Drawing on the left · model on the right":"Scrub from the drawing to the finished model";
+  $("#buildDivider").hidden=!compare;$("#playBuild").hidden=compare||showcase;$("#folioSides").hidden=!compare;$("#folioSteps").hidden=compare||showcase;
+  $("#folioExtent").hidden=!compare || !wallSpan(P.walls);
+  $("#folioSource").textContent=showcase?"01 / MODEL STUDY":compare?(sourceSheet?"01 / REGISTERED FLOOR PLAN":"01 / MODEL-DERIVED DRAWING"):"01 / BUILD SEQUENCE";
+  [[ "showcase", "#showcaseMode"], ["compare","#compareMode"], ["build","#assembleMode"]].forEach(([name,sel])=>$(sel).setAttribute("aria-pressed",String(name===mode)));
+  stage.resize();paintBuild();
 }
 function leaveBuild(explore=false) {
   inspectToken++; if(!inspection)return;stopBuild();inspection.dispose();inspection=null;
   stage.render=originalRender;stage.ctl.enabled=true;$("#buildControls").hidden=true;$("#buildDivider").hidden=true;
-  $(".stagewrap").classList.remove("is-building");$("#drawingFolio").classList.remove("is-building");
+  $(".stagewrap").classList.remove("is-building");$("#drawingFolio").classList.remove("is-building","is-showcase");stage.resize();
   $("#folioHead").hidden=true;$("#folioSides").hidden=true;$("#showBuild").setAttribute("aria-expanded","false");
   setLook(explore?"solid":previousLook);stage.render();
 }
@@ -197,19 +205,18 @@ $("#showBuild").onclick=async()=>{
   $("#buildControls").hidden=false;$(".stagewrap").classList.add("is-building");$("#drawingFolio").classList.add("is-building");
   $("#folioHead").hidden=false;$("#showBuild").setAttribute("aria-expanded","true");
   const provenance=P.provenance?.scale_check, conflicts=P.provenance?.conflicts?.length||0;
-  $("#folioSource").textContent=(sourceSheet?"01 / REGISTERED FLOOR PLAN":"01 / MODEL-DERIVED DRAWING");
   $("#folioTitle").textContent=P.meta.name==="demo-plan"?"Tōtara Grove / sample hall":P.meta.name;
   $("#folioLeft").textContent=sourceSheet?"Source PDF":"Model linework";
   const span=wallSpan(P.walls);$("#folioExtent").hidden=!span;
   if(span) $("#folioSpan").textContent=span.map(x=>x.toFixed(2)).join(" × ")+" m";
   $("#folioBasis").textContent="Wall extent · "+(sourceSheet?(provenance?.status==="user-calibrated"?"written span set":"check scale"):"fictional sample");
-  $("#buildEvidence").textContent=(sourceSheet?"Original PDF, page 1. "+(provenance?.note||"Scale needs checking."):"Fictional sample. Lines are drawn from this model, not an original PDF.")+" "+P.walls.length+" walls · "+P.openings.length+" openings. "+(conflicts?conflicts+" dimension conflicts to review. ":"")+"Heights, roof and finishes need confirmation. Stage order illustrates the model, not a construction schedule.";
-  selectBuildMode(true);
+  $("#buildEvidence").textContent=(sourceSheet?"Original PDF, page 1. "+(provenance?.note||"Scale needs checking."):"Fictional sample. Lines are drawn from this model, not an original PDF.")+" "+P.walls.length+" walls · "+P.openings.length+" openings. "+(conflicts?conflicts+" dimension conflicts to review. ":"")+"Heights, roof and finishes need confirmation. The cutaway uses display finishes. Stage order illustrates the model, not a construction schedule.";
+  selectBuildMode("showcase");
 };
 BEATS.forEach((name,i)=>{
  const b=document.createElement("button");b.type="button";b.textContent=name;b.onclick=()=>{stopBuild();$("#buildScrub").value=i;paintBuild();};$("#folioSteps").append(b);
 });
-$("#compareMode").onclick=()=>selectBuildMode(true);$("#assembleMode").onclick=()=>selectBuildMode(false);
+$("#showcaseMode").onclick=()=>selectBuildMode("showcase");$("#compareMode").onclick=()=>selectBuildMode("compare");$("#assembleMode").onclick=()=>selectBuildMode("build");
 $("#leaveBuild").onclick=()=>{leaveBuild(true);$("#showBuild").focus();};
 $("#buildScrub").oninput=()=>{stopBuild();paintBuild();};
 $("#playBuild").onclick=()=>{if(tick)return stopBuild();const s=$("#buildScrub");if(+s.value>=5)s.value=0;paintBuild();$("#playBuild").textContent="Pause";

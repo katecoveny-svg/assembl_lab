@@ -203,3 +203,23 @@ th { background: #1B0E1A; color: var(--on); } th, td { border-bottom-color: var(
   .folio-steps {grid-template-columns:repeat(3,minmax(0,1fr))}
   .folio-steps button {min-height:32px}
 }
+
+/* Model first; dimensions and exact paper registration are kept for Compare. */
+#drawingFolio.is-showcase {
+  --folio-ink:#fffdfb;--folio-rose:#e3d0d2;--folio-faint:#352834;--folio-paper:#4e3a48;
+  border-color:#806772;
+}
+#drawingFolio.is-showcase .folio-head {padding-top:17px;padding-bottom:13px}
+#drawingFolio.is-showcase .folio-eyebrow {color:#e3d0d2}
+#drawingFolio.is-showcase .stagewrap {background:#614b58;border-block-color:#907883}
+#drawingFolio.is-showcase .seg {border-color:#846979}
+#drawingFolio.is-showcase #buildControls button[aria-pressed="true"] {background:#e3d0d2;color:#362733}
+#drawingFolio.is-showcase .folio-evidence {border-top-color:#7e6573;color:#e3d0d2}
+#drawingFolio #buildReadout[hidden],#drawingFolio #buildScrub[hidden] {display:none}
+#drawingFolio #buildControls .seg button {min-height:36px}
+@media(max-width:600px) {
+  #drawingFolio.is-showcase .stagewrap {aspect-ratio:5/4}
+  #drawingFolio #buildControls .seg button {font-size:12px;padding-inline:8px}
+}
+
+#folioExtent[hidden] {display:none}
