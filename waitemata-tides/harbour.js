@@ -75,11 +75,13 @@ export async function createHarbour(holder){
    float surfaceDistance=length(eye-worldPosition.xyz);
    vec2 g=waveSlope(worldPosition.xz)*(1.-smoothstep(55.,145.,surfaceDistance));
    vec2 p=worldPosition.xz;
+   p+=vec2(sin(dot(p,vec2(.57,.37))-time*.42),cos(dot(p,vec2(.44,-.23))+time*.37))*.49;
+   float gust=.43+.57*smoothstep(-.7,.7,sin(dot(p,vec2(.31,.59))-time*.71));
    vec2 cap=vec2(sin(dot(p,vec2(8.1,-5.5))-time*3.9),sin(dot(p,vec2(3.5,10.1))+time*4.1));
    vec2 secondary=vec2(sin(dot(p,vec2(1.9,4.5))-time*2.8),cos(dot(p,vec2(3.3,-2.4))+time*2.0));
    vec2 chop=noise.xy*.45*(1.-smoothstep(35.,235.,surfaceDistance))
-     + cap*.026*(1.-smoothstep(20.,110.,surfaceDistance))
-     + secondary*.048*(1.-smoothstep(90.,315.,surfaceDistance));
+     + cap*.024*gust*(1.-smoothstep(20.,110.,surfaceDistance))
+     + secondary*.054*gust*(1.-smoothstep(90.,315.,surfaceDistance));
    vec3 surfaceNormal=normalize(vec3(-g.x+chop.x,1.,-g.y+chop.y));
   `)
   .replace('surfaceNormal.xz * ( 0.001 + 1.0 / distance ) * distortionScale','surfaceNormal.xz * (0.014+0.9/max(15.,distance))*distortionScale')
