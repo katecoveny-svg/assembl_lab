@@ -93,7 +93,7 @@ export async function createHarbour(holder){
   `);
  const boat=makeBoat(scene);boat.position.set(6,0,-47);
  const grip=document.createElement('button');grip.className='boat-grip';grip.type='button';
- grip.textContent='Drag boat';grip.setAttribute('aria-label','Drag the model boat, or use the arrow keys to move it. Home resets the boat.');
+ const hint=document.createElement('span');hint.textContent='Drag boat';grip.append(hint);grip.setAttribute('aria-label','Drag the model boat, or use the arrow keys to move it. Home resets the boat.');
  const pin=new T.Vector3(),pointer=new T.Vector2(),ray=new T.Raycaster(),plane=new T.Plane(xyz(0,1,0)),hit=new T.Vector3();
  let taking=null;
  function waterPick(e){
@@ -143,7 +143,7 @@ export async function createHarbour(holder){
  }
  pin.set(boat.position.x,boat.position.y+.22,boat.position.z).project(camera);
  grip.style.left=T.MathUtils.clamp((1+pin.x)*.5*w,56,w-56)+'px';
- grip.style.top=T.MathUtils.clamp((1-pin.y)*.5*h+13,8,h-49)+'px';
+ grip.style.top=T.MathUtils.clamp((1-pin.y)*.5*h-25,8,h-57)+'px';
  }
  let drag;canvas.style.touchAction='pan-y';
  canvas.onpointerdown=e=>{drag=[e.pointerId,e.clientX,e.clientY,pan,tilt];canvas.setPointerCapture(e.pointerId)};

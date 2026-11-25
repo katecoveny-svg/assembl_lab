@@ -37,6 +37,8 @@ body{overflow-x:clip}header,footer{background:#463b3d}.brand{height:48px}
 
 /* Only the boat's own 44px control captures touch; vertical drags elsewhere still scroll. */
 #canvasHolder{position:relative}
-.boat-grip{position:absolute;z-index:1;min-height:44px;min-width:90px;transform:translateX(-50%);touch-action:none;cursor:grab;user-select:none;background:#fffdfaee!important;font-size:12px}
+.harbour .boat-grip{position:absolute;z-index:1;width:64px;height:52px;min-height:44px;padding:0;transform:translateX(-50%);touch-action:none;cursor:grab;user-select:none;background:transparent;border:0;border-radius:8px;outline:none}
+.boat-grip span{position:absolute;top:100%;left:50%;transform:translateX(-50%);padding:2px 6px;border-radius:5px;background:#283b435c;color:#fff;font-size:10px;line-height:1.4;white-space:nowrap;pointer-events:none;text-shadow:0 1px 3px #000}
+.harbour .boat-grip:focus-visible{outline:2px solid #fff;box-shadow:0 0 0 4px #253740}
 .boat-grip[data-grabbing=true]{cursor:grabbing}
-@media(min-width:900px){.boat-grip:not(:focus):not(:hover):not([data-grabbing]){opacity:.82}}
+.boat-grip[data-grabbing=true] span{visibility:hidden}
