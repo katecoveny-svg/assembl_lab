@@ -10,7 +10,7 @@ const xyz=(x,y,z)=>new T.Vector3(x,y,z);
 function makeBoat(scene){
  const boat=new T.Group();scene.add(boat);
  const paint=(c,r=.55,m=.04)=>new T.MeshStandardMaterial({color:c,roughness:r,metalness:m,side:T.DoubleSide});
- const hull=paint(0x263d3e,.36),under=paint(0x663832),stripe=paint(0xe7dfc7),mahogany=paint(0x916548),seam=paint(0x4b3d32),deck=paint(0xb0926d),linen=paint(0xe9e6d9,.92),jib=paint(0xd9d5c9,.91),steel=paint(0x9ca7aa,.26,.7),rope=paint(0xb2a891,.85);
+ const hull=paint(0x304b51,.36),under=paint(0x663832),stripe=paint(0xe7dfc7),mahogany=paint(0x916548),seam=paint(0x4b3d32),deck=paint(0xb0926d),linen=paint(0xe9e6d9,.92),jib=paint(0xd9d5c9,.91),steel=paint(0x9ca7aa,.26,.7),rope=paint(0xb2a891,.85);
  function add(g,m){const o=new T.Mesh(g,m);boat.add(o);return o}
  function segment(a,b,r,m){const start=xyz(...a),end=xyz(...b),d=end.clone().sub(start);const o=add(new T.CylinderGeometry(r,r,d.length(),7),m);o.position.copy(start).lerp(end,.5);o.quaternion.setFromUnitVectors(xyz(0,1,0),d.normalize());}
  function sheet(points,idx,m){const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(points,3));g.setIndex(idx);g.computeVertexNormals();return add(g,m)}
@@ -20,6 +20,15 @@ function makeBoat(scene){
  for(const side of [-1,1]){
   const rings=[[0,0,-.59],[.56,0,-.35],[.85,0,-.06],[.90,0,.025],[.905,0,.057],[.99,1,-.047],[1,1,0],[.982,1,.024]];
   [under,under,hull,stripe,hull,stripe,mahogany].forEach((m,k)=>ribbon(skin(side,rings[k]),skin(side,rings[k+1]),m));
+ }
+ // A cambered coachroof sits within the existing deck footprint.
+ const cabin=new T.Shape();
+ cabin.moveTo(-.62,0);cabin.lineTo(.62,0);cabin.quadraticCurveTo(.59,.31,.44,.40);
+ cabin.quadraticCurveTo(0,.48,-.44,.40);cabin.quadraticCurveTo(-.59,.31,-.62,0);
+ const trunk=add(new T.ExtrudeGeometry(cabin,{depth:1.68,bevelEnabled:true,bevelSize:.035,bevelThickness:.04,bevelSegments:2}),stripe);
+ trunk.position.set(0,.44,-.30);
+ for(const side of [-1,1])for(const z of [.05,.63,1.11]){
+  const port=add(new T.SphereGeometry(1,14,7),hull);port.position.set(side*.559,.70,z);port.scale.set(.038,.09,.19);
  }
  // Deck split around the cockpit instead of a solid box on top of the hull.
  const slot=stations.map(([z])=>z>=-2.31&&z<=-.53?.51:0);
@@ -69,11 +78,13 @@ export async function createHarbour(holder){
  water.rotation.x=-Math.PI/2;scene.add(water);const m=water.material;
  m.uniforms.size.value=3.4;
  m.uniforms.hullCentre={value:new T.Vector2()};
+ const trail=Array.from({length:6},()=>new T.Vector3(0,0,-100));
+ m.uniforms.trackPoints={value:trail};
  m.vertexShader=m.vertexShader.replace('void main() {','float surface(vec2 p,float s){return '+waveGL+';}\nvoid main() { vec3 waved=position;waved.z+=surface(vec2(position.x,-position.y),time)* (1.0-smoothstep(50.,150.,abs(position.y)));').replaceAll('vec4( position, 1.0 )','vec4(waved,1.)');
  // Fresnel, reflected skyline/boat and coloured downwelling light. No projected photograph on the water.
  const waveSlope=waves.map(([a,k,dx,dz,w])=>'vec2('+number(dx)+','+number(dz)+')*'+number(a*k)+'*cos('+number(k)+'*dot(p,vec2('+number(dx)+','+number(dz)+'))-'+number(w)+'*time)').join('+');
- m.fragmentShader='uniform vec2 hullCentre;\n'+m.fragmentShader.replace('void main() {','vec2 waveSlope(vec2 p){return '+waveSlope+';}\nvoid main() {')
-  .replace('vec4 noise = getNoise( worldPosition.xz * size );','vec4 noise = getNoise( worldPosition.xz * 63.0 );')
+ m.fragmentShader='uniform vec2 hullCentre; uniform vec3 trackPoints[6];\n'+m.fragmentShader.replace('void main() {','vec2 waveSlope(vec2 p){return '+waveSlope+';}\nvoid main() {')
+  .replace('vec4 noise = getNoise( worldPosition.xz * size );','vec4 noise = getNoise( worldPosition.xz * vec2(77.,51.) );')
   .replace('vec3 surfaceNormal = normalize( noise.xzy * vec3( 1.5, 1.0, 1.5 ) );',`
    float surfaceDistance=length(eye-worldPosition.xyz);
    vec2 g=waveSlope(worldPosition.xz)*(1.-smoothstep(55.,145.,surfaceDistance));
@@ -84,7 +95,7 @@ export async function createHarbour(holder){
    float windPatch=.48+.52*smoothstep(-.85,.65,sin(across*.34+sin(along*.105)-time*.34));
    float phase=along*8.7+sin(across*1.35+time*.34)*1.38-time*3.3;
    float filtered=1.-smoothstep(.34,2.4,fwidth(phase));
-   vec2 capillary=wind*cos(phase)*.072*windPatch*filtered;
+   vec2 capillary=wind*cos(phase+noise.x*8.)*.034*windPatch*filtered;
    vec2 chop=noise.xy*.27*(1.-smoothstep(35.,175.,surfaceDistance))
       +capillary+crossWind*.044*cos(across*2.2+along*.39-time*1.75)*windPatch;
    // A rocking hull makes a short waterline disturbance, centred on the draggable boat.
@@ -93,6 +104,17 @@ export async function createHarbour(holder){
    float ring=length(hullAxes/vec2(1.06,3.4));
    float crest=sin(ring*12.-time*2.6)*exp(-2.9*abs(ring-1.17));
    chop+=boatLocal/max(length(boatLocal),.2)*crest*.12;
+   float wake=0.;
+   for(int j=0;j<6;j++){
+    vec3 samplePoint=trackPoints[j];float age=time-samplePoint.z;
+    if(age>=0.&&age<5.){
+     vec2 delta=p-samplePoint.xy;float dist=length(delta);
+     float front=dist-(.65+age*.92);
+     float band=exp(-front*front*2.7)*(1.-age*.2);
+     chop+=delta/max(.3,dist)*sin(front*6.)*band*.075;
+     wake+=band*.03;
+    }
+   }
    vec3 surfaceNormal=normalize(vec3(-g.x+chop.x,1.,-g.y+chop.y));
   `)
   .replace('surfaceNormal.xz * ( 0.001 + 1.0 / distance ) * distortionScale','surfaceNormal.xz * (0.014+0.9/max(15.,distance))*distortionScale')
@@ -102,27 +124,32 @@ export async function createHarbour(holder){
    vec3 body=mix(vec3(.008,.046,.056),vec3(.029,.112,.128),skyward*skyward*windPatch);
    float contact=.24*exp(-2.5*abs(ring-.90));
    vec3 reflected=mix(reflectionSample,vec3(.27,.36,.40),.045);
-   vec3 outgoingLight=(mix(body,reflected,.10+.84*reflectance)+specularLight*.35)*(1.-contact);
+   vec3 outgoingLight=(mix(body,reflected,.10+.84*reflectance)+specularLight*.35)*(1.-contact)+vec3(.16,.20,.19)*min(wake,.18);
   `);
  const boat=makeBoat(scene);boat.position.set(6,0,-47);
  const grip=document.createElement('button');grip.className='boat-grip';grip.type='button';
  const hint=document.createElement('span');hint.textContent='Drag boat';grip.append(hint);grip.setAttribute('aria-label','Drag the model boat, or use the arrow keys to move it. Home resets the boat.');
  const pin=new T.Vector3(),pointer=new T.Vector2(),ray=new T.Raycaster(),plane=new T.Plane(xyz(0,1,0)),hit=new T.Vector3();
- let taking=null;
- function waterPick(e){
-  const box=canvas.getBoundingClientRect();
-  pointer.set((e.clientX-box.left)/box.width*2-1,1-(e.clientY-box.top)/box.height*2);
-  ray.setFromCamera(pointer,camera);plane.constant=-water.position.y;
-  return ray.ray.intersectPlane(plane,hit);
+ let taking=null,lastMark=-1,trailIndex=0;
+ function moveBoat(x,z){
+  const nx=T.MathUtils.clamp(x,-13,16),nz=T.MathUtils.clamp(z,-64,-30);
+  if(Math.hypot(nx-boat.position.x,nz-boat.position.z)>.08&&clock-lastMark>.13){
+   trail[trailIndex].set(boat.position.x,boat.position.z,clock);trailIndex=(trailIndex+1)%trail.length;lastMark=clock;
+  }
+  boat.position.x=nx;boat.position.z=nz;render();
  }
- function moveBoat(x,z){boat.position.x=T.MathUtils.clamp(x,-13,16);boat.position.z=T.MathUtils.clamp(z,-64,-30);render()}
  grip.onpointerdown=e=>{
   if(!e.isPrimary||e.button!==0)return;
-  e.stopPropagation();const p=waterPick(e);if(!p)return;
-  taking=[e.pointerId,boat.position.x-p.x,boat.position.z-p.z];grip.setPointerCapture(e.pointerId);grip.dataset.grabbing='true';
+  e.stopPropagation();
+  const hull=pin.set(boat.position.x,water.position.y,boat.position.z).project(camera);
+  taking={id:e.pointerId,x:e.clientX,y:e.clientY,u:hull.x,v:hull.y};
+  grip.setPointerCapture(e.pointerId);grip.dataset.grabbing='true';
  };
  grip.onpointermove=e=>{
-  if(taking?.[0]!==e.pointerId)return;const p=waterPick(e);if(p)moveBoat(p.x+taking[1],p.z+taking[2]);
+  if(taking?.id!==e.pointerId)return;
+  pointer.set(taking.u+2*(e.clientX-taking.x)/width,taking.v-2*(e.clientY-taking.y)/hh);
+  ray.setFromCamera(pointer,camera);plane.constant=-water.position.y;
+  if(ray.ray.intersectPlane(plane,hit))moveBoat(hit.x,hit.z);
  };
  grip.onlostpointercapture=()=>{taking=null;delete grip.dataset.grabbing};
  grip.onkeydown=e=>{
@@ -155,9 +182,16 @@ export async function createHarbour(holder){
   }
   ready=true;holder.replaceChildren(canvas,grip);
  }
- pin.set(boat.position.x,boat.position.y+.22,boat.position.z).project(camera);
- grip.style.left=T.MathUtils.clamp((1+pin.x)*.5*w,56,w-56)+'px';
- grip.style.top=T.MathUtils.clamp((1-pin.y)*.5*h-25,8,h-57)+'px';
+ // Project the actual mast and both ends of the hull. The full sail can be grabbed even above the horizon.
+ let left=w,right=0,top=h,bottom=0;
+ for(const [x,y,z] of [[0,6.7,.48],[-1,.3,-3.3],[1,.3,-3.3],[0,.7,3.46],[0,-.12,0]]){
+  pin.set(x,y,z).applyMatrix4(boat.matrixWorld).project(camera);
+  const px=(1+pin.x)*w*.5,py=(1-pin.y)*h*.5;
+  left=Math.min(left,px);right=Math.max(right,px);top=Math.min(top,py);bottom=Math.max(bottom,py);
+ }
+ grip.style.left=(left-8)+'px';grip.style.top=(top-5)+'px';
+ grip.style.width=Math.max(48,right-left+16)+'px';grip.style.height=Math.max(48,bottom-top+12)+'px';
+
  }
  let drag;canvas.style.touchAction='pan-y';
  canvas.onpointerdown=e=>{drag=[e.pointerId,e.clientX,e.clientY,pan,tilt];canvas.setPointerCapture(e.pointerId)};
