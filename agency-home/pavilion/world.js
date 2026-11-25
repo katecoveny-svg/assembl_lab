@@ -7,7 +7,6 @@ import * as T from './vendor/three.webgpu.min.js';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
 import {HDRLoader} from './vendor/HDRLoader.js';
 import {RoundedBoxGeometry} from './vendor/RoundedBoxGeometry.js';
-import {RectAreaLightTexturesLib} from './vendor/RectAreaLightTexturesLib.js';
 import {finePanicles} from './panicles.js';
 import {furnishRoom} from './interior.js';
 import {buildCoast,addSedges,grade,plantable,pathX} from './landscape.js';
@@ -43,12 +42,13 @@ export async function openPavilion(host,asset,forceGL=false,signal){
  }
  let refined=false;
  async function refine(){if(refined)return;refined=true;
+   await refineApertures().catch(()=>{});
    while(refinements.length){await Promise.allSettled(refinements.splice(0,2).map(load=>load()))}
  }
- const [sky,wood,blackwood,grit,chair,fern,shrub,grass,terrain]=await Promise.all([
-   new HDRLoader(manager).loadAsync(asset('kloofendal_38d_partly_cloudy_puresky.hdr')),
+ const [sky,wood,blackwood,grit,chair,terrain]=await Promise.all([
+   new HDRLoader(manager).loadAsync(asset('pavilion-daylight-512.hdr')),
    ...['cedar','charred','sandy_gravel'].map(n=>surface(n+'.webp')),
-   ...['mid_century_lounge_chair','fern_02','shrub_03','grass_medium_01','gulf-terrain'].map(n=>glLoader.loadAsync(asset(n+'.glb')))
+   ...['mid_century_lounge_chair','gulf-terrain'].map(n=>glLoader.loadAsync(asset(n+'.glb')))
  ]);
  signal?.throwIfAborted();
  sky.mapping=T.EquirectangularReflectionMapping;scene.environment=sky;scene.background=sky;scene.backgroundRotation.y=scene.environmentRotation.y=0;
@@ -125,6 +125,14 @@ export async function openPavilion(host,asset,forceGL=false,signal){
  endBoards(-2.09,.234,.073,2.854);endBoards(.235,2.008,.073,.537);endBoards(.235,2.008,2.794,3.09);
  rearBoards(.46,1.79,.073,2.614);rearBoards(5.52,7.1,.073,2.614);
  rearBoards(1.79,5.52,.073,.902);rearBoards(1.79,5.52,2.40,2.614);
+ // Carry the charred external boards below the existing east sill and above its head.
+ // The source aperture, interior returns, roof and post positions stay on their authored coordinates.
+ function eastSpandrel(z0,z1,bottom,top){
+  const n=Math.ceil((z1-z0)/.132),pitch=(z1-z0)/n;
+  for(let i=0;i<n;i++)box(7.265,(bottom+top)/2,z0+(i+.5)*pitch,.037,top-bottom,pitch-.004,dark);
+ }
+ eastSpandrel(.235,2.008,.008,.527);eastSpandrel(.235,2.008,2.796,3.095);
+ for(const y of [.527,2.799])box(7.251,y,1.12,.11,.018,1.80,metal);
  box(7.16,1.66,1.12,.012,2.18,1.72,glass);
  for(const z of [.22,1.08,2.0])box(7.12,1.66,z,.12,2.27,.047,metal);
  for(const y of [.55,2.78]){box(7.12,y,1.12,.12,.048,1.8,metal);box(7.035,y+(y<1?-.03:.03),1.12,.24,.032,1.89,oak)}
@@ -202,32 +210,38 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  const fill=new T.DirectionalLight(0xe4eef6,.12);fill.position.set(2,6,-3);scene.add(fill);
  for(const x of [-3,3]){const lamp=new T.SpotLight(0xffead2,3.3,5,1.04,.86,2);lamp.position.set(x,2.64,.20);lamp.target.position.set(x,.35,-.65);scene.add(lamp,lamp.target)}
  // Area emitters fill the actual apertures. They provide broad indoor sky transport without point hotspots.
+ async function refineApertures(){
+ const {RectAreaLightTexturesLib}=await import('./vendor/RectAreaLightTexturesLib.js');
  T.RectAreaLightNode.setLTC(RectAreaLightTexturesLib.init());
  const aperture=(pos,aim,w,h,power,color)=>{const l=new T.RectAreaLight(color,power,w,h);l.position.set(...pos);l.lookAt(...aim);scene.add(l)};
  aperture([7.13,1.61,1.12],[2.5,1.18,0],1.76,2.15,1.7,0xf4f4ed);
  aperture([3.64,1.66,-2.07],[3.66,.45,1],3.58,1.40,2.3,0xe9f0f4);
  aperture([3.80,1.49,2.05],[3.31,1.0,-1],6.35,2.74,1.25,0xf5eee0);
+ }
  const tmp=new T.Object3D(),wind=[];
  function instantiate(geo,m,placements,windFactor=0,cast=true){if(!placements.length)return;const o=new T.InstancedMesh(geo,m,placements.length);o.castShadow=cast;o.receiveShadow=true;
    for(let i=0;i<placements.length;i++){const [x,y,z,s,a]=placements[i];tmp.position.set(x,y,z);tmp.scale.setScalar(s);tmp.rotation.set(0,a,0);tmp.updateMatrix();o.setMatrixAt(i,tmp.matrix)}
    scene.add(o);if(windFactor)wind.push({o,placements,windFactor});return o
  }
- function scanPlant(g,count,scale,zone,windFactor){if(host.clientWidth<=680)count=Math.ceil(count*.57);const all=g.scene.children.filter(o=>o.isMesh||o.children.length);const variants=all;
+ function scanPlant(g,count,scale,zone,windFactor,isShrub=false){if(host.clientWidth<=680)count=Math.ceil(count*.57);const all=g.scene.children.filter(o=>o.isMesh||o.children.length);const variants=all;
    variants.forEach((src,j)=>{const locations=[];for(let i=j;i<count;i+=variants.length){let [x,z]=zone();locations.push([x,ground(x,z)-.018,z,range(...scale),range(0,6.28)])}src.traverse(n=>{if(n.isMesh){
      const m=n.material.clone();m.side=T.DoubleSide;m.transparent=false;m.alphaTest=.42;m.roughness=.84;
-     const stride=host.clientWidth<=680?(g===shrub?4:2):(g===shrub?2:1);
+     const stride=host.clientWidth<=680?(isShrub?4:2):(isShrub?2:1);
      instantiate(n.geometry,m,locations.filter((_,index)=>index%stride===0),windFactor)
    }})})
  }
  const around=()=>{let x,z;do{x=range(-17,16);z=range(-8,16)}while(!plantable(x,z));return [x,z]};
  const fernHollow=()=>{let x,z;do{x=range(-13,8);z=range(2,11)}while(!plantable(x,z));return [x,z]};
- scanPlant(fern,77,[.91,1.36],fernHollow,.02);scanPlant(shrub,88,[1.21,2.37],around,.016);scanPlant(grass,450,[1.9,3.3],around,.024);
+ async function refinePlanting(){
+ const [fern,shrub,grass]=await Promise.all(['fern_02','shrub_03','grass_medium_01'].map(n=>glLoader.loadAsync(asset(n+'.glb'))));
+ scanPlant(fern,77,[.91,1.36],fernHollow,.02);scanPlant(shrub,88,[1.21,2.37],around,.016,true);scanPlant(grass,450,[1.9,3.3],around,.024);
  // Shade-tolerant fronds emerge between the open eastern bays, with the central pile faces still visible.
  const shadeFernPositions=[[-5.61,4.62],[-5.29,4.46],[-.84,4.48],[-.55,4.58],[3.23,4.47],[3.50,4.60],[5.84,3.99]];
  let fernIndex=0;fern.scene.traverse(o=>{if(!o.isMesh)return;
   const material=o.material.clone();material.side=T.DoubleSide;material.alphaTest=.43;material.transparent=false;material.roughness=.88;
   const spots=shadeFernPositions.filter((_,i)=>i%3===fernIndex%3).map(([x,z],i)=>[x,ground(x,z)+.023,z,1.03+(i%2)*.19,x*.61]);
   instantiate(o.geometry,material,spots,.019);fernIndex++});
+ }
  // Rooted harakeke fans: folded longitudinal ridges catch different amounts of sun on each face.
  function flax(seedIdx){const verts=[],col=[],faces=[];for(let i=0;i<32;i++){const angle=(i%2?0:Math.PI)+range(-.62,.62)+Math.floor(i/11)*1.02,L=range(.53,1.5),W=range(.029,.066),curl=range(.32,1.2),off=range(-.066,.066),base=verts.length/3;
   const tone=new T.Color().setRGB(range(.039,.09),range(.075,.135),range(.018,.045));for(let k=0;k<=10;k++){const t=k/10,dist=L*(.07*t+curl*t*t*.78),h=L*(1.65*t-.94*t*t-(curl*.28)*t*t*t),wx=Math.cos(angle),wz=-Math.sin(angle),width=W*(1-t**1.8)*(.67+.34*Math.sin(t*Math.PI)),cx=Math.sin(angle)*dist+off,cz=Math.cos(angle)*dist;
@@ -267,6 +281,8 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  const match=new URLSearchParams(location.search).has('match');
  const positions=[v(12.1,.67,13.8),v(5.8,.73,8.45),(match?v(1.55,1.40,1.48):v(.89,1.49,1.69))],targets=[v(.02,1.02,.65),v(.07,1.21,.12),(match?v(4.28,1.27,-1.25):v(4.08,1.14,-.78))];
  const camPath=new T.CatmullRomCurve3(positions,false,'centripetal'),aimPath=new T.CatmullRomCurve3(targets,false,'centripetal');
+ let garden=null;
+ async function gardenBed(){const {createGardenBed}=await import("./garden-bed.js");return garden??=createGardenBed(scene,camera,ground)}
  let explorePose=null,detail=null,indoors=false;
  const displacement=v(),direction=v(),stepRight=v(),next=v();
  const obstacles=[[-3.84,-.66,-2.1,-1.22],[-3.22,-1.02,.18,.80],[-4.04,-3.74,-2.1,.63],[-4.04,-3.74,1.59,2.04],[-7.03,-4.78,-1.19,.63],[-7.03,-4.95,-2.06,-1.49],[-.79,1.04,-1.69,-.10],[2.02,4.83,-1.88,-.73],[2.66,4.64,-.41,.79],[5.26,6.48,-.35,.91]];
@@ -294,7 +310,9 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
    if(detail==='basin'){cp.set(-1.10,1.37,-.77);aim.set(-1.74,1.12,-1.79);camera.fov=43}
    if(detail==='tree'){cp.set(-7.35,2.40,7.37);aim.set(-12.17,3.68,1.94);camera.fov=48}
    if(detail==='deck'){cp.set(6.75,1.41,4.0);aim.set(-1.10,1.04,2.61);camera.fov=57}
-   indoors=p>.63&&!['deck','tree'].includes(detail);
+   if(garden?.active)garden.frame(cp,aim);
+   indoors=!garden?.active&&p>.63&&!['deck','tree'].includes(detail);
+   scene.environmentIntensity=indoors?.74:1.15;
    camera.updateProjectionMatrix();
    if(explorePose){
     const {yaw,pitch,travel}=explorePose;
@@ -315,7 +333,7 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
      tmp.position.set(x,y,z);tmp.scale.setScalar(s);tmp.rotation.set(wave*windFactor*.47,a,wave*windFactor,'ZXY');tmp.updateMatrix();o.setMatrixAt(i,tmp.matrix)}o.instanceMatrix.needsUpdate=true}
    renderer.render(scene,camera)
  }
- size();return {backend,draw,size,refine,step,furnishLivingRoom,inside:()=>indoors,resetWalk:()=>displacement.set(0,0,0),setDetail(value){detail=value;displacement.set(0,0,0)},setExplore(view){explorePose=view;if(!view)displacement.set(0,0,0)},renderer,triangleCount,pose:()=>({position:camera.position.toArray(),quaternion:camera.quaternion.toArray(),fov:camera.fov,aspect:camera.aspect})}
+ size();return {backend,draw,size,refine,refinePlanting,step,gardenBed,furnishLivingRoom,inside:()=>indoors,resetWalk:()=>displacement.set(0,0,0),setDetail(value){detail=value;displacement.set(0,0,0)},setExplore(view){explorePose=view;if(!view)displacement.set(0,0,0)},renderer,triangleCount,pose:()=>({position:camera.position.toArray(),quaternion:camera.quaternion.toArray(),fov:camera.fov,aspect:camera.aspect})}
  } catch(error) {
    if(initialized)renderer.dispose();
    throw error;

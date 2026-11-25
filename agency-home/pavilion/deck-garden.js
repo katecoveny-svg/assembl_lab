@@ -10,6 +10,17 @@ export function deckGarden({scene,mesh,box,grade,trim,grit}){
  for(let j=0;j<2;j++)for(let i=0;i<15;i++){const x=-6.97+j*1.7+i*.104,z=4.155,base=grade(x,z)+.15,top=-.27;
   box(x,(top+base)/2,z,.034,top-base,.051,screen)}
  box(-5.40,-.283,4.115,3.3,.065,.032,screen);
+ // A recessed open skirt finishes the east gable below the spandrel.
+ // Existing posts, beam section, grade and stormwater gaps are visible through the slats.
+ const skirt=trim.clone();skirt.color.setHex(0x665549);skirt.roughness=.91;
+ const top=-.185;
+ for(let i=0;i<42;i++){
+  const z=-1.98+i*.095,x=7.035,base=grade(x,z)+.13;
+  box(x,(top+base)/2,z,.041,top-base,.062,skirt);
+ }
+ // Return the screen along the east end of the veranda and leave the approach stair open.
+ for(let i=0;i<17;i++){const x=5.50+i*.09,z=4.15,base=grade(x,z)+.16;
+  box(x,(top+base)/2,z,.058,top-base,.039,skirt)}
  // Screened local aggregate: a fine mineral surface and occasional larger stones catch the light.
  const canvas=document.createElement('canvas');canvas.width=canvas.height=256;const ctx=canvas.getContext('2d');
  let seed=2519;const rand=()=>((seed=Math.imul(seed,1664525)+1013904223>>>0)/4294967296);

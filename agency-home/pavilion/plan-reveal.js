@@ -31,7 +31,7 @@ export function setupPlanReveal(asset) {
   // keep the live orthographic model under the same fixed drawing coordinates.
   host.hidden=!orbit&&!engine;beauty.hidden=!orbit||!!engine;top.hidden=orbit||!!engine;
   slider.disabled=orbit;turn.setAttribute('aria-pressed',String(orbit));
-  turn.textContent=orbit?'Back to plan lens':'Turn the cutaway';
+  turn.textContent=orbit?'Reveal the 16C plan':'Turn the cutaway';
   heading.textContent=orbit?'Furnished cutaway':'Model and original plan';
   hint.firstChild.textContent=orbit?(engine?'Drag or use the arrow keys to turn.':'Furnished view. '):'Move over the house to reveal its plan. On touch, drag sideways.';
   field.setAttribute('aria-label',orbit?'Furnished 16C cutaway. Use arrow keys to turn.':'16C model. Arrow keys move the circular plan lens. Escape clears it.');

@@ -7,7 +7,11 @@ export function fitKitchen(scene,oak,stone){
  const hardware=mat(0x836b48,.35,.65),graphite=mat(0x282b2c,.48,.24),steel=mat(0xbec2c3,.31,.86),black=mat(0x111b1e,.14,.40),rubber=mat(0x161918,.84),milk=mat(0xe1ddd3,.46),glaze=mat(0xc3c1b7,.25),etch=mat(0x747e7c,.45,.53),timber=oak.clone();
  timber.color.setHex(0xa48b6e);const v=(x,y,z)=>new T.Vector3(x,y,z);
  function add(g,m,x,y,z,rot){if(rot)g.applyMatrix4(new T.Matrix4().makeRotationFromEuler(new T.Euler(...rot)));g.translate(x,y,z);
-  if(g.index)g=g.toNonIndexed();if(!g.attributes.uv)g.setAttribute('uv',new T.BufferAttribute(new Float32Array(g.attributes.position.count*2),2));if(!bins.has(m))bins.set(m,[]);bins.get(m).push(g)}
+  if(m===timber&&g.attributes.uv){
+    const p=g.attributes.position,uv=g.attributes.uv,offset=x*.573;
+    for(let k=0;k<p.count;k++)uv.setXY(k,p.getY(k)/2.1+offset,(p.getX(k)+p.getZ(k))/.94);
+   }
+   if(g.index)g=g.toNonIndexed();if(!g.attributes.uv)g.setAttribute('uv',new T.BufferAttribute(new Float32Array(g.attributes.position.count*2),2));if(!bins.has(m))bins.set(m,[]);bins.get(m).push(g)}
  function box(x,y,z,w,h,d,r,m){add(new RoundedBoxGeometry(w,h,d,2,Math.min(r,w*.45,h*.45,d*.45)),m,x,y,z)}
  function tube(points,rad,m){const p=points.map(a=>v(...a));add(new T.TubeGeometry(new T.CatmullRomCurve3(p),Math.max(12,p.length*6),rad,9),m,0,0,0)}
  function turn(x,y,z,profile,m){add(new T.LatheGeometry(profile.map(([radius,h])=>new T.Vector2(radius,h)),40),m,x,y,z)}
@@ -16,8 +20,8 @@ export function fitKitchen(scene,oak,stone){
  // Hand-finished ceramic courses. Each tile has a shallow crown and a glazed, slightly irregular face.
  const grout=mat(0xb9aaa0,.91);
  box(-1.985,1.40,-1.966,2.365,.80,.018,.002,grout);
- const tileTones=[0xe4d1c8,0xdcc8be,0xe5d5cb,0xdac3bb,0xe9d9cd];
- const ceramics=tileTones.map(color=>new T.MeshPhysicalMaterial({color,roughness:.24,clearcoat:.86,clearcoatRoughness:.19}));
+ const tileTones=[0xcab5a6,0xc3af9c,0xd2c0b0,0xc7afa0,0xdac7b5];
+ const ceramics=tileTones.map(color=>new T.MeshPhysicalMaterial({color,roughness:.29,clearcoat:.59,clearcoatRoughness:.19}));
  for(let j=0;j<3;j++)for(let i=0;i<24;i++){
    const w=.0984,h=.245,z=-1.949+.0019*Math.sin(i*4.7+j*2.7),cx=-3.165+(i+.5)*w,cy=1.014+(j+.5)*h;
    const tile=new RoundedBoxGeometry(w-.0031,h-.0031,.018,2,.004);
@@ -103,5 +107,35 @@ export function fitKitchen(scene,oak,stone){
  for(const [ix,iz] of [[-2.83,-1.79],[-2.61,-1.81]])for(let i=0;i<2;i++)
   turn(ix,1.76+i*.017,iz,[[.029,0],[.053,.004],[.079,.036],[.081,.054],[.077,.055],[.07,.037],[.039,.01],[0,.008]],glaze);
  for(const [w,h,x] of [[.194,.309,-1.012],[.117,.217,-.955]])box(x,y+h/2,-1.924,w,h,.022,.011,timber);
+ // A folded tea towel, two nesting cups and a thrown breakfast carafe establish human scale.
+ const earthen=mat(0x67594b,.72),celadon=mat(0x899381,.39);
+ turn(-2.26,.827,.51,[[.001,0],[.063,0],[.083,.016],[.089,.12],[.073,.168],[.044,.209],[.044,.237],[.048,.241],[.048,.247],[.040,.247],[.039,.224]],earthen);
+ for(const [x,z,m] of [[-2.11,.58,celadon],[-1.96,.46,glaze]]){
+  turn(x,.827,z,[[0,0],[.030,0],[.035,.008],[.041,.075],[.040,.080],[.036,.081],[.034,.073],[.026,.011],[0,.009]],m);
+  tube([[x+.036,.843,z],[x+.061,.85,z],[x+.061,.881,z],[x+.040,.889,z]],.0045,m);
+ }
+ const tea=new T.PlaneGeometry(.29,.37,20,28),tp=tea.attributes.position,tu=tea.attributes.uv,tc=[];
+ for(let k=0;k<tp.count;k++){
+  const u=tu.getX(k),v=tu.getY(k),fold=.009*Math.sin(4*u*Math.PI+v*.8),bend=Math.max(0,.43-v);
+  tp.setXYZ(k,-1.078+(u-.5)*.288+.012*Math.sin(v*3),y+.015+fold-bend*.35,-1.342-(v-.43)*.38+Math.min(0,v-.43)*.36);
+  const stripe=(u>.094&&u<.16)||(u>.80&&u<.855),c=new T.Color(stripe?0x5e665b:0xb0a38e);tc.push(c.r,c.g,c.b);
+ }
+ tea.setAttribute('color',new T.Float32BufferAttribute(tc,3));tea.computeVertexNormals();
+ add(tea,new T.MeshStandardMaterial({side:T.DoubleSide,vertexColors:true,roughness:1}),0,0,0);
+ // Contact darkens gradually beneath the shelf, behind the plinth, and below the tableware.
+ const shadowCanvas=document.createElement('canvas');shadowCanvas.width=shadowCanvas.height=64;
+ const ctx=shadowCanvas.getContext('2d'),gradient=ctx.createRadialGradient(32,32,0,32,32,32);
+ gradient.addColorStop(0,'#231a13bf');gradient.addColorStop(.55,'#302a1e73');gradient.addColorStop(1,'#302a1e00');
+ ctx.fillStyle=gradient;ctx.fillRect(0,0,64,64);
+ const contact=new T.MeshBasicMaterial({map:new T.CanvasTexture(shadowCanvas),transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-1});
+ for(const [x,z,w,d,h] of [[-2.26,.51,.27,.19,.826],[-2.11,.58,.115,.092,.826],[-1.96,.46,.115,.092,.826],[-2.12,.49,1.53,.83,.073],[-2.31,-1.45,3.45,.42,.071]]){
+  const shade=new T.Mesh(new T.PlaneGeometry(w,d),contact);shade.rotation.x=-Math.PI/2;shade.position.set(x,h,z);scene.add(shade);
+ }
+ const railShade=document.createElement('canvas');railShade.width=2;railShade.height=64;
+ const sc=railShade.getContext('2d'),ramp=sc.createLinearGradient(0,0,0,64);
+ ramp.addColorStop(0,'#36291d68');ramp.addColorStop(.29,'#36291d2d');ramp.addColorStop(1,'#36291d00');
+ sc.fillStyle=ramp;sc.fillRect(0,0,2,64);
+ const shade=new T.Mesh(new T.PlaneGeometry(2.32,.155),new T.MeshBasicMaterial({map:new T.CanvasTexture(railShade),transparent:true,depthWrite:false}));
+ shade.position.set(-1.99,1.647,-1.929);scene.add(shade);
  for(const [m,geos] of bins){const g=mergeGeometries(geos,false);const o=new T.Mesh(g,m);o.castShadow=o.receiveShadow=true;scene.add(o);for(const geo of geos)geo.dispose()}
 }
