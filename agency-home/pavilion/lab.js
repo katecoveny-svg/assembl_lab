@@ -19,11 +19,23 @@ function showPlate(key,action){
 }
 document.querySelectorAll('[data-plate]').forEach(b=>b.onclick=()=>showPlate(b.dataset.plate,true));
 showPlate('section',false);
-function editorialScroll(){const r=$('.film-wrap').getBoundingClientRect();if(!activeMotion.matches&&r.bottom>0&&r.top<innerHeight)$('.film-wrap').style.setProperty('--film-drift',((.5-(r.top+r.height/2)/innerHeight)*2.0).toFixed(2)+'%');
+const filmWrap=$('.film-wrap'),copyBlocks=[$('.opening'),$('.film-caption'),$('.lab-intro'),filmWrap];
+let editorialFrame=0;
+function editorialScroll(){
+ if(!editorialFrame)editorialFrame=requestAnimationFrame(()=>{
+  editorialFrame=0;
+  if(activeMotion.matches)return;
+  for(const block of copyBlocks){
+   const r=block.getBoundingClientRect();if(r.bottom<0||r.top>innerHeight)continue;
+   const progress=Math.max(-1,Math.min(1,(innerHeight/2-r.top-r.height/2)/(innerHeight/2+r.height/2)));
+   block.style.setProperty('--text-drift',(progress*(innerWidth<=680?8:17)).toFixed(1)+'px');
+   if(block===filmWrap)block.style.setProperty('--film-drift',(progress*1.8).toFixed(2)+'%');
+  }
+ });
  if(manual||innerWidth<=680||activeMotion.matches)return;const run=$('.plate-run').getBoundingClientRect(),h=$('.plate').offsetHeight;
  if(run.top<innerHeight*.9&&run.bottom>0){const progress=Math.max(0,Math.min(1,(-run.top+innerHeight*.025)/Math.max(1,run.height-h)));showPlate(progress<.25?'drawing':progress<.66?'model':'exterior',false)}
 }
-window.addEventListener('scroll',editorialScroll,{passive:true});window.addEventListener('resize',editorialScroll);
+window.addEventListener('scroll',editorialScroll,{passive:true});window.addEventListener('resize',editorialScroll);editorialScroll();
 tideCard(asset);
 let audioContext,soundOn=false;
 const soundControl=$('#sound');
@@ -44,7 +56,38 @@ soundControl.addEventListener('click',async()=>{
 });
 document.addEventListener('click',e=>{if(e.isTrusted&&e.target.closest('button,a')&&e.target!==soundControl)clickSound()});
 
- const film=$('.film-wrap video'),play=$('#play-film');play.hidden=false;
- play.onclick=async()=>{film.src='https://lab.assembl.co.nz/media/work/waiheke-flythrough.mp4';film.hidden=false;play.hidden=true;try{await film.play()}catch{film.hidden=true;play.hidden=false;play.textContent='Film needs a connection · Retry'}};
- film.onended=()=>{film.hidden=true;play.hidden=false;play.textContent='Replay fly-through ▷'};
+ const film=$('.film-wrap video'),play=$('#play-film');
+ const source='https://lab.assembl.co.nz/media/work/waiheke-flythrough.mp4';
+ let onScreen=false,autoTried=false,manualPlayback=false,resumeWhenVisible=false;
+ play.hidden=false;
+ async function playFilm(manual){
+  manualPlayback=manual;
+  if(!film.hasAttribute('src'))film.src=source;
+  film.hidden=false;film.muted=true;
+  try{await film.play()}catch{
+   if(!film.paused)return;
+   film.classList.remove('playing');play.hidden=false;
+  }
+ }
+ film.addEventListener('playing',()=>{
+  if(document.hidden||!onScreen&&!manualPlayback){film.pause();return}
+  film.classList.add('playing');play.hidden=true;
+ });
+ film.addEventListener('ended',()=>{film.classList.remove('playing');play.hidden=false;play.textContent='Replay fly-through ▷'});
+ film.addEventListener('error',()=>{film.classList.remove('playing');film.hidden=true;film.removeAttribute('src');play.hidden=false;play.textContent='Retry fly-through'});
+ function syncFilm(){
+  const net=navigator.connection;
+  const restricted=activeMotion.matches||net?.saveData||matchMedia('(prefers-reduced-data: reduce)').matches
+   ||['3g','2g','slow-2g'].includes(net?.effectiveType)||(net?.downlink>0&&net.downlink<.7)
+   ||(navigator.deviceMemory>0&&navigator.deviceMemory<4)||(navigator.hardwareConcurrency>0&&navigator.hardwareConcurrency<4);
+  if(document.hidden||!onScreen||restricted&&!manualPlayback){
+   if(!film.paused){resumeWhenVisible=true;film.pause()}return;
+  }
+  if(resumeWhenVisible){resumeWhenVisible=false;playFilm(manualPlayback);return}
+  if(!manualPlayback&&!autoTried&&!restricted){autoTried=true;playFilm(false)}
+ }
+ play.onclick=()=>{autoTried=true;playFilm(true)};
+ new IntersectionObserver(([e])=>{onScreen=e.intersectionRatio>=.32;syncFilm()},{threshold:[0,.32]}).observe(filmWrap);
+ activeMotion.addEventListener('change',syncFilm);navigator.connection?.addEventListener('change',syncFilm);
+ document.addEventListener('visibilitychange',syncFilm);
 }
