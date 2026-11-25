@@ -16,7 +16,7 @@ for(const img of document.querySelectorAll('[data-image]'))pictures.observe(img)
 lab(asset);
 const vista=$('#vista'),journey=$('.journey'),settings=new URLSearchParams(location.search),reduced=matchMedia('(prefers-reduced-motion: reduce)');
 if(settings.has('match'))document.documentElement.classList.add('match-camera');
-let room=null,roomMove=null;
+let room=null,roomMove=null,preferWebGL=false;
 let exploring=false,detail=null;
 let intervals=[],lastPaint=0;let world,p=0,paused=reduced.matches,visible=true,time=0,prev=0,id=0,gustAt=-10,manual=null,scrolled=window.scrollY,trace=false,lx=.5,ly=.49,dirty=true;
 function event(name,value){window.dispatchEvent(new CustomEvent('assembl:interaction',{detail:{name,value}}))}
@@ -82,7 +82,10 @@ function frame(now){id=0;if(!world||!visible||document.hidden)return;const delta
    p=roomMove.from+(roomMove.to-roomMove.from)*blend;
    if(step===1)roomMove=null;
  }
- const lift=liftAt(p);prev=now;world.draw(p,time,Math.max(0,1-(time-gustAt)/3.6),lift);titleFrame(p,lift);if(settings.has('profile')){if(lastPaint&&now-lastPaint<250)intervals.push(now-lastPaint);if(intervals.length>500)intervals.shift();lastPaint=now}dirty=false;vista.dataset.position=p.toFixed(3)}
+ const lift=liftAt(p);prev=now;
+ try{world.draw(p,time,Math.max(0,1-(time-gustAt)/3.6),lift)}
+ catch{staticMode('render failed');return}
+ titleFrame(p,lift);if(settings.has('profile')){if(lastPaint&&now-lastPaint<250)intervals.push(now-lastPaint);if(intervals.length>500)intervals.shift();lastPaint=now}dirty=false;vista.dataset.position=p.toFixed(3)}
  if(active||roomMove)id=requestAnimationFrame(frame)}
 function wake(){if(!id)id=requestAnimationFrame(frame)}
 function jump(t,view=null){roomMove=null;finishGarden();setRoom(view==='kitchen'?'kitchen':t===1&&!view?'living':null);stopTour();carry=0;free.leave(false);free.releaseGlance();detail=view;world?.setDetail(view);document.querySelectorAll("[data-detail]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.detail===view)));manual=t;p=t;if(!paused&&!reduced.matches){const b=bounds();let u=t<.5?t*2:(t-.5)*2;const inv=.5-Math.sin(Math.asin(1-2*u)/3);const coordinate=settings.has('match')?t:(t<.5?inv*.5:.5+inv*.5);window.scrollTo(0,b.top+coordinate*b.range+(t===1&&!settings.has('match')?Math.min(95,innerHeight*.09):0))}sync();event('pavilion_view',view??t)}
@@ -101,7 +104,10 @@ $('#pause').onclick=()=>{stopTour();paused=!paused;motionLabel();dirty=true;wake
 $('#gust').onclick=()=>{gustAt=time;dirty=true;wake();event('pavilion_gust',true)};
 function staticMode(reason){
  finishGarden();garden=null;gardenButton.hidden=true;stopTour();if(roomMove){p=roomMove.to;roomMove=null}
- free.lost();world=null;window.pavilionStatus=undefined;
+ const failed=world;world=null;window.pavilionStatus=undefined;
+ if(failed?.backend==='WebGPU')preferWebGL=true;
+ free.lost();if(failed){try{failed.renderer.dispose()}catch{}}
+
  titleFrame(0,0);vista.dataset.renderer='still';delete vista.dataset.ready;
  $('#gpu').replaceChildren();journey.classList.add('still');
  $('.scene-controls').hidden=true;enter.hidden=false;enter.disabled=false;
@@ -115,7 +121,7 @@ document.addEventListener('click',e=>{let a=e.target.closest('a');if(a?.closest(
 async function start(signal){
  if(settings.get('renderer')==='still')throw new Error('Still view requested');
  const {openPavilion}=await import('./world.js');signal.throwIfAborted();
- const force=settings.get('renderer')==='webgl';
+ const force=preferWebGL||settings.get('renderer')==='webgl';
  let candidate,drawnP,drawnDetail;
  async function firstFrame(webgl){
   const scene=await openPavilion($('#gpu'),asset,webgl,signal);

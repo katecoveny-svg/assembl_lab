@@ -20,7 +20,9 @@ export async function openPavilion(host,asset,forceGL=false,signal){
  signal?.addEventListener('abort',abort,{once:true});
  try {
  signal?.throwIfAborted();
- await renderer.init();initialized=true;signal?.throwIfAborted();renderer.setPixelRatio(Math.min(devicePixelRatio,host.clientWidth<=680?1.15:1.55));renderer.shadowMap.enabled=true;
+ await renderer.init();initialized=true;signal?.throwIfAborted();
+ const compactGL=host.clientWidth<=680&&!renderer.backend.isWebGPUBackend;
+ renderer.setPixelRatio(Math.min(devicePixelRatio,compactGL?1:host.clientWidth<=680?1.15:1.55));renderer.shadowMap.enabled=true;
  renderer.shadowMap.type=T.PCFShadowMap;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.13;
  const scene=new T.Scene(), camera=new T.PerspectiveCamera(45,1,.065,1000),cube=new T.BoxGeometry(),matrix=new T.Matrix4(),q=new T.Quaternion();
  const v=(x=0,y=0,z=0)=>new T.Vector3(x,y,z);
@@ -42,7 +44,7 @@ export async function openPavilion(host,asset,forceGL=false,signal){
  }
  let refined=false;
  async function refine(){if(refined)return;refined=true;
-   await refineApertures().catch(()=>{});
+   if(!compactGL)await refineApertures().catch(()=>{});
    while(refinements.length){await Promise.allSettled(refinements.splice(0,2).map(load=>load()))}
  }
  const [sky,wood,blackwood,grit,chair,terrain]=await Promise.all([
@@ -217,7 +219,7 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  addSedges({scene,range,rand,timeNode:windTime,gustNode:gustStrength});finePanicles(scene,windTime,gustStrength);
  const hemi=new T.HemisphereLight(0xe5edf2,0x99968b,.24);scene.add(hemi);
  const sun=new T.DirectionalLight(0xfff2da,2.6);sun.position.set(.6390*30,.6128*30,.4649*30);sun.target.position.set(0,0,0);scene.add(sun,sun.target);sun.castShadow=true;
- Object.assign(sun.shadow.camera,{left:-18,right:18,top:14,bottom:-13,near:.2,far:65});sun.shadow.mapSize.set(2048,2048);sun.shadow.normalBias=.003;sun.shadow.bias=-.00007;
+ Object.assign(sun.shadow.camera,{left:-18,right:18,top:14,bottom:-13,near:.2,far:65});const shadowSize=compactGL?1024:2048;sun.shadow.mapSize.set(shadowSize,shadowSize);sun.shadow.normalBias=.003;sun.shadow.bias=-.00007;
  const fill=new T.DirectionalLight(0xe4eef6,.12);fill.position.set(2,6,-3);scene.add(fill);
  for(const x of [-3,3]){const lamp=new T.SpotLight(0xffead2,3.3,5,1.04,.86,2);lamp.position.set(x,2.64,.20);lamp.target.position.set(x,.35,-.65);scene.add(lamp,lamp.target)}
  // Area emitters fill the actual apertures. They provide broad indoor sky transport without point hotspots.
@@ -245,6 +247,8 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  const around=()=>{let x,z;do{x=range(-17,16);z=range(-8,16)}while(!plantable(x,z));return [x,z]};
  const fernHollow=()=>{let x,z;do{x=range(-13,8);z=range(2,11)}while(!plantable(x,z));return [x,z]};
  async function refinePlanting(){
+  // The procedural coastal planting is already present. Skip the three scanned layers on small WebGL devices.
+  if(compactGL)return;
  const [fern,shrub,grass]=await Promise.all(['fern_02','shrub_03','grass_medium_01'].map(n=>glLoader.loadAsync(asset(n+'.glb'))));
  scanPlant(fern,77,[.91,1.36],fernHollow,.02);scanPlant(shrub,88,[1.21,2.37],around,.016,true);scanPlant(grass,450,[1.9,3.3],around,.024);
  // Shade-tolerant fronds emerge between the open eastern bays, with the central pile faces still visible.
