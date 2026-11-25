@@ -134,21 +134,26 @@ async function renderEarlierWorks(el, ctx) {
   const files = await ctx.store.listFiles({ project_id: p.id });
   const storedHtml = files.filter((f) => /\.html?$/i.test(f?.name ?? ''));
 
+  const audioSample = localItems.find((it) => it.kind === 'audio');
+  const displayItems = localItems.filter((it) => it.kind !== 'audio');
+
   el.innerHTML = `
     <div class="ew-box">
       <div class="ew-head">
         <div>
-          <p class="label">Earlier works &amp; interactive walkthroughs</p>
-          <h3>${localItems.length + storedHtml.length ? `${localItems.length + storedHtml.length} milestone walkthroughs, masterplans &amp; reference cuts` : 'Attach interactive HTML walkthroughs &amp; milestone studies'}</h3>
+          <p class="label">Earlier works &amp; walkthroughs</p>
+          <h3>${displayItems.length + storedHtml.length ? `${displayItems.length + storedHtml.length} interactive builds &amp; milestone studies` : 'Interactive HTML walkthroughs'}</h3>
         </div>
-        <label class="btn" tabindex="0">
-          <span>+ Attach HTML Walkthrough / Cut</span>
-          <input type="file" accept=".html,.htm,.mp4,.webm,.pdf,.png,.jpg,.jpeg,.glb,.ifc" multiple hidden data-ew-upload />
-        </label>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          ${audioSample ? `<button type="button" class="btn" data-ew-sample-voice>▶ Tāne Narration Sample</button>` : ''}
+          <label class="btn" tabindex="0">
+            <span>+ Attach Walkthrough</span>
+            <input type="file" accept=".html,.htm,.mp4,.webm,.pdf,.png,.jpg,.jpeg,.glb,.ifc" multiple hidden data-ew-upload />
+          </label>
+        </div>
       </div>
-      <p class="small">Standalone 3D <code>.html</code> walkthroughs (including 100 MB+ offline builds), earlier fly-through drafts, Wānanga masterplans and architect reference sheets stay grouped by milestone so your team and client can compare iterations side by side or send any sheet/model straight into the live WebGPU 3D Studio.</p>
       ${
-        localItems.length || storedHtml.length
+        displayItems.length || storedHtml.length
           ? `<div class="ew-grid">
               ${storedHtml
                 .map(
@@ -156,35 +161,34 @@ async function renderEarlierWorks(el, ctx) {
                     <div>
                       <div class="ew-kind"><span>HTML WALKTHROUGH</span><span>${esc(sizeText(f.size || 0))}</span></div>
                       <div class="ew-title">${esc(f.name.replace(/\.html?$/i, ''))}</div>
-                      <div class="ew-sub">Stored in project library · interactive 3D browser build</div>
                     </div>
                     <div class="ew-acts">
-                      <button type="button" class="btn solid" data-ew-stored="${esc(f.id)}" data-ew-name="${esc(f.name)}">Launch Walkthrough</button>
+                      <button type="button" class="btn solid" data-ew-stored="${esc(f.id)}" data-ew-name="${esc(f.name)}">Launch</button>
                     </div>
                   </article>`,
                 )
                 .join('')}
-              ${localItems
+              ${displayItems
                 .map(
                   (it, idx) => `<article class="ew-card">
                     <div>
                       <div class="ew-kind"><span>${esc(it.badge)}</span><span>${esc(it.sizeLabel || '')}</span></div>
                       <div class="ew-title">${esc(it.title)}</div>
-                      <div class="ew-sub">${esc(it.note || '')}</div>
+                      ${it.note ? `<div class="ew-sub">${esc(it.note)}</div>` : ''}
                     </div>
                     <div class="ew-acts">
                       ${
                         it.openIn3d
                           ? `<button type="button" class="btn solid" data-ew-to3d="${idx}">Open in 3D Studio →</button>`
-                          : `<button type="button" class="btn solid" data-ew-view="${idx}">${it.kind === 'html' ? 'Launch Walkthrough' : it.kind === 'video' ? 'Play Cut' : 'Inspect'}</button>`
+                          : `<button type="button" class="btn solid" data-ew-view="${idx}">${it.kind === 'html' ? 'Launch' : it.kind === 'video' ? 'Play' : 'View'}</button>`
                       }
-                      <a class="btn" href="${esc(it.url)}" target="_blank" rel="noopener">New Tab ↗</a>
+                      <a class="btn" href="${esc(it.url)}" target="_blank" rel="noopener">↗</a>
                     </div>
                   </article>`,
                 )
                 .join('')}
             </div>`
-          : `<p class="small" style="margin-top:8px">Drop or choose any standalone <code>.html</code> walkthrough file above to keep it with this project.</p>`
+          : ''
       }
     </div>`;
 
@@ -214,16 +218,20 @@ async function renderEarlierWorks(el, ctx) {
     });
   });
 
+  el.querySelector('[data-ew-sample-voice]')?.addEventListener('click', () => {
+    if (audioSample) openMediaViewer({ title: audioSample.title, url: audioSample.url, kind: 'audio' });
+  });
+
   el.querySelectorAll('[data-ew-view]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const it = localItems[Number(btn.dataset.ewView)];
+      const it = displayItems[Number(btn.dataset.ewView)];
       if (it) openMediaViewer({ title: it.title, url: it.url, kind: it.kind });
     });
   });
 
   el.querySelectorAll('[data-ew-to3d]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const it = localItems[Number(btn.dataset.ewTo3d)];
+      const it = displayItems[Number(btn.dataset.ewTo3d)];
       if (it) void sendUrlTo3dStudio(ctx, it, btn);
     });
   });

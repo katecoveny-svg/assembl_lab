@@ -1,7 +1,7 @@
 // Unit tests for the Aotearoa NZ Architectural Studio Suite:
 //   - Multi-sheet PDF classification, Cultural Narrative extraction & Bilingual Te Reo Māori script generation
 //   - 9-category NZ Architectural Specifier, Live Cost ($ NZD) & Critical-Path Programme Delay engine + URL codec
-//   - Working Plans & Drawings Agent (A101–A401 A3 SVG set, CAD DXF export, universal NZBC pre-check)
+//   - Working Plans & Drawings Agent (A101–L101 A3 SVG set incl. L101 landscape, CAD DXF export, universal NZBC pre-check)
 //   - /architecture/ Three.js stage live telemetry & Earlier Works addon registration
 
 import test from 'node:test';
@@ -121,7 +121,7 @@ test('NZ architectural specifier calculates live NZD cost delta, critical-path p
   assert.match(html, /NZBC/);
 });
 
-test('Working Plans & Drawings agent emits 4 A3 SVG sheets (A101–A401), cited NZBC pre-checks, and CAD DXF', () => {
+test('Working Plans & Drawings agent emits 5 A3 SVG sheets (A101–L101 incl. landscape), cited NZBC pre-checks, and CAD DXF', () => {
   const { narrative } = extractPdfSetNarrative(
     [{ page: 1, items: ['CULTURAL NARRATIVE', 'Kōmiromiro and Ngaru guide the entry screen and soffit rhythm across the site.'] }],
     'Sample Pavilion',
@@ -151,21 +151,81 @@ test('Working Plans & Drawings agent emits 4 A3 SVG sheets (A101–A401), cited 
   assert.ok(checks.some((c) => c.clause.includes('NZBC H1/AS1') && c.status === 'review'), '36% WWR flags H1 VM1 modelling check');
 
   const sheets = generateWorkingDrawingSet(input);
-  assert.deepEqual(sheets.map((s) => s.id), ['A101', 'A201', 'A301', 'A401']);
+  assert.deepEqual(sheets.map((s) => s.id), ['A101', 'A201', 'A301', 'A401', 'L101']);
   for (const sh of sheets) {
     assert.match(sh.svg, /^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" viewBox="0 0 1190 842"/);
     assert.match(sh.svg, /Sample Studio Ltd/);
+    assert.doesNotMatch(sh.svg, /#C7B4F0|#D7B3F0|#6A50BE/i, `${sh.id} has no banned violet`);
   }
   assert.match(sheets[1].svg, /Cedar Vertical Shiplap, Carbon Black Stain/);
   assert.match(sheets[3].svg, /Kōmiromiro/);
+
+  // L101 synthesised from landscaping spec + footprint when no brushed garden exists
+  const l101 = sheets[4];
+  assert.equal(l101.scale, '1:100');
+  assert.match(l101.svg, />L101</);
+  assert.match(l101.svg, /LANDSCAPE, ECO-SOURCING &amp; PERMEABLE SURFACES PLAN \(PROPOSED FROM SPEC\)/);
+  assert.match(l101.svg, /data-layer="L-PERM-ZONE"/);
+  assert.match(l101.svg, /data-layer="L-BED-EDGE"/);
+  assert.match(l101.svg, /data-layer="L-PLNT-CANP"/);
+  assert.match(l101.svg, /PERMEABLE \d+%/);
+  assert.match(l101.svg, /IMPERVIOUS \d+%/);
+  assert.match(l101.svg, /NZBC E1\/AS1/);
+  assert.match(l101.svg, /NZBC E1\/VM1/);
+  assert.match(l101.svg, /ROHE ECO-SOURCING SCHEDULE/);
+  assert.match(l101.svg, /Metrosideros excelsa/, 'baseline coastal palette schedules Pōhutukawa botanically');
+  assert.match(l101.svg, /stroke-dasharray="4 3"/, '2 m root-protection halos are dashed');
+  assert.match(l101.svg, /<polygon points="0,-15 6,8 0,4 -6,8"/, 'north arrow present');
 
   const dxf = exportWorkingSetDXF(input);
   assert.match(dxf, /A-WALL-EXTR/);
   assert.match(dxf, /A-ROOM-OTLN/);
   assert.match(dxf, /Main Hui \/ Banquet Hall/);
+  assert.match(dxf, /\n8\nL-BED-EDGE\n/);
+  assert.match(dxf, /\n8\nL-PLNT-CANP\n/);
+  assert.match(dxf, /\n8\nL-PERM-ZONE\n/);
+  assert.match(dxf, /0\nCIRCLE\n8\nL-PLNT-CANP/);
+  assert.doesNotMatch(dxf, /[^\x00-\x7F]/, 'DXF stays 7-bit ASCII');
+
+  // Brushed garden state: explicit beds/plants, council %, root clash + shade flags
+  const brushed = generateWorkingDrawingSet({
+    ...input,
+    landscapePlan: {
+      roheLabel: 'Tāmaki Makaurau Ecological District',
+      permeablePct: 34,
+      detentionLitres: 1000,
+      beds: [
+        { x: -2, z: 18, r: 1.6, kind: 'Corten' },
+        { x: 30, z: 4, r: 2.0, kind: 'Macrocarpa sleeper' },
+        { x: 12, z: 19, r: 1.2, kind: 'Pebble swale' },
+        { x: 20, z: 19, r: 2.2, kind: 'Paver' },
+      ],
+      plants: [
+        { sp: 'Nīkau', x: 29.4, z: 8, s: 3 },
+        { sp: 'Kōwhai', x: -4, z: 20, s: 5, sunOk: false },
+        { sp: 'Harakeke', x: 6, z: 18.5, s: 1.8 },
+      ],
+    },
+  });
+  const lb = brushed[4].svg;
+  assert.match(lb, /\(BRUSHED GARDEN STATE\)/);
+  assert.match(lb, /PERMEABLE 34%/);
+  assert.match(lb, /IMPERVIOUS 66%/);
+  assert.match(lb, /Tāmaki Makaurau Ecological District/);
+  assert.match(lb, /Rhopalostylis sapida/);
+  assert.match(lb, /Sophora microphylla/);
+  assert.match(lb, /⚠RPZ/, 'Nīkau 1 m from the footprint flags a root-protection clash');
+  assert.match(lb, /1 clash with footprint/);
+  assert.match(lb, /1 plant\(s\) in shade/);
+  assert.match(lb, /◧ REVIEW/, '34% permeable fails the 40% district-plan rule');
+  const bdxf = exportWorkingSetDXF({ ...input, landscapePlan: { beds: [{ x: 1, z: 18, r: 1.5, kind: 'corten' }], plants: [{ sp: 'Tōtara', x: -3, z: 3, s: 7 }] } });
+  assert.match(bdxf, /B1 CORTEN/);
+  assert.match(bdxf, /P1 Totara \(Podocarpus totara\)/);
+  assert.match(bdxf, /0\nCIRCLE\n8\nL-BED-EDGE\n10\n1000\.0\n20\n18000\.0/);
 
   const printable = exportWorkingSetPrintableHTML(sheets, 'Sample Pavilion');
   assert.match(printable, /@page \{ size: A3 landscape/);
+  assert.match(printable, /5-Sheet A3 Architectural Working Drawing Set \(A101–L101\)/);
 });
 
 test('/architecture/ 3D stage telemetry and Earlier Works addon are wired cleanly', async () => {

@@ -20,6 +20,7 @@ import {
   type SpecSelections,
 } from './nzSpecifier';
 import { planting, type Placement as PlantPlacement, type Species } from './plants';
+import { mountNzLandscapeBrush } from './nzLandscapeBrush';
 import { BRAND_KEY, readBrand } from './practiceLook';
 import { cameraQuery } from './share';
 
@@ -275,6 +276,15 @@ export function mountNzSpecifier(host: SpecifierHostOpts) {
   floraHolder.name = 'nz_specifier_landscaping';
   host.app.scene.add(floraHolder);
 
+  const plantBrush = mountNzLandscapeBrush({
+    app: host.app,
+    bounds: host.bounds,
+    groundAt: host.groundAt,
+    onStatsChange: () => {
+      if (clientBarOn) renderClientBar();
+    },
+  });
+
   // Sync URL cleanly without reloading page
   const syncUrl = () => {
     try {
@@ -329,7 +339,12 @@ export function mountNzSpecifier(host: SpecifierHostOpts) {
             </tbody>
           </table>
         </div>
-        <p class="small" style="margin:0;color:#654A4E">Indicative New Zealand supply &amp; install allowances (NZD excl. GST). Confirm supplier quotes, lead times and council consent documentation before procurement.</p>
+        <p class="small" style="margin:0;color:#654A4E">Indicative New Zealand supply &amp; install allowances (NZD excl. GST). Confirm supplier quotes, lead times and council consent documentation before procurement.${(() => {
+          const gs = plantBrush.getStats();
+          return gs.totalNzd > 0
+            ? ` <b>Brushed 3D Garden (${esc(gs.roheLabel)}, Yr ${gs.growthYear}):</b> ${gs.areaM2.toFixed(1)} m², ${gs.plantCount} plants, Permeable ${gs.permeablePct}%, NZBC E1 ${gs.detentionLitres.toLocaleString('en-NZ')} L (~${formatNzdTotal(gs.totalNzd)} NZD indicative).`
+            : '';
+        })()}</p>
         <div class="row wrap" style="justify-content:flex-end">
           <button type="button" class="pill" id="nzsDlCsv">Download CSV Schedule</button>
           <button type="button" class="pill solid" id="nzsDlHtml">Printable Client Sign-Off (HTML/PDF)</button>
@@ -462,24 +477,11 @@ export function mountNzSpecifier(host: SpecifierHostOpts) {
     const sum = calculateSpecImpact(selections, { floorAreaM2, baselineFloatWeeks: floatWeeks });
     const cat = SPEC_CATEGORIES.find((c) => c.id === activeCat)!;
     const baseOpt = getSpecOption(cat.id, cat.baselineOptionId);
-    const driverNote = sum.criticalPathDrivers[0]
-      ? `Longest lead: ${sum.criticalPathDrivers[0].optionLabel} (${sum.criticalPathDrivers[0].leadWeeks} wks)`
-      : `All selections within ${floatWeeks}-week procurement float`;
 
     card.innerHTML = `
-      <h3>NZ Specifier · Cost &amp; Delay (Live)</h3>
-      <p class="small">Swap NZ cladding, joinery, colours, fittings, furniture, lighting &amp; native landscaping live in 3D — cost &amp; critical-path programme impact update immediately.</p>
-      <div class="nzs-summary" aria-live="polite">
-        <div>
-          <div class="nzs-kicker">Variation vs Baseline</div>
-          <div class="nzs-big ${sum.netDeltaNzd > 0 ? 'is-warn' : 'is-ok'}">${formatNzdDelta(sum.netDeltaNzd)}</div>
-          <div class="nzs-sub">Total: ${formatNzdTotal(sum.selectedTotalNzd)} (${sum.floorAreaM2} m²)</div>
-        </div>
-        <div>
-          <div class="nzs-kicker">Programme Impact</div>
-          <div class="nzs-big ${sum.netDelayWeeks > 0 ? 'is-warn' : 'is-ok'}">${sum.netDelayWeeks > 0 ? `+${sum.netDelayWeeks} wks (+${sum.netDelayWorkingDays}d)` : 'On track (0d)'}</div>
-          <div class="nzs-sub">${esc(driverNote)}</div>
-        </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <h3 style="margin:0">Palette &amp; Cost</h3>
+        <span class="mono small" aria-live="polite"><b>${sum.netDeltaNzd === 0 ? '$0 NZD' : formatNzdDelta(sum.netDeltaNzd)}</b> · <b style="color:${sum.netDelayWeeks > 0 ? '#9b2f45' : '#2F6B4F'}">${sum.netDelayWeeks > 0 ? `+${sum.netDelayWeeks}w` : '0d delay'}</b></span>
       </div>
 
       <div class="nzs-tabs" role="tablist" focusgroup="tablist nomemory" aria-label="New Zealand specification categories">
@@ -493,24 +495,18 @@ export function mountNzSpecifier(host: SpecifierHostOpts) {
           const pkgScale = floorAreaM2 > 350 ? Math.min(3.4, 1 + (floorAreaM2 - 350) / 650) : 1;
           const optDelta = Math.round((o.unit === 'm2' ? qty * o.rateNzd : o.rateNzd * pkgScale) - (baseOpt.unit === 'm2' ? qty * baseOpt.rateNzd : baseOpt.rateNzd * pkgScale));
           const extraWks = Math.max(0, o.leadWeeks - floatWeeks);
-          return `<button type="button" class="nzs-opt" data-opt="${o.id}" aria-pressed="${on}">
+          return `<button type="button" class="nzs-opt" data-opt="${o.id}" aria-pressed="${on}" title="${esc(o.specLine)} · ${esc(o.nzbcClause)}">
             <span class="nzs-swatch" style="background:${esc(o.swatch)}" aria-hidden="true"></span>
-            <span>
-              <div class="nzs-opt-title">${esc(o.label)}</div>
-              <div class="nzs-opt-meta">${esc(o.nzbcClause)} · Lead ${o.leadWeeks} wks</div>
-            </span>
-            <span class="nzs-opt-right">
-              <div>${optDelta === 0 ? 'Baseline' : formatNzdDelta(optDelta)}</div>
-              <div style="color:${extraWks > 0 ? '#9b2f45' : '#2F6B4F'}">${extraWks > 0 ? `+${extraWks} wk delay` : '0d delay'}</div>
-            </span>
+            <span class="nzs-opt-title">${esc(o.label.split(',')[0])}</span>
+            <span class="nzs-opt-right">${optDelta === 0 ? 'Base' : `${optDelta > 0 ? '+' : '−'}$${(Math.abs(optDelta) / 1000).toFixed(1).replace(/\.0$/, '')}k`} · <span style="color:${extraWks > 0 ? '#9b2f45' : '#2F6B4F'}">${extraWks > 0 ? `+${extraWks}w` : `${o.leadWeeks}w`}</span></span>
           </button>`;
         }).join('')}
       </div>
 
       <div class="row wrap">
-        <button type="button" class="pill solid" id="nzsShareClient">Share Client Walkthrough</button>
-        <button type="button" class="pill" id="nzsOpenTable">Cost &amp; Delay Schedule</button>
-        <button type="button" class="pill" id="nzsToggleHud">${clientBarOn ? 'Hide Client Bar' : 'Client Walk HUD'}</button>
+        <button type="button" class="pill solid" id="nzsShareClient">Share Walk</button>
+        <button type="button" class="pill" id="nzsOpenTable">Schedule</button>
+        <button type="button" class="pill" id="nzsToggleHud">${clientBarOn ? 'Hide HUD' : 'Client HUD'}</button>
       </div>`;
 
     const tabs = [...card.querySelectorAll<HTMLButtonElement>('[data-cat]')];
@@ -553,6 +549,7 @@ export function mountNzSpecifier(host: SpecifierHostOpts) {
     card.querySelector('#nzsOpenTable')?.addEventListener('click', openScheduleModal);
     card.querySelector('#nzsShareClient')?.addEventListener('click', () => void openClientShareModal());
     card.querySelector('#nzsToggleHud')?.addEventListener('click', () => { clientBarOn = !clientBarOn; renderCard(); renderClientBar(); });
+    card.append(plantBrush.el);
   };
 
   // Apply initial URL/default selections & render

@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#180B18" />
+  <title>Aotearoa Native 3D Landscape &amp; Site-Plan Painter · assembl lab</title>
+  <meta name="description" content="Three.js WebGPU + TSL Aotearoa landscape studio: brush 3D New Zealand native gardens onto 2D PDF/image site plans, backyard photos, studio beds, or live 1 m LINZ LiDAR topography with seasonal bloom phenology and NZ supplier schedules." />
+  <link rel="icon" href="/lab/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body class="ls-app has-inspector">
+  <p id="srStatus" class="vh" role="status" aria-live="polite"></p>
+
+  <main class="ls-shell" aria-label="3D Aotearoa New Zealand Native Landscape and Site-Plan Studio">
+    <img id="photoBackdrop" alt="Uploaded backyard or site photo backdrop" hidden />
+    <canvas id="gl" aria-label="Interactive WebGPU 3D New Zealand native garden canvas. Use Garden Bed Brush or Plant Mix Brush to paint mulched Corten beds, native plants, and NZ hardscapes. Right-drag to orbit, scroll to zoom."></canvas>
+
+    <!-- Compact Top Bar (< 8% viewport height) -->
+    <header class="ls-topbar">
+      <div class="ls-brand-cluster">
+        <a class="ls-wordmark ls-brand-outer" href="/" aria-label="assembl lab home">assembl<span class="dot">.</span></a>
+        <span class="ls-badge" id="backendBadge">WebGPU</span>
+        <span class="ls-badge subtle ls-nav-hide-sm" id="fpsBadge">60 fps</span>
+        <a class="ls-nav-link ls-nav-hide-sm ls-brand-outer" href="/architecture/">Architecture</a>
+        <a class="ls-nav-link ls-nav-hide-sm ls-brand-outer" href="/plan-studio/twins/drop/">Plan Studio</a>
+      </div>
+
+      <div class="ls-mode-cluster" role="toolbar" aria-label="Site ground mode and NZ solar time" aria-controls="gl">
+        <div role="group" aria-label="Ground source" style="display:inline-flex;gap:3px">
+          <button type="button" class="ls-pill" id="modeStudioBtn" aria-pressed="true" title="Sunlit NZ coastal studio garden with Kwila deck &amp; Firth pavers">Studio Garden</button>
+          <button type="button" class="ls-pill" id="modeSitePlanBtn" aria-pressed="false" title="Brush 3D garden beds, NZ hardscapes &amp; native plants directly onto a 2D site plan (PDF, PNG, JPG, or sample plan)">Site Plan + Brush</button>
+          <button type="button" class="ls-pill" id="modePhotoBtn" aria-pressed="false" title="Upload a backyard or site photo behind a shadow-catcher ground plane to brush live 3D NZ natives">Photo Backdrop</button>
+          <button type="button" class="ls-pill" id="modeLinzBtn" aria-pressed="false" title="Load real NZ address with 1 m LINZ LiDAR topography, primary parcel &amp; buildings">Real NZ Land (LINZ)</button>
+        </div>
+        <span class="ls-sep-v ls-nav-hide-sm" role="separator" aria-orientation="vertical"></span>
+        <label class="ls-sun-ctrl ls-nav-hide-sm" for="sunSlider" title="Aotearoa Southern Hemisphere solar azimuth &amp; elevation (06:30–20:30)">
+          <span class="ls-sun-icon" aria-hidden="true">☀</span>
+          <input type="range" id="sunSlider" class="ls-range sm" min="6.5" max="20.5" step="0.1" value="14.5" />
+          <output id="sunTimeOut" for="sunSlider">14:30</output>
+        </label>
+      </div>
+
+      <div class="ls-right-cluster">
+        <button type="button" class="ls-pill" id="topViewBtn" aria-pressed="false" title="Toggle scaled 2D top-down planting plan view">2D Plan</button>
+        <button type="button" class="ls-pill" id="inspectorToggleBtn" aria-pressed="true" title="Show or hide live bed areas, ecology &amp; NZ supplier schedule">Areas &amp; Schedule</button>
+      </div>
+    </header>
+
+    <!-- Floating Site-Plan Action Bar (shown in Site Plan + Brush mode) -->
+    <div id="sitePlanStrip" class="ls-substrip" hidden role="region" aria-label="2D Site Plan Controls">
+      <label class="ls-pill is-active" tabindex="0" style="cursor:pointer" title="Upload or drop a 2D Site Plan PDF, PNG, JPG or WebP">
+        <input type="file" id="planFileInput" accept=".pdf,image/*" hidden />
+        <span>+ Upload Site Plan (PDF / Img)</span>
+      </label>
+      <select id="pdfPageSelect" class="ls-plan-select" hidden aria-label="PDF Sheet Page"></select>
+      <label class="ls-plan-width" title="Calibrated site plan width in metres">
+        <span>Width</span>
+        <input type="number" id="planWidthInput" min="4" max="300" step="0.5" value="28" />
+        <span>m</span>
+      </label>
+      <button type="button" class="ls-pill" id="twoPtScaleBtn" aria-pressed="false" title="Click two points of a known dimension on the site plan to calibrate exact 1:1 scale">2-Pt Scale</button>
+      <button type="button" class="ls-pill" id="planMassingBtn" aria-pressed="true" title="Toggle 3D architectural house &amp; Kwila deck massing on sample site plan">3D House Massing</button>
+      <button type="button" class="ls-pill" id="samplePlanBtn" title="Reload sample 1:100 NZ coastal architectural site plan">Reset Sample Plan</button>
+    </div>
+
+    <!-- Floating Photo Backdrop Action Bar (shown in Photo Backdrop mode) -->
+    <div id="photoStrip" class="ls-substrip" hidden role="region" aria-label="Photo Backdrop Calibration Controls">
+      <label class="ls-pill is-active" tabindex="0" style="cursor:pointer" title="Upload or drop a backyard or site photograph">
+        <input type="file" id="photoFileInput" accept="image/*" hidden />
+        <span>+ Upload Site Photo</span>
+      </label>
+      <label class="ls-plan-width" for="photoHorizonRange">
+        <span>Horizon</span>
+        <input type="range" id="photoHorizonRange" class="ls-range sm" min="20" max="80" step="1" value="50" />
+        <output id="photoHorizonOut" for="photoHorizonRange">50%</output>
+      </label>
+      <label class="ls-plan-width" for="photoTiltRange">
+        <span>Tilt</span>
+        <input type="range" id="photoTiltRange" class="ls-range sm" min="6" max="42" step="1" value="14" />
+        <output id="photoTiltOut" for="photoTiltRange">14°</output>
+      </label>
+      <label class="ls-plan-width" for="photoScaleRange">
+        <span>Scale</span>
+        <input type="range" id="photoScaleRange" class="ls-range sm" min="0.6" max="1.8" step="0.05" value="1.0" />
+        <output id="photoScaleOut" for="photoScaleRange">1.00×</output>
+      </label>
+      <button type="button" class="ls-pill" id="samplePhotoBtn" title="Load sample NZ coastal backyard photo">Sample Backyard</button>
+    </div>
+
+    <!-- Status & Live Measurement Readout -->
+    <div id="hudChip" class="ls-hud-chip" aria-live="off">Studio Garden · WebGPU photorealistic botanical atlas ready.</div>
+
+    <!-- Polygon Draw Bed Hint -->
+    <div id="drawHint" class="ls-draw-hint hidden">
+      Click ground to place bed vertices · <strong>Double-click</strong> or press <strong>Enter</strong> to close &amp; plant · <strong>Esc</strong> to cancel
+    </div>
+
+    <!-- Left Vertical Floating Tool Palette -->
+    <div class="ls-left-toolbar" role="toolbar" aria-orientation="vertical" aria-label="3D Garden Bed, Planting and Surface Tools" aria-controls="gl">
+      <div class="ls-tool-group" role="group" aria-label="Brush and bed tools">
+        <button type="button" class="ls-tool-btn" data-tool="garden_brush" aria-pressed="false" aria-label="Garden Bed Brush (G)" title="Garden Bed Brush (G) — freehand-brush a 3D mulched, Corten-edged native bed onto a site plan, photo, or land (Alt-drag to carve path)">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 19c2-5 6-7 11-7 2.8 0 5-1.5 5-4.5C20 4.5 17.5 3 14.5 3 9 3 4 8 4 14.5V19Z"/><path d="M4 19c4 1.5 9.5 1.5 15-1"/><circle cx="14.5" cy="7.5" r="1.3" fill="currentColor"/></svg>
+        </button>
+        <button type="button" class="ls-tool-btn" data-tool="paint-mix" aria-pressed="true" aria-label="Paint NZ Composition Mix (B)" title="Paint NZ Composition Mix (B) — brush naturalistic Oudolf drift matrices">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M18.4 3.6a2.1 2.1 0 0 1 3 3L12 16l-4 1 1-4 9.4-9.4Z"/><path d="M7.5 14.5c-2.2.4-3.5 1.8-3.5 3.5 0 1.4-1.2 2-2 2 1.8 1.2 4.5 1.2 6-.3 1.1-1.1 1.2-2.7-.5-5.2Z"/></svg>
+        </button>
+        <button type="button" class="ls-tool-btn" data-tool="paint-plant" aria-pressed="false" aria-label="Paint Individual NZ Plant (P)" title="Paint Individual NZ Plant (P) — place single hero specimen or drift">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v15"/><path d="M12 8c-3.5-3.5-7-1.5-7 2 3.5 0 5.5-1 7-2Z"/><path d="M12 10c3.5-3.5 7-1.5 7 2-3.5 0-5.5-1-7-2Z"/><path d="M7 21h10"/></svg>
+        </button>
+        <button type="button" class="ls-tool-btn" data-tool="draw-bed" aria-pressed="false" aria-label="Draw Polygon Bed (D)" title="Draw Spline Bed (D) — click vertices, double-click or Enter to create Corten/Macrocarpa bed">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><polygon points="12 3 21 9 18 20 6 20 3 9"/></svg>
+        </button>
+        <button type="button" class="ls-tool-btn" data-tool="sculpt" aria-pressed="false" aria-label="Sculpt Bed Vertices (V)" title="Sculpt Bed Handles (V) — drag circular vertex handles to reshape curved beds">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 18c2-8 12-12 14-4s-8 8-14 4Z"/><circle cx="6" cy="17" r="2" fill="currentColor"/><circle cx="18" cy="13" r="2" fill="currentColor"/><circle cx="11" cy="9" r="2" fill="currentColor"/></svg>
+        </button>
+        <button type="button" class="ls-tool-btn" data-tool="paint-surface" aria-pressed="false" aria-label="Paint NZ Hardscape Surface (S)" title="Paint NZ Hardscape Surface (S) — Daltons Mulch, Firth Pavers, Waikato Pebble, Otago Schist, Kwila Deck">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v6M15 9v6M9 15v6"/></svg>
+        </button>
+        <button type="button" class="ls-tool-btn" data-tool="erase" aria-pressed="false" aria-label="Erase Plants and Beds (E)" title="Eraser Brush (E) — remove plants and carve pathways through brushed beds">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m7 21-4.3-4.3a2 2 0 0 1 0-2.8L14.6 2a2 2 0 0 1 2.8 0l4.6 4.6a2 2 0 0 1 0 2.8L11 21"/><path d="M6 11 13 18"/><path d="M21 21H7"/></svg>
+        </button>
+        <button type="button" class="ls-tool-btn" data-tool="measure" aria-pressed="false" aria-label="Measure 3D Distance and Grade (M)" title="Measure 3D Distance &amp; Slope Grade (M)">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M21.3 8.7 8.7 21.3a1 1 0 0 1-1.4 0l-4.6-4.6a1 1 0 0 1 0-1.4L15.3 2.7a1 1 0 0 1 1.4 0l4.6 4.6a1 1 0 0 1 0 1.4Z"/><path d="m7.5 10.5 2 2M10.5 7.5l2 2M13.5 4.5l2 2"/></svg>
+        </button>
+        <button type="button" class="ls-tool-btn" data-tool="orbit" aria-pressed="false" aria-label="Orbit Camera (O)" title="Orbit &amp; Pan Camera (O) — right-drag also orbits in any tool">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8"/><path d="M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+        </button>
+      </div>
+
+      <span class="ls-sep-h" role="separator" aria-orientation="horizontal"></span>
+
+      <div class="ls-tool-group" role="group" aria-label="Bed and history actions">
+        <button type="button" class="ls-tool-btn" id="addBedBtn" aria-label="Add curved spline garden bed" title="Add a new curved garden bed">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+        <button type="button" class="ls-tool-btn" id="undoBtn" aria-disabled="true" aria-label="Undo (Cmd/Ctrl+Z)" title="Undo (Cmd/Ctrl + Z)">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+        </button>
+        <button type="button" class="ls-tool-btn" id="redoBtn" aria-disabled="true" aria-label="Redo (Cmd/Ctrl+Shift+Z)" title="Redo (Cmd/Ctrl + Shift + Z)">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Right-Hand Collapsible Inspector (Areas, Drift, Ecology & NZ Supplier BOM) -->
+    <aside id="inspectorPane" class="ls-inspector" aria-label="Garden areas, ecology and New Zealand supplier schedule">
+      <div class="ls-insp-head">
+        <h2>Areas &amp; NZ Schedule</h2>
+        <div style="display:flex;gap:4px">
+          <button type="button" class="ls-btn" id="inspAddBedBtn" style="padding:4px 8px;font-size:11px">+ Bed</button>
+          <button type="button" class="ls-btn" id="inspCloseBtn" aria-label="Collapse inspector" style="padding:4px 8px;font-size:11px">✕</button>
+        </div>
+      </div>
+
+      <div class="ls-insp-body">
+        <div class="ls-stat-grid">
+          <div>
+            <div class="ls-stat-lbl">Bed Area</div>
+            <div class="ls-stat-val" id="statArea">0.0 m²</div>
+          </div>
+          <div>
+            <div class="ls-stat-lbl">Edging</div>
+            <div class="ls-stat-val" id="statPerim">0.0 m</div>
+          </div>
+          <div>
+            <div class="ls-stat-lbl">Plants</div>
+            <div class="ls-stat-val" id="statPlants">0</div>
+          </div>
+        </div>
+
+        <div class="ls-slider-box">
+          <div class="ls-slider-lbl"><label for="brushRange">Brush Radius</label><output id="brushOut" for="brushRange">2.0 m</output></div>
+          <input type="range" id="brushRange" class="ls-range on-paper" min="0.6" max="5.5" step="0.1" value="2.0" />
+          <div class="ls-slider-lbl"><label for="densityRange">Planting Density</label><output id="densityOut" for="densityRange">1.1×</output></div>
+          <input type="range" id="densityRange" class="ls-range on-paper" min="0.5" max="1.8" step="0.1" value="1.1" />
+          <div class="ls-slider-lbl"><label for="clumpRange">Oudolf Drift Clumping</label><output id="clumpOut" for="clumpRange">72%</output></div>
+          <input type="range" id="clumpRange" class="ls-range on-paper" min="0" max="1" step="0.05" value="0.72" />
+        </div>
+
+        <div class="ls-field-row">
+          <label for="bedSelect">Active bed</label>
+          <select id="bedSelect" class="ls-select"></select>
+        </div>
+        <div class="ls-field-row">
+          <label for="edgingSelect">Edging</label>
+          <select id="edgingSelect" class="ls-select"></select>
+        </div>
+        <div class="ls-field-row">
+          <label for="mulchSelect">Mulch</label>
+          <select id="mulchSelect" class="ls-select"></select>
+        </div>
+
+        <div class="ls-checks">
+          <label><input type="checkbox" id="windToggle" checked /> Breeze</label>
+          <label><input type="checkbox" id="handlesToggle" checked /> Handles</label>
+          <label><input type="checkbox" id="uplightsToggle" checked /> Uplights</label>
+          <label title="Curated 3D Tūī, Kererū &amp; Pīwakawaka"><input type="checkbox" id="manuToggle" checked /> 3D Manu</label>
+        </div>
+
+        <div class="ls-btn-row">
+          <button type="button" class="ls-btn is-solid" id="regenBedBtn">↻ Regenerate</button>
+          <button type="button" class="ls-btn" id="reshuffleBtn">⇄ Reshuffle</button>
+          <button type="button" class="ls-btn" id="clearBedBtn">Clear</button>
+        </div>
+
+        <!-- Live LINZ Primary Parcel & AUP Facts Card (shown in Real NZ Land mode) -->
+        <div id="siteFactsCard" class="ls-eco-card" hidden aria-label="Live LINZ parcel and planning facts"></div>
+
+        <!-- Kaitiakitanga Ecology & Stormwater Performance -->
+        <div class="ls-eco-card" aria-label="Kaitiakitanga ecology and stormwater metrics">
+          <div class="ls-eco-row"><span>Tūī &amp; Korimako nectar</span><strong id="ecoTui">0%</strong></div>
+          <div class="ls-eco-bar"><span id="ecoTuiBar" style="width:0%"></span></div>
+          <div class="ls-eco-row" style="margin-top:4px"><span>Kererū canopy &amp; skink cover</span><strong id="ecoKereru">0%</strong></div>
+          <div class="ls-eco-bar"><span id="ecoKereruBar" style="width:0%"></span></div>
+          <div class="ls-eco-row" style="margin-top:4px"><span>NZBC E1 sponge retention</span><strong id="ecoStorm">0 L/hr</strong></div>
+        </div>
+
+        <div class="ls-sched-head">
+          <span>NZ Nursery &amp; Supplier Schedule</span>
+          <span id="schedDensity">0 / m²</span>
+        </div>
+        <ul id="schedList" class="ls-sched-list" aria-label="Planted New Zealand native species and supplier quantities"></ul>
+      </div>
+
+      <div class="ls-insp-foot">
+        <div class="ls-total-line">
+          <span>Indicative supply + hardscape</span>
+          <strong id="statTotalNzd">$0 NZD</strong>
+        </div>
+        <div class="ls-btn-row">
+          <button type="button" class="ls-btn is-solid" id="exportSvgBtn" title="Download A3 scaled L101 vector planting plan SVG">L101 Plan (SVG)</button>
+          <button type="button" class="ls-btn" id="exportCsvBtn" title="Download NZ wholesale nursery CSV schedule">CSV</button>
+          <button type="button" class="ls-btn" id="exportGlbBtn" title="Export 3D garden beds and native flora as .glb">3D .glb</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Bottom Floating Dock: Compositions | NZ Plants | NZ Surfaces + J–D Seasonal Timeline + Yr 1/4/7/12 -->
+    <section class="ls-dock" aria-label="Planting compositions, NZ species palette, hardscapes and seasonal phenology">
+      <div class="ls-dock-top">
+        <div class="ls-tabs" role="tablist" aria-label="Palette mode">
+          <button type="button" role="tab" id="tabCompositions" class="ls-tab" data-tab="compositions" aria-selected="true" tabindex="0">Compositions</button>
+          <button type="button" role="tab" id="tabPlants" class="ls-tab" data-tab="plants" aria-selected="false" tabindex="-1">NZ Plants (27)</button>
+          <button type="button" role="tab" id="tabSurfaces" class="ls-tab" data-tab="surfaces" aria-selected="false" tabindex="-1">NZ Surfaces</button>
+        </div>
+
+        <div class="ls-dock-stats ls-nav-hide-sm">
+          <span id="dockStatArea">0 m²</span>
+          <span>·</span>
+          <strong id="dockStatPlants">0 plants</strong>
+          <span>·</span>
+          <span id="dockStatCost">$0 NZD</span>
+        </div>
+
+        <!-- Smooth Southern Hemisphere Seasonal Timeline (J–D) + Play -->
+        <div class="ls-timeline" title="Animate or scrub Southern Hemisphere Aotearoa seasons (Jan–Dec)">
+          <button type="button" class="ls-play-btn" id="btnPlaySeason" aria-pressed="false" aria-label="Play seasonal bloom timeline">▶</button>
+          <div class="ls-season-track">
+            <div class="ls-month-ticks" aria-hidden="true">
+              <span>J</span><span>F</span><span>M</span><span>A</span><span>M</span><span>J</span>
+              <span>J</span><span>A</span><span>S</span><span>O</span><span>N</span><span>D</span>
+            </div>
+            <input type="range" id="seasonSlider" class="ls-range" min="0" max="11.95" step="0.05" value="11.4" aria-label="Seasonal month" />
+          </div>
+          <span class="ls-season-out" id="seasonOut">Mid-Dec · Raumati</span>
+        </div>
+
+        <!-- Multi-Year Growth Projection (Yr 1 / 4 / 7 / 12) -->
+        <div class="ls-yr-group" role="group" aria-label="Multi-year canopy maturity projection">
+          <span class="ls-yr-prefix">Yr</span>
+          <button type="button" class="ls-yr-btn" data-year="1" aria-pressed="false">1</button>
+          <button type="button" class="ls-yr-btn" data-year="4" aria-pressed="true">4</button>
+          <button type="button" class="ls-yr-btn" data-year="7" aria-pressed="false">7</button>
+          <button type="button" class="ls-yr-btn" data-year="12" aria-pressed="false">12</button>
+        </div>
+      </div>
+
+      <!-- Category Filter Pills (shown when NZ Plants tab is active) -->
+      <div class="ls-cat-row hidden" id="plantCatRow">
+        <button type="button" class="ls-cat-pill is-active" data-cat="all">All (27)</button>
+        <button type="button" class="ls-cat-pill" data-cat="trees">Canopy &amp; Palms</button>
+        <button type="button" class="ls-cat-pill" data-cat="architectural">Flax, Ferns &amp; Lilies</button>
+        <button type="button" class="ls-cat-pill" data-cat="shrubs">Flowering Shrubs</button>
+        <button type="button" class="ls-cat-pill" data-cat="grasses">Tussocks &amp; Sedges</button>
+        <button type="button" class="ls-cat-pill" data-cat="flowers">Coastal Perennials &amp; Stone</button>
+      </div>
+
+      <div id="paletteRail" class="ls-rail" role="tabpanel" aria-labelledby="tabCompositions"></div>
+    </section>
+  </main>
+
+  <!-- Modal: Real New Zealand Address -> Live 1 m LINZ LiDAR DEM + Primary Parcel + Building Outlines -->
+  <dialog id="siteModal" class="ls-dialog" closedby="any" aria-labelledby="siteModalTitle">
+    <div class="ls-dlg-body">
+      <div class="ls-dlg-top">
+        <div>
+          <div style="font:500 10.5px var(--ls-mono);text-transform:uppercase;letter-spacing:.08em;color:#654a4e">Toitū Te Whenua LINZ · 1 m LiDAR + Primary Parcel + AUP</div>
+          <h1 id="siteModalTitle">Work on real New Zealand land</h1>
+        </div>
+        <form method="dialog"><button class="ls-btn" value="close" style="flex:none;padding:6px 12px">Close</button></form>
+      </div>
+
+      <p style="margin:0;font-size:12.5px;line-height:1.45;color:#654a4e">
+        Enter a New Zealand street address (or choose a benchmark coastal/hillside site below) to stream real 1 m LINZ LiDAR elevation contours (NZVD2016), legal parcel boundaries, planning overlays, and building massing at 1:1 metre scale.
+      </p>
+
+      <div>
+        <label for="addrInput" class="vh">New Zealand street address</label>
+        <input id="addrInput" class="ls-input" type="search" placeholder="Search NZ address — e.g. 42 Ponsonby Road, Auckland" autocomplete="off" spellcheck="false" autofocus />
+      </div>
+
+      <ul id="addrResults" class="ls-addr-results" aria-label="Matching New Zealand addresses"></ul>
+
+      <div style="font:500 10px var(--ls-mono);text-transform:uppercase;letter-spacing:.08em;color:#654a4e">Instant NZ LiDAR Benchmark Sites</div>
+      <div class="ls-preset-grid">
+        <button type="button" class="ls-addr-btn" data-preset-lat="-36.8546" data-preset-lon="174.7458" data-preset-name="Ponsonby Villa Terrace, Tāmaki Makaurau">
+          <strong>Ponsonby Villa Garden</strong><br /><span style="font-size:11px;color:#654a4e">Tāmaki Makaurau · 1 m LiDAR</span>
+        </button>
+        <button type="button" class="ls-addr-btn" data-preset-lat="-36.7824" data-preset-lon="175.0086" data-preset-name="Oneroa Coastal Headland, Waiheke Island">
+          <strong>Oneroa Coastal Slope</strong><br /><span style="font-size:11px;color:#654a4e">Waiheke · Salt-wind headland</span>
+        </button>
+        <button type="button" class="ls-addr-btn" data-preset-lat="-41.2885" data-preset-lon="174.7642" data-preset-name="Kelburn Hillside Section, Te Whanganui-a-Tara">
+          <strong>Kelburn Hillside Bank</strong><br /><span style="font-size:11px;color:#654a4e">Wellington · Steep contoured site</span>
+        </button>
+        <button type="button" class="ls-addr-btn" data-preset-lat="-43.5718" data-preset-lon="172.7582" data-preset-name="Sumner Coastal Courtyard, Ōtautahi">
+          <strong>Sumner Coastal Section</strong><br /><span style="font-size:11px;color:#654a4e">Ōtautahi · Sheltered microclimate</span>
+        </button>
+      </div>
+
+      <p id="siteModalMsg" style="margin:0;font:400 11.5px var(--ls-mono);color:#654a4e" role="status" aria-live="polite"></p>
+    </div>
+  </dialog>
+
+  <script type="module" src="./assets/landscape-app.js"></script>
+</body>
+</html>

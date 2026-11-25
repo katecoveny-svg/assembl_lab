@@ -1,15 +1,44 @@
 // Working Plans & Drawings Agent + IFC/GLB NZBC Pre-Check Engine.
 // Pure TypeScript with zero DOM/Three.js imports so Node unit tests run it directly.
 //
-// Generates 4 practice-branded A3 Architectural Working Drawing Sheets (420 × 297 mm SVG), Printable A3 Set HTML,
+// Generates 5 practice-branded A3 Architectural Working Drawing Sheets (420 × 297 mm SVG), Printable A3 Set HTML,
 // and AutoCAD/Archicad-compatible R12/2000 ASCII DXF from ANY loaded 2D Plan, Multi-Sheet PDF, IFC, or GLB model:
 //   - A101: Dimensioned Floor / Footprint Plan, Structural Grid (A–E / 1–5) & Room Schedule
 //   - A201: Primary & Side Architectural Elevations, RL Levels & Glazing/Cladding Callouts
 //   - A301: Cross-Section, LINZ Ground Profile & Cited NZ Building Code Pre-Check Table
 //   - A401: NZ Specification, Live Cost/Delay Summary & Cultural Narrative / Governance Sheet
+//   - L101: Landscape, Rohe Eco-Sourcing & Permeable Surfaces Site Plan (beds, native canopy, 2 m RPZ halos,
+//           Council permeable/impervious %, NZBC E1 stormwater table) + DXF layers L-BED-EDGE / L-PLNT-CANP / L-PERM-ZONE
 
 import type { CulturalNarrative } from './culturalNarrative.ts';
 import { formatNzdDelta, formatNzdTotal, type SpecImpactSummary } from './nzSpecifier.ts';
+
+/** Brushed or proposed landscape bed (metres, relative to building minX / minZ; may sit outside the footprint) */
+export interface LandscapeBed {
+  x: number;
+  z: number;
+  r: number;
+  kind: string; // 'corten' | 'macrocarpa' | 'pebble' | 'paver' (free text tolerated)
+}
+
+/** Native plant placement: s = mature canopy spread (diameter, metres) */
+export interface LandscapePlant {
+  sp: string;
+  x: number;
+  z: number;
+  s: number;
+  sunOk?: boolean;
+  rootClash?: boolean;
+}
+
+export interface LandscapePlanInput {
+  roheLabel?: string;
+  permeablePct?: number;
+  imperviousPct?: number;
+  detentionLitres?: number;
+  beds?: LandscapeBed[];
+  plants?: LandscapePlant[];
+}
 
 export interface DrawingRoom {
   name: string;
@@ -37,7 +66,12 @@ export interface DrawingBuildingInput {
   rooms: DrawingRoom[];
   specSummary: SpecImpactSummary;
   narrative: CulturalNarrative;
+  /** Optional brushed garden state; synthesised from the landscaping spec + footprint when absent */
+  landscapePlan?: LandscapePlanInput;
 }
+
+/** Alias used by Plan Studio UI modules */
+export type WorkingDrawingInput = DrawingBuildingInput;
 
 export interface NzbcPrecheckItem {
   clause: string;
@@ -48,7 +82,7 @@ export interface NzbcPrecheckItem {
 }
 
 export interface WorkingSheet {
-  id: 'A101' | 'A201' | 'A301' | 'A401';
+  id: 'A101' | 'A201' | 'A301' | 'A401' | 'L101';
   title: string;
   scale: string;
   svg: string;
@@ -179,6 +213,301 @@ function a3Frame(opts: {
     <text class="mono muted" x="1006" y="70" font-size="9">Rev P1 · Twin</text>
   </g>
 </svg>`;
+}
+
+// ---------------------------------------------------------------------------------------------
+// L101 Landscape helpers
+// ---------------------------------------------------------------------------------------------
+
+const BOTANICAL: Record<string, string> = {
+  'pōhutukawa': 'Metrosideros excelsa',
+  'pohutukawa': 'Metrosideros excelsa',
+  'harakeke': 'Phormium tenax',
+  'pōhuehue': 'Muehlenbeckia complexa',
+  'muehlenbeckia': 'Muehlenbeckia complexa',
+  'ponga': 'Cyathea dealbata',
+  'nīkau': 'Rhopalostylis sapida',
+  'nikau': 'Rhopalostylis sapida',
+  'tī kōuka': 'Cordyline australis',
+  'ti kouka': 'Cordyline australis',
+  'tikouka': 'Cordyline australis',
+  'cabbage tree': 'Cordyline australis',
+  'tussock': 'Chionochloa rubra',
+  'fern': 'Blechnum novae-zelandiae',
+  'carex': 'Carex secta',
+  'pūrei': 'Carex secta',
+  'oioi': 'Apodasmia similis',
+  'kōwhai': 'Sophora microphylla',
+  'kowhai': 'Sophora microphylla',
+  'mānuka': 'Leptospermum scoparium',
+  'manuka': 'Leptospermum scoparium',
+  'tōtara': 'Podocarpus totara',
+  'totara': 'Podocarpus totara',
+  'kawakawa': 'Piper excelsum',
+  'puka': 'Meryta sinclairii',
+  'rengarenga': 'Arthropodium cirratum',
+  'kānuka': 'Kunzea robusta',
+  'kanuka': 'Kunzea robusta',
+  'tītoki': 'Alectryon excelsus',
+  'titoki': 'Alectryon excelsus',
+  'karaka': 'Corynocarpus laevigatus',
+  'hebe': 'Veronica spp.',
+  'koromiko': 'Veronica stricta',
+  'wharariki': 'Phormium cookianum',
+};
+
+export function botanicalName(sp: string): string {
+  const k = sp.toLowerCase().trim();
+  if (BOTANICAL[k]) return BOTANICAL[k];
+  const hit = Object.keys(BOTANICAL).find((key) => k.includes(key));
+  return hit ? BOTANICAL[hit] : sp;
+}
+
+export type CanopyLayer = 'canopy' | 'sub-canopy' | 'groundcover';
+export const canopyLayer = (s: number): CanopyLayer => (s >= 5 ? 'canopy' : s >= 2 ? 'sub-canopy' : 'groundcover');
+const LAYER_FILL: Record<CanopyLayer, string> = { canopy: '#2F6B4F', 'sub-canopy': '#5D7047', groundcover: '#8FA36B' };
+
+export type BedMaterial = 'corten' | 'macrocarpa' | 'pebble' | 'paver' | 'planting';
+export function bedMaterial(kind: string): BedMaterial {
+  const k = kind.toLowerCase();
+  if (/corten|steel|weather/.test(k)) return 'corten';
+  if (/macro|sleeper|timber|cypress/.test(k)) return 'macrocarpa';
+  if (/pebble|gravel|chip|stone|scoria|swale/.test(k)) return 'pebble';
+  if (/paver|paving|brick|flag|basalt/.test(k)) return 'paver';
+  return 'planting';
+}
+const BED_STYLE: Record<BedMaterial, { fill: string; stroke: string; label: string }> = {
+  corten: { fill: '#E9D2C2', stroke: '#9C4F26', label: 'Corten steel raised bed edge' },
+  macrocarpa: { fill: '#EFE1CC', stroke: '#8A6440', label: 'Macrocarpa sleeper bed edge' },
+  pebble: { fill: '#E4E1DA', stroke: '#7D786F', label: 'Pebble / scoria permeable swale' },
+  paver: { fill: '#DCD8D2', stroke: '#5E5A55', label: 'Permeable clay paver zone' },
+  planting: { fill: '#E3EBDD', stroke: '#2F6B4F', label: 'Bark mulch / native planting bed' },
+};
+
+const PALETTES: Record<string, [string, number][]> = {
+  'coastal-harakeke': [['Pōhutukawa', 8], ['Harakeke', 1.8], ['Pōhuehue', 1.2], ['Kōwhai', 5], ['Harakeke', 1.8], ['Rengarenga', 0.6]],
+  'ponga-nikau-bush': [['Ponga', 4], ['Nīkau', 3], ['Tī kōuka', 3.5], ['Kawakawa', 2], ['Tōtara', 7], ['Rengarenga', 0.6]],
+  'wetland-raingarden': [['Carex', 0.9], ['Oioi', 0.8], ['Harakeke', 1.8], ['Tī kōuka', 3.5], ['Mānuka', 3], ['Carex', 0.9]],
+  'minimal-lawn': [['Tōtara', 7], ['Kōwhai', 5], ['Mānuka', 3], ['Rengarenga', 0.6], ['Kānuka', 4], ['Harakeke', 1.8]],
+};
+
+/** Deterministic proposed garden (beds + native canopy) around the footprint from the landscaping spec option */
+export function synthesizeLandscapePlan(b: DrawingBuildingInput): Required<Pick<LandscapePlanInput, 'beds' | 'plants'>> {
+  const W = Math.max(4, b.widthM || 18), D = Math.max(4, b.depthM || 12);
+  const m = Math.min(12, Math.max(3, 0.3 * Math.max(W, D)));
+  const optId = b.specSummary.rows.find((r) => r.categoryId === 'landscaping')?.selectedId ?? 'coastal-harakeke';
+  const pal = PALETTES[optId] ?? PALETTES['coastal-harakeke'];
+  const beds: LandscapeBed[] = [
+    { x: W * 0.12, z: D + m * 0.62, r: Math.min(2.4, m * 0.32), kind: 'corten' },
+    { x: W * 0.5, z: -m * 0.5, r: Math.min(2.8, m * 0.36), kind: 'macrocarpa' },
+    { x: -m * 0.5, z: D * 0.5, r: Math.min(2.2, m * 0.3), kind: 'pebble' },
+    { x: W * 0.45, z: D + m * 0.45, r: Math.min(2.6, m * 0.34), kind: 'paver' },
+  ];
+  const spots: [number, number][] = [
+    [-m * 0.55, D + m * 0.75], // front-left canopy specimen
+    [W * 0.28, D + m * 0.9],
+    [W + m * 0.5, D * 0.3],
+    [W + m * 0.55, -m * 0.5], // rear-right canopy
+    [W * 0.82, -m * 0.6],
+    [-m * 0.45, -m * 0.4],
+  ];
+  const plants: LandscapePlant[] = spots.map(([x, z], i) => {
+    const [sp, s] = pal[i % pal.length];
+    return { sp, x, z, s: Math.min(s, m * 1.6) };
+  });
+  return { beds, plants };
+}
+
+const distToFootprint = (x: number, z: number, W: number, D: number) => {
+  const dx = Math.max(0 - x, 0, x - W), dz = Math.max(0 - z, 0, z - D);
+  return Math.hypot(dx, dz);
+};
+
+export interface ResolvedLandscapePlan {
+  roheLabel: string;
+  beds: LandscapeBed[];
+  plants: (LandscapePlant & { rootClash: boolean; sunOk: boolean })[];
+  site: { minX: number; maxX: number; minZ: number; maxZ: number; areaM2: number };
+  drive: { x: number; z: number; w: number; d: number };
+  imperviousM2: number;
+  permeablePct: number;
+  imperviousPct: number;
+  detentionLitres: number;
+  detentionRequiredLitres: number;
+  peakFlowLps: number;
+  synthesized: boolean;
+}
+
+export const ROOT_PROTECTION_M = 2;
+
+export function resolveLandscapePlan(b: DrawingBuildingInput): ResolvedLandscapePlan {
+  const W = Math.max(4, b.widthM || 18), D = Math.max(4, b.depthM || 12);
+  const lp = b.landscapePlan ?? {};
+  const synthesized = !(lp.beds?.length || lp.plants?.length);
+  const syn = synthesized ? synthesizeLandscapePlan(b) : null;
+  const beds = (syn ? syn.beds : lp.beds ?? []).filter((x) => Number.isFinite(x.x) && Number.isFinite(x.z) && x.r > 0).slice(0, 40);
+  const rawPlants = (syn ? syn.plants : lp.plants ?? []).filter((p) => Number.isFinite(p.x) && Number.isFinite(p.z)).slice(0, 60);
+  const plants = rawPlants.map((p) => ({
+    ...p,
+    s: Math.max(0.3, p.s || 1),
+    rootClash: p.rootClash ?? distToFootprint(p.x, p.z, W, D) < ROOT_PROTECTION_M,
+    sunOk: p.sunOk ?? true,
+  }));
+
+  const m = Math.min(12, Math.max(3, 0.3 * Math.max(W, D)));
+  let minX = -m, maxX = W + m, minZ = -m, maxZ = D + m * 1.3;
+  for (const bd of beds) { minX = Math.min(minX, bd.x - bd.r - 1); maxX = Math.max(maxX, bd.x + bd.r + 1); minZ = Math.min(minZ, bd.z - bd.r - 1); maxZ = Math.max(maxZ, bd.z + bd.r + 1); }
+  for (const p of plants) { const r = p.s / 2; minX = Math.min(minX, p.x - r - 1); maxX = Math.max(maxX, p.x + r + 1); minZ = Math.min(minZ, p.z - r - 1); maxZ = Math.max(maxZ, p.z + r + 1); }
+  const areaM2 = (maxX - minX) * (maxZ - minZ);
+
+  const driveW = Math.min(3.6, W * 0.4);
+  const drive = { x: W - driveW - 0.2, z: D, w: driveW, d: maxZ - D };
+  const imperviousCalc = W * D + drive.w * drive.d;
+  let imperviousPct = Math.round((100 * imperviousCalc) / areaM2);
+  let permeablePct = 100 - imperviousPct;
+  if (Number.isFinite(lp.permeablePct)) { permeablePct = Math.round(lp.permeablePct!); imperviousPct = Number.isFinite(lp.imperviousPct) ? Math.round(lp.imperviousPct!) : 100 - permeablePct; }
+  else if (Number.isFinite(lp.imperviousPct)) { imperviousPct = Math.round(lp.imperviousPct!); permeablePct = 100 - imperviousPct; }
+  const imperviousM2 = Math.round((imperviousPct / 100) * areaM2);
+  // On-site detention: 20 L per m² impervious (≈ 20 mm event capture), rounded up to 500 L tanks
+  const detentionRequiredLitres = Math.ceil((imperviousM2 * 20) / 500) * 500;
+  const detentionLitres = Number.isFinite(lp.detentionLitres) ? Math.round(lp.detentionLitres!) : detentionRequiredLitres;
+  // Rational method Q = C·i·A, C ≈ 0.9 impervious, i = 100 mm/h (10% AEP indicative)
+  const peakFlowLps = Math.round(((0.9 * 100 * imperviousM2) / 3600) * 10) / 10;
+
+  return {
+    roheLabel: (lp.roheLabel || b.narrative.roheOrPlace || 'Aotearoa New Zealand').slice(0, 60),
+    beds, plants,
+    site: { minX, maxX, minZ, maxZ, areaM2 },
+    drive, imperviousM2, permeablePct, imperviousPct,
+    detentionLitres, detentionRequiredLitres, peakFlowLps, synthesized,
+  };
+}
+
+function renderL101Body(b: DrawingBuildingInput, W: number, D: number): string {
+  const L = resolveLandscapePlan(b);
+  const { site } = L;
+  const sW = site.maxX - site.minX, sD = site.maxZ - site.minZ;
+  const areaW = 780, areaH = 590;
+  const k = Math.min(areaW / sW, areaH / sD);
+  const lox = 50 + (areaW - sW * k) / 2;
+  const loy = 78 + (areaH - sD * k) / 2;
+  const X = (x: number) => (lox + (x - site.minX) * k).toFixed(1);
+  const Y = (z: number) => (loy + (z - site.minZ) * k).toFixed(1);
+  const R = (r: number) => Math.max(0.8, r * k).toFixed(1);
+
+  const bedsSvg = L.beds.map((bd, i) => {
+    const mat = bedMaterial(bd.kind);
+    const st = BED_STYLE[mat];
+    return `<g data-layer="L-BED-EDGE"><circle cx="${X(bd.x)}" cy="${Y(bd.z)}" r="${R(bd.r)}" fill="${st.fill}" stroke="${st.stroke}" stroke-width="2"${mat === 'paver' ? ' stroke-dasharray="3 2"' : ''}/>
+      <text class="mono" x="${X(bd.x)}" y="${(Number(Y(bd.z)) + 3).toFixed(1)}" font-size="8" text-anchor="middle">B${i + 1}</text></g>`;
+  }).join('\n');
+
+  const plantsSvg = L.plants.map((p, i) => {
+    const lay = canopyLayer(p.s);
+    const halo = `<circle cx="${X(p.x)}" cy="${Y(p.z)}" r="${R(ROOT_PROTECTION_M)}" fill="none" stroke="${p.rootClash ? '#9b2f45' : '#2F6B4F'}" stroke-width="0.9" stroke-dasharray="4 3"/>`;
+    return `<g data-layer="L-PLNT-CANP">
+      <circle cx="${X(p.x)}" cy="${Y(p.z)}" r="${R(p.s / 2)}" fill="${LAYER_FILL[lay]}" fill-opacity="0.32" stroke="${LAYER_FILL[lay]}" stroke-width="1.2"/>
+      ${halo}
+      <circle cx="${X(p.x)}" cy="${Y(p.z)}" r="2" fill="#240B21"/>
+      <text class="mono" x="${(Number(X(p.x)) + 4).toFixed(1)}" y="${(Number(Y(p.z)) - 4).toFixed(1)}" font-size="8"${p.sunOk ? '' : ' style="fill:#A4541A"'}>P${i + 1} ${esc(p.sp.slice(0, 14))}${p.rootClash ? ' ⚠RPZ' : ''}</text></g>`;
+  }).join('\n');
+
+  // Graphic scale bar (5 m)
+  const barM = sW > 60 ? 10 : 5;
+  const barPx = barM * k;
+
+  const perPass = L.permeablePct >= 40;
+  const detPass = L.detentionLitres >= L.detentionRequiredLitres;
+  const clashes = L.plants.filter((p) => p.rootClash).length;
+  const shaded = L.plants.filter((p) => !p.sunOk).length;
+  const e1Rows: { c: string; t: string; m: string; ok: boolean | null }[] = [
+    { c: 'District Plan', t: 'Permeable ≥ 40% site', m: `${L.permeablePct}% perm · ${L.imperviousPct}% imperv`, ok: perPass },
+    { c: 'NZBC E1/AS1', t: '10% AEP surface water', m: `${L.imperviousM2} m² → ${L.peakFlowLps} L/s`, ok: null },
+    { c: 'NZBC E1/VM1', t: 'On-site detention', m: `${L.detentionLitres.toLocaleString('en-NZ')} L vs ${L.detentionRequiredLitres.toLocaleString('en-NZ')} L req`, ok: detPass },
+    { c: 'Arb. RPZ 2 m', t: 'Root protection', m: clashes ? `${clashes} clash with footprint` : 'No footprint clashes', ok: clashes === 0 },
+    { c: 'Aspect / sun', t: 'Plant sun suitability', m: shaded ? `${shaded} plant(s) in shade` : 'All placements suited', ok: shaded === 0 },
+  ];
+
+  const species = new Map<string, { sp: string; n: number; s: number }>();
+  for (const p of L.plants) {
+    const key = p.sp.toLowerCase();
+    const cur = species.get(key);
+    if (cur) cur.n++; else species.set(key, { sp: p.sp, n: 1, s: p.s });
+  }
+  const spRows = [...species.values()].slice(0, 8);
+
+  const legend = (['corten', 'macrocarpa', 'pebble', 'paver'] as BedMaterial[]).map((mat, i) => {
+    const st = BED_STYLE[mat];
+    const lx = 56 + i * 196;
+    return `<circle cx="${lx + 6}" cy="696" r="6" fill="${st.fill}" stroke="${st.stroke}" stroke-width="1.6"/><text class="sans muted" x="${lx + 16}" y="699.5" font-size="9">${esc(st.label)}</text>`;
+  }).join('');
+  const layerLegend = (Object.keys(LAYER_FILL) as CanopyLayer[]).map((lay, i) => {
+    const lx = 56 + i * 150;
+    return `<circle cx="${lx + 6}" cy="716" r="6" fill="${LAYER_FILL[lay]}" fill-opacity="0.32" stroke="${LAYER_FILL[lay]}" stroke-width="1.2"/><text class="sans muted" x="${lx + 16}" y="719.5" font-size="9">${lay === 'canopy' ? 'Canopy ≥ 5 m' : lay === 'sub-canopy' ? 'Sub-canopy 2–5 m' : 'Groundcover < 2 m'}</text>`;
+  }).join('');
+
+  return `
+    <text class="mono muted" x="46" y="54" font-size="10.5" letter-spacing="1.2">01 · LANDSCAPE, ECO-SOURCING &amp; PERMEABLE SURFACES PLAN${L.synthesized ? ' (PROPOSED FROM SPEC)' : ' (BRUSHED GARDEN STATE)'}</text>
+    <!-- L-PERM-ZONE: site boundary / permeable landscape zone -->
+    <rect data-layer="L-PERM-ZONE" x="${X(site.minX)}" y="${Y(site.minZ)}" width="${(sW * k).toFixed(1)}" height="${(sD * k).toFixed(1)}" fill="#EEF3EA" stroke="#2F6B4F" stroke-width="1.4" stroke-dasharray="14 4 2 4"/>
+    <text class="mono" x="${(Number(X(site.minX)) + 6).toFixed(1)}" y="${(Number(Y(site.minZ)) + 12).toFixed(1)}" font-size="8.5" style="fill:#2F6B4F">SITE BOUNDARY · ${Math.round(site.areaM2)} m² · PERMEABLE ${L.permeablePct}%</text>
+    <!-- Impervious driveway -->
+    <rect x="${X(L.drive.x)}" y="${Y(L.drive.z)}" width="${(L.drive.w * k).toFixed(1)}" height="${(L.drive.d * k).toFixed(1)}" fill="#C9C4BE" stroke="#654A4E" stroke-width="0.8"/>
+    <text class="mono muted" transform="translate(${(Number(X(L.drive.x + L.drive.w / 2)) + 3).toFixed(1)},${Y(L.drive.z + L.drive.d / 2)}) rotate(90)" font-size="8" text-anchor="middle">IMPERVIOUS DRIVE</text>
+    ${bedsSvg}
+    <!-- Building footprint (roof = impervious) -->
+    <rect x="${X(0)}" y="${Y(0)}" width="${(W * k).toFixed(1)}" height="${(D * k).toFixed(1)}" fill="#F6F1ED" stroke="#240B21" stroke-width="2.6"/>
+    <text class="sans" x="${X(W / 2)}" y="${Y(D / 2)}" font-size="11" font-weight="600" text-anchor="middle">BUILDING FOOTPRINT</text>
+    <text class="mono muted" x="${X(W / 2)}" y="${(Number(Y(D / 2)) + 14).toFixed(1)}" font-size="9" text-anchor="middle">${Math.round(W * 1000)} × ${Math.round(D * 1000)} mm · ${(W * D).toFixed(0)} m² roof → E1 outfall</text>
+    ${plantsSvg}
+    <!-- North Arrow -->
+    <g transform="translate(815,78)">
+      <circle cx="0" cy="0" r="20" fill="#F6F1ED" stroke="#240B21" stroke-width="1.2"/>
+      <polygon points="0,-15 6,8 0,4 -6,8" fill="#240B21"/>
+      <text class="mono" x="0" y="17" font-size="8.5" text-anchor="middle">N</text>
+    </g>
+    <!-- Graphic scale -->
+    <g transform="translate(56,672)">
+      <rect x="0" y="0" width="${(barPx / 2).toFixed(1)}" height="5" fill="#240B21"/>
+      <rect x="${(barPx / 2).toFixed(1)}" y="0" width="${(barPx / 2).toFixed(1)}" height="5" fill="#FFFDFB" stroke="#240B21" stroke-width="0.8"/>
+      <text class="mono" x="0" y="-3" font-size="8">0</text>
+      <text class="mono" x="${barPx.toFixed(1)}" y="-3" font-size="8" text-anchor="end">${barM} m</text>
+      <text class="mono muted" x="${(barPx + 8).toFixed(1)}" y="5" font-size="8">1:100 @ A3 (graphic scale governs) · dashed halo = ${ROOT_PROTECTION_M} m root-protection zone</text>
+    </g>
+    ${legend}
+    ${layerLegend}
+
+    <!-- Right panel: Council permeable / NZBC E1 table + Rohe eco-sourcing schedule -->
+    <g transform="translate(865,54)">
+      <rect x="0" y="0" width="275" height="655" fill="#F6F1ED" stroke="#654A4E" stroke-width="0.9"/>
+      <text class="mono" x="12" y="22" font-size="10" font-weight="600">PERMEABLE vs IMPERVIOUS · NZBC E1</text>
+      <line class="thin" x1="0" y1="32" x2="275" y2="32"/>
+      <rect x="12" y="42" width="251" height="12" fill="#C9C4BE"/>
+      <rect x="12" y="42" width="${(251 * Math.max(0, Math.min(100, L.permeablePct)) / 100).toFixed(1)}" height="12" fill="#5D7047"/>
+      <text class="mono" x="12" y="68" font-size="9" style="fill:#2F6B4F">PERMEABLE ${L.permeablePct}%</text>
+      <text class="mono muted" x="263" y="68" font-size="9" text-anchor="end">IMPERVIOUS ${L.imperviousPct}%</text>
+      ${e1Rows.map((r, i) => {
+        const y = 92 + i * 40;
+        const badge = r.ok === null ? '◧ VERIFY' : r.ok ? '■ MEETS' : '◧ REVIEW';
+        const col = r.ok === null ? '#A4541A' : r.ok ? '#2F6B4F' : '#9b2f45';
+        return `<text class="mono" x="12" y="${y}" font-size="8.8" font-weight="600">${esc(r.c)}</text>
+          <text class="mono" x="263" y="${y}" font-size="8.5" text-anchor="end" style="fill:${col}">${badge}</text>
+          <text class="sans" x="12" y="${y + 13}" font-size="9.5" font-weight="500">${esc(r.t)}</text>
+          <text class="mono muted" x="12" y="${y + 25}" font-size="8.3">${esc(r.m.slice(0, 44))}</text>`;
+      }).join('\n')}
+      <line class="thin" x1="0" y1="${92 + e1Rows.length * 40 - 6}" x2="275" y2="${92 + e1Rows.length * 40 - 6}"/>
+      <text class="mono" x="12" y="${92 + e1Rows.length * 40 + 12}" font-size="10" font-weight="600">ROHE ECO-SOURCING SCHEDULE</text>
+      <text class="sans muted" x="12" y="${92 + e1Rows.length * 40 + 27}" font-size="9">Eco-sourced: ${esc(L.roheLabel.slice(0, 40))}</text>
+      ${spRows.map((s, i) => {
+        const y = 92 + e1Rows.length * 40 + 48 + i * 30;
+        const lay = canopyLayer(s.s);
+        return `<circle cx="17" cy="${y - 3}" r="4" fill="${LAYER_FILL[lay]}"/>
+          <text class="sans" x="26" y="${y}" font-size="10" font-weight="500">${esc(s.sp.slice(0, 18))}</text>
+          <text class="mono" x="263" y="${y}" font-size="9" text-anchor="end">× ${s.n} · ${s.s.toFixed(1)} m</text>
+          <text class="mono muted" x="26" y="${y + 12}" font-size="8.3" font-style="italic">${esc(botanicalName(s.sp).slice(0, 30))} · ${lay}</text>`;
+      }).join('\n')}
+      <text class="mono muted" x="12" y="640" font-size="8">Nursery stock from local ecological district.</text>
+    </g>`;
 }
 
 export function generateWorkingDrawingSet(b: DrawingBuildingInput): WorkingSheet[] {
@@ -389,6 +718,7 @@ export function generateWorkingDrawingSet(b: DrawingBuildingInput): WorkingSheet
     { id: 'A201', title: 'Architectural Elevations & Envelope Keynotes', scale: '1:100', svg: a3Frame({ sheetId: 'A201', sheetTitle: 'Architectural Elevations & Envelope Keynotes', scale: '1:100', b, body: a201Body }) },
     { id: 'A301', title: 'Cross-Section & NZ Building Code Pre-Check', scale: '1:100', svg: a3Frame({ sheetId: 'A301', sheetTitle: 'Cross-Section & NZBC Pre-Check', scale: '1:100', b, body: a301Body }) },
     { id: 'A401', title: 'Cultural Narrative, Finishes & Cost/Delay Schedule', scale: 'NTS', svg: a3Frame({ sheetId: 'A401', sheetTitle: 'Cultural Narrative & Live NZ Spec Schedule', scale: 'NTS', b, body: a401Body }) },
+    { id: 'L101', title: 'Landscape, Rohe & Permeable Site Plan', scale: '1:100', svg: a3Frame({ sheetId: 'L101', sheetTitle: 'Landscape, Rohe & Permeable Site Plan', scale: '1:100', b, body: renderL101Body(b, W, D) }) },
   ];
 }
 
@@ -403,12 +733,12 @@ export function exportWorkingSetPrintableHTML(sheets: WorkingSheet[], projectTit
   svg { display: block; width: 100%; height: auto; }
   @media print { .bar { display: none; } html, body { background: #fff; } .sheet { margin: 0; max-width: none; box-shadow: none; break-after: page; page-break-after: always; } }
 </style></head><body>
-<div class="bar"><span><b>${esc(projectTitle)}</b> · 4-Sheet A3 Architectural Working Drawing Set (A101–A401)</span><button onclick="window.print()">Print / Save as A3 PDF</button></div>
+<div class="bar"><span><b>${esc(projectTitle)}</b> · ${sheets.length}-Sheet A3 Architectural Working Drawing Set (${sheets.length ? `${sheets[0].id}–${sheets[sheets.length - 1].id}` : '—'})</span><button onclick="window.print()">Print / Save as A3 PDF</button></div>
 ${sheets.map((s) => `<div class="sheet">${s.svg}</div>`).join('\n')}
 </body></html>`;
 }
 
-/** Export minimal CAD-ready ASCII DXF (millimetres, layers WALLS, ROOMS, GRID, TEXT) */
+/** Export minimal CAD-ready ASCII DXF (millimetres; layers A-WALL-EXTR, A-ROOM-OTLN, A-ANNO-TEXT, L-PERM-ZONE, L-BED-EDGE, L-PLNT-CANP) */
 export function exportWorkingSetDXF(b: DrawingBuildingInput): string {
   const lines: (string | number)[] = ['0', 'SECTION', '2', 'ENTITIES'];
   const rect = (layer: string, x0: number, y0: number, w: number, h: number) => {
@@ -418,12 +748,32 @@ export function exportWorkingSetDXF(b: DrawingBuildingInput): string {
       lines.push('0', 'LINE', '8', layer, '10', a[0].toFixed(1), '20', a[1].toFixed(1), '30', '0.0', '11', c[0].toFixed(1), '21', c[1].toFixed(1), '31', '0.0');
     }
   };
+  const circle = (layer: string, x: number, y: number, r: number) => {
+    lines.push('0', 'CIRCLE', '8', layer, '10', x.toFixed(1), '20', y.toFixed(1), '30', '0.0', '40', Math.max(1, r).toFixed(1));
+  };
+  const text = (layer: string, x: number, y: number, h: number, s: string) => {
+    lines.push('0', 'TEXT', '8', layer, '10', x.toFixed(1), '20', y.toFixed(1), '30', '0.0', '40', h.toFixed(1), '1', s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x20-\x7E]/g, ''));
+  };
   const Wmm = b.widthM * 1000, Dmm = b.depthM * 1000;
   rect('A-WALL-EXTR', 0, 0, Wmm, Dmm);
   for (const r of b.rooms) {
     rect('A-ROOM-OTLN', r.x * 1000, r.z * 1000, r.w * 1000, r.d * 1000);
-    lines.push('0', 'TEXT', '8', 'A-ANNO-TEXT', '10', ((r.x + r.w / 2) * 1000).toFixed(1), '20', ((r.z + r.d / 2) * 1000).toFixed(1), '30', '0.0', '40', '180.0', '1', r.name.replace(/[^\x20-\x7E]/g, ''));
+    text('A-ANNO-TEXT', (r.x + r.w / 2) * 1000, (r.z + r.d / 2) * 1000, 180, r.name);
   }
+  // ---- L101 landscape layers ----
+  const L = resolveLandscapePlan(b);
+  const s = L.site;
+  rect('L-PERM-ZONE', s.minX * 1000, s.minZ * 1000, (s.maxX - s.minX) * 1000, (s.maxZ - s.minZ) * 1000);
+  text('L-PERM-ZONE', (s.minX + 0.5) * 1000, (s.minZ + 0.5) * 1000, 250, `SITE ${Math.round(s.areaM2)} m2 PERMEABLE ${L.permeablePct}% IMPERVIOUS ${L.imperviousPct}%`);
+  L.beds.forEach((bd, i) => {
+    circle('L-BED-EDGE', bd.x * 1000, bd.z * 1000, bd.r * 1000);
+    text('L-BED-EDGE', bd.x * 1000, bd.z * 1000, 160, `B${i + 1} ${bedMaterial(bd.kind).toUpperCase()}`);
+  });
+  L.plants.forEach((p, i) => {
+    circle('L-PLNT-CANP', p.x * 1000, p.z * 1000, (p.s / 2) * 1000);
+    circle('L-PLNT-RPZ', p.x * 1000, p.z * 1000, ROOT_PROTECTION_M * 1000);
+    text('L-PLNT-CANP', p.x * 1000, p.z * 1000, 160, `P${i + 1} ${p.sp} (${botanicalName(p.sp)})`);
+  });
   lines.push('0', 'ENDSEC', '0', 'EOF');
   return lines.join('\n') + '\n';
 }
