@@ -23,13 +23,13 @@ function event(name,value){window.dispatchEvent(new CustomEvent('assembl:interac
 function bounds(){const r=journey.getBoundingClientRect();return {top:r.top+scrollY,range:Math.max(1,r.height-$('.pinned').offsetHeight)}}
 let touring=false,tourTime=0,tourFrom=0,carry=0,carryOrigin=0;
 const tourControl=$('#pavilion-tour');
-function scrollPosition(){
- const b=bounds(),f=Math.max(0,Math.min(1,(scrollY-b.top)/b.range)),u=f<.5?f*2:(f-.5)*2;
+function scrollPosition(at=scrollY){
+ const b=bounds(),f=Math.max(0,Math.min(1,(at-b.top)/b.range)),u=f<.5?f*2:(f-.5)*2;
  const eased=u*u*(3-2*u);return settings.has('match')?f:f<.5?eased*.5:.5+eased*.5;
 }
 function stopTour(){
  if(!touring)return;
- touring=false;carry=p-scrollPosition();carryOrigin=scrollY;manual=p;
+ touring=false;carry=p-scrollPosition(scrolled);carryOrigin=scrolled;manual=p;
  tourControl.hidden=true;
 }
 function startTour(){
