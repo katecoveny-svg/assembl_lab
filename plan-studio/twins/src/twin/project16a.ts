@@ -330,6 +330,7 @@ export const project16a: Project = {
       const free = (e: number, n: number) => inPoly([e, n], site.lot) && !data.impervious.polys.some((p) => inPoly([e, n], p)) && !inHome(e, n) && !nearPath(e, n) && !inPoly([e, n], data.existing.outline);
       // beds along each home: shady south walls get ferns, ends get layered natives
       const bedList: PlantAt[] = [];
+      const brush = new URLSearchParams(location.search).has('garden');
       const beds = new THREE.Group();
       beds.name = 'planted_beds';
       let seed = 11;
@@ -358,8 +359,15 @@ export const project16a: Project = {
           const backE = fr.en(st.back[0] === 0 ? (st.uv[0][0] + st.uv[1][0]) / 2 : st.back[0], st.back[1]);
           const pl = bedPlanting(poly, G, { back: backE, shade: st.shade, density: 1.1, seed: seed++, skip: (e, n) => !free(e, n) });
           if (!pl.length) continue;
-          bedList.push(...pl);
-          beds.add(mulchBed(`bed_${key}_${seed}`, poly, (e, n) => (free(e, n) || inHome(e, n) ? G(e, n) : G(e, n) - 0.2), q));
+          const chosen = brush && key==='16C' && st.uv[0][1]===7.08;
+          const bed=mulchBed(`bed_${key}_${seed}`, poly, (e, n) => (free(e, n) || inHome(e, n) ? G(e, n) : G(e, n) - 0.2), q);
+          if(chosen){
+            bed.userData.brush=true;
+            const palette=pl.map((p,i): PlantAt=>({...p,sp:i%5===0?'harakeke':i%5===1?'tussock':i%5===2?'carex':i%5===3?'fern':'kawakawa',s:i%5===0?0.85:1.05}));
+            const proposals=planting(palette,'Illustrative proposed 16C planting, not surveyed.','proposed',true);
+            proposals.name='brush-placements';g.add(proposals);
+          } else bedList.push(...pl);
+          beds.add(bed);
         }
       }
       // a bed inside the rear fence and down the west side, behind the hedge line

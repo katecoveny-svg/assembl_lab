@@ -118,13 +118,14 @@ function sides(pts: V3[], fallback = V(0, 1, 0)) {
 }
 
 // --- species ------------------------------------------------------------------------------------
-export function harakeke(seed: number, size = 1) {
+export function harakeke(seed: number, size = 1, detail = false) {
   const R = rng(seed);
   const g = new Geo();
   const leaves = 28 + Math.floor(R() * 14);
   for (let i = 0; i < leaves; i++) {
     const a = R() * Math.PI * 2;
-    const dir = V(Math.cos(a), 0, Math.sin(a));
+    const angle=detail?(i%4)*Math.PI/2+(a-Math.PI)*.27:a;
+    const dir = V(Math.cos(angle), 0, Math.sin(angle));
     const len = (1.0 + R() * 1.0) * size;
     const up = 1.0 + R() * 0.45;
     const base = V((R() - 0.5) * 0.25 * size, 0, (R() - 0.5) * 0.25 * size);
@@ -133,7 +134,12 @@ export function harakeke(seed: number, size = 1) {
     const w = pts.map((_, k) => 0.07 * size * (1 - (k / 11) * 0.85));
     const fold = pts.map(() => V(0, 0.35, 0));
     const tone = 0.75 + 0.35 * R();
-    g.ribbon(pts, sd, w, (t, e) => (e ? C(0x6b4a2a, 0.8) : C(0x4f6b2c, tone * (0.85 + 0.25 * t))), 1, fold);
+    g.ribbon(pts, sd, w, (t, e) => (e ? C(0x6b4a2a, 0.8) : C(detail && i%4===0?0x756040:0x4f6b2c, tone * (0.85 + 0.25 * t))), 1, fold);
+  }
+  if(detail)for(let i=0;i<3;i++){
+    const a=i*2.3,h=size*(1.2+R()*.5),x=.26*Math.cos(a),z=.26*Math.sin(a);
+    g.tube([V(0,0,0),V(x*.55,h*.6,z*.55),V(x,h,z)],[.012,.009,.004],5,()=>C(0x5a392b));
+    for(let j=0;j<6;j++){const py=h*(.65+.061*j),pj=V(x*.8,py,z*.8),tip=pj.clone().add(V(.075*Math.cos(a+j*2),.04,.075*Math.sin(a+j*2)));g.tube([pj,tip],[.013,.006],4,()=>C(0x74503c));}
   }
   return g.build();
 }
@@ -242,7 +248,7 @@ export function groundFern(seed: number, size = 0.8) {
   return g.build();
 }
 
-export function tussock(seed: number, size = 0.7, golden = false) {
+export function tussock(seed: number, size = 0.7, golden = false, detail = false) {
   const R = rng(seed);
   const g = new Geo();
   const n = 70 + Math.floor(R() * 40);
@@ -254,6 +260,7 @@ export function tussock(seed: number, size = 0.7, golden = false) {
     const tone = golden ? C(0xb59a57, 0.8 + 0.35 * R()) : C(0x7a8a4a, 0.7 + 0.4 * R());
     g.ribbon(pts, sides(pts), pts.map((_, k) => 0.012 * (1 - k / 6)), () => tone);
   }
+  if(detail)for(let j=0;j<8;j++){const a=j*2.399,h=size*(.8+R()*.68),end=V(Math.cos(a)*.17,h,Math.sin(a)*.17);g.tube([V(0,0,0),end],[.004,.002],3,()=>C(0xa18452));const cap=end.clone().add(V(.028,.11,.015));g.tube([end,cap],[.009,.003],5,()=>C(0xb3a171));}
   return g.build();
 }
 
@@ -403,10 +410,10 @@ const LABEL: Record<Species, string> = {
   hebe: 'Hebe',
   coprosma: 'Coprosma',
 };
-function make(sp: Species, seed: number) {
+function make(sp: Species, seed: number, detail=false) {
   switch (sp) {
     case 'harakeke':
-      return harakeke(seed, 1);
+      return harakeke(seed, 1, detail);
     case 'nikau':
       return nikau(seed, 4 + (seed % 3) * 0.9);
     case 'wheki':
@@ -416,9 +423,9 @@ function make(sp: Species, seed: number) {
     case 'fern':
       return groundFern(seed, 0.8);
     case 'tussock':
-      return tussock(seed, 0.75, true);
+      return tussock(seed, 0.75, true, detail);
     case 'carex':
-      return tussock(seed, 0.55, false);
+      return tussock(seed, 0.55, false, detail);
     case 'tikouka':
       return cabbageTree(seed, 4);
     case 'kawakawa':
@@ -446,7 +453,7 @@ export interface Placement {
 }
 
 /** instance the placements: 3 variants per species, each an InstancedMesh with its name and provenance */
-export function planting(list: Placement[], note: string, source = 'proposed') {
+export function planting(list: Placement[], note: string, source = 'proposed', detail=false) {
   const g = new THREE.Group();
   g.name = 'native_planting';
   const by = new Map<Species, Placement[]>();
@@ -454,7 +461,7 @@ export function planting(list: Placement[], note: string, source = 'proposed') {
   const m = new THREE.Matrix4();
   const q = new THREE.Quaternion();
   for (const [sp, ps] of by) {
-    const variants = [11, 23, 37].map((s) => make(sp, s + sp.length * 7));
+    const variants = [11, 23, 37].map((s) => make(sp, s + sp.length * 7,detail));
     variants.forEach((geo, vi) => {
       const mine = ps.filter((_, i) => i % variants.length === vi);
       if (!mine.length) return;
