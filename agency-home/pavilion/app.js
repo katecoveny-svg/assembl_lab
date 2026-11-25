@@ -24,8 +24,7 @@ function bounds(){const r=journey.getBoundingClientRect();return {top:r.top+scro
 let touring=false,tourTime=0,tourFrom=0,carry=0,carryOrigin=0;
 const tourControl=$('#pavilion-tour');
 function scrollPosition(at=scrollY){
- const b=bounds(),f=Math.max(0,Math.min(1,(at-b.top)/b.range)),u=f<.5?f*2:(f-.5)*2;
- const eased=u*u*(3-2*u);return settings.has('match')?f:f<.5?eased*.5:.5+eased*.5;
+ const b=bounds();return Math.max(0,Math.min(1,(at-b.top)/b.range));
 }
 function stopTour(){
  if(!touring)return;
@@ -51,7 +50,7 @@ function furnishInterior(){
  current.furnishLivingRoom().then(()=>{if(world===current){dirty=true;wake()}}).catch(()=>{});
 }
 function sync(){if(!room&&!garden?.active&&!touring&&!exploring&&!paused&&manual===null){p=Math.max(0,Math.min(1,scrollPosition()+carry*Math.max(0,1-Math.abs(scrollY-carryOrigin)/300)))}furnishInterior();document.querySelectorAll('[data-shot]').forEach(b=>b.setAttribute('aria-pressed',String(!garden?.active&&!detail&&Math.abs(p-Number(b.dataset.shot))<.13)));dirty=true;wake()}
-const titleLayer=$('.scene-titles');
+const titleLayer=$('.scene-titles'),chapterText=$('#journey-chapter');
 function easeBetween(value,low,high){
  const t=Math.min(1,Math.max(0,(value-low)/(high-low)));return t*t*(3-2*t);
 }
@@ -60,6 +59,8 @@ function liftAt(value){
  return easeBetween(value,.055,.30)*(1-easeBetween(value,.42,.65));
 }
 function titleFrame(value,lift){
+ const chapter=detail==='kitchen'||room==='kitchen'?'Kitchen':room==='living'?'Living room':room==='roof'?'Roof lift':value<.14?'Approach':value<.48?'Roof lift':value<.67?'Threshold':value<.84?'Living room':'Kitchen';
+ if(chapterText.textContent!==chapter)chapterText.textContent=chapter;
  const fade=easeBetween(value,.018,.17);
  titleLayer.style.setProperty('--title-alpha',(1-fade).toFixed(3));
  titleLayer.style.setProperty('--title-shift',(-60*fade).toFixed(1)+'px');
@@ -68,13 +69,33 @@ function titleFrame(value,lift){
  titleLayer.style.setProperty('--roof-shift',((1-lift)*28).toFixed(1)+'px');
  vista.toggleAttribute('data-manual-detail',!!detail);
 }
+// Cold and no-GPU entries keep moving through the same photographed model viewpoints on scroll.
+const still=document.querySelector('#journey-still');
+let queuedShot='',stillRequest=0;
+journey.dataset.scrollStills='';
+function scrollStill(){
+ if(world||room||reduced.matches){still.hidden=true;queuedShot='';stillRequest++;return}
+ const value=scrollPosition();
+ const which=value<.18?'':value<.52?'roof':value<.86?'living':'kitchen';
+ titleFrame(value,liftAt(value));
+ if(queuedShot===which)return;
+ queuedShot=which;const ticket=++stillRequest;
+ if(!which){still.hidden=true;return}
+ const image=new Image();
+ image.src=asset('room-'+which+(matchMedia('(max-width:680px)').matches?'-phone':'')+'.webp');
+ image.decode().then(()=>{
+  if(ticket!==stillRequest||world||room||reduced.matches)return;
+  still.src=image.src;still.hidden=false;
+ }).catch(()=>{});
+}
+addEventListener('scroll',scrollStill,{passive:true});reduced.addEventListener('change',scrollStill);
 function frame(now){id=0;if(!world||!visible||document.hidden)return;const delta=Math.min(.1,Math.max(0,(now-prev)/1000));const active=!paused||time-gustAt<3.6;
  furnishExterior();
  if(dirty||(active&&now-prev>=(1000/30-.6))){if(active)time+=delta;
  if(touring&&!paused){
   tourTime+=delta;
-  const t=Math.min(1,tourTime/38);
-  p=tourFrom+(.56-tourFrom)*(t*t*(3-2*t)*.55+t*.45);
+  const t=Math.min(1,tourTime/27);
+  p=tourFrom+(1-tourFrom)*(t*t*(3-2*t)*.55+t*.45);
   if(t===1)stopTour();
  }
  if(roomMove){
@@ -82,13 +103,15 @@ function frame(now){id=0;if(!world||!visible||document.hidden)return;const delta
    p=roomMove.from+(roomMove.to-roomMove.from)*blend;
    if(step===1)roomMove=null;
  }
+ furnishInterior();
+ const guided=!room&&!detail&&!exploring&&!garden?.active&&!settings.has('match');
  const lift=liftAt(p);prev=now;
- try{world.draw(p,time,Math.max(0,1-(time-gustAt)/3.6),lift)}
+ try{world.draw(p,time,Math.max(0,1-(time-gustAt)/3.6),lift,guided)}
  catch{staticMode('render failed');return}
  titleFrame(p,lift);if(settings.has('profile')){if(lastPaint&&now-lastPaint<250)intervals.push(now-lastPaint);if(intervals.length>500)intervals.shift();lastPaint=now}dirty=false;vista.dataset.position=p.toFixed(3)}
  if(active||roomMove)id=requestAnimationFrame(frame)}
 function wake(){if(!id)id=requestAnimationFrame(frame)}
-function jump(t,view=null){roomMove=null;finishGarden();setRoom(view==='kitchen'?'kitchen':t===1&&!view?'living':null);stopTour();carry=0;free.leave(false);free.releaseGlance();detail=view;world?.setDetail(view);document.querySelectorAll("[data-detail]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.detail===view)));manual=t;p=t;if(!paused&&!reduced.matches){const b=bounds();let u=t<.5?t*2:(t-.5)*2;const inv=.5-Math.sin(Math.asin(1-2*u)/3);const coordinate=settings.has('match')?t:(t<.5?inv*.5:.5+inv*.5);window.scrollTo(0,b.top+coordinate*b.range+(t===1&&!settings.has('match')?Math.min(95,innerHeight*.09):0))}sync();event('pavilion_view',view??t)}
+function jump(t,view=null){roomMove=null;finishGarden();setRoom(view==='kitchen'?'kitchen':t===1&&!view?'living':null);stopTour();carry=0;free.leave(false);free.releaseGlance();detail=view;world?.setDetail(view);document.querySelectorAll("[data-detail]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.detail===view)));manual=t;p=t;if(!paused&&!reduced.matches){const b=bounds();const coordinate=t;window.scrollTo(0,b.top+coordinate*b.range+(t===1&&!settings.has('match')?Math.min(95,innerHeight*.09):0))}sync();event('pavilion_view',view??t)}
 function traceAt(x,y){lx=Math.min(1,Math.max(0,x));ly=Math.min(1,Math.max(0,y));vista.style.setProperty('--mx',(lx*100)+'%');vista.style.setProperty('--my',(ly*100)+'%')}
 vista.addEventListener('pointermove',e=>{if(trace){const b=vista.getBoundingClientRect();traceAt((e.clientX-b.x)/b.width,(e.clientY-b.y)/b.height)}});
 vista.addEventListener('pointerdown',e=>{if(trace){const b=vista.getBoundingClientRect();traceAt((e.clientX-b.x)/b.width,(e.clientY-b.y)/b.height)}});

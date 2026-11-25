@@ -89,6 +89,9 @@ async function show16a(){
   $("#methodBody").textContent="Design view only: illustrative panels on the north-facing slope of each roof; local geometry on traced survey terrain. Visual shade includes the geometry shown, not measured surroundings.";
   $("#sourcesBody").textContent="16A draft resource-consent set, issue A, 12 May 2025; RC-02 survey, RC-05 area plan, RC-06 plans, RC-07 sections. Survey traced, not survey-grade. Approximate Auckland-region sun; no new address or parcel location is included.";
   S.ready=true;document.documentElement.dataset.ready="1";
+  if(document.documentElement.classList.contains('roof-plate')){
+   parent.postMessage({type:'assembl:plate-ready'},location.origin);
+  }
  }catch(e){if(run!==S.run)return;$("#twinView").replaceChildren();badge("Could not open 16A");$("#result").innerHTML='<p role="alert">'+esc(e.message)+'</p><p><a href="/plan-studio/twins/16a/">Open the original 16A viewer</a>, or use the address search for an estimate.</p>';}
 }
 $("#sampleStudy").addEventListener('click',()=>{if(!S.study||!S.ready)show16a();});
@@ -187,3 +190,8 @@ $("#landmark").addEventListener("click", () => { choose(LANDMARK.lat, LANDMARK.l
   const lat = parseFloat(q.get("lat")), lon = parseFloat(q.get("lon"));
   if (inNZ(lat, lon)) choose(lat, lon, "The point in the link"); else if(q.get("study")==="landmark") choose(LANDMARK.lat, LANDMARK.lon, LANDMARK.name); else show16a();
 }
+
+addEventListener('message',event=>{
+ if(event.source!==parent||event.origin!==location.origin||!document.documentElement.classList.contains('roof-plate'))return;
+ if(event.data?.type==='assembl:roof-shot'&&['detail','home','overview'].includes(event.data.view))S.twin?.reset(event.data.view);
+});

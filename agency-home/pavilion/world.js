@@ -318,12 +318,21 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
   scene.add(shade,model);
  }
  function size(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
- function draw(progress,time,gust,roofLift=0){windTime.value=time;gustStrength.value=gust;let p=Math.max(0,Math.min(1,progress));const cp=camPath.getPoint(p),aim=aimPath.getPoint(p);
+ function draw(progress,time,gust,roofLift=0,guided=false){windTime.value=time;gustStrength.value=gust;let p=Math.max(0,Math.min(1,progress));const track=guided?Math.min(1,p/.76):p;
+   const cp=camPath.getPoint(track),aim=aimPath.getPoint(track);
+   if(guided&&p>.76){
+    // Turn via the open aisle. Interpolating the look-at endpoints would aim straight into the camera.
+    const turn=T.MathUtils.smoothstep(p,.76,1);
+    const startYaw=Math.atan2(4.08-.89,-.78-1.69),endYaw=Math.atan2(-2.40+.28,-.95-1.64)+Math.PI*2;
+    const yaw=T.MathUtils.lerp(startYaw,endYaw,turn);
+    cp.lerp(v(-.28,1.39,1.64),turn);
+    aim.set(cp.x+3.8*Math.sin(yaw),cp.y-.34,cp.z+3.8*Math.cos(yaw));
+   }
    // Lift only the existing canopy, its lining and seams. Both still cast shadows on the rooms.
    roofStudy.position.set(0,roofLift*3.2,-roofLift*2.1);
    if(roofLift){cp.lerp(v(13.4,10.1,18.9),roofLift);aim.lerp(v(.1,2.65,0),roofLift)}
    if(camera.aspect<1.24){const f=Math.max(0,1.24-camera.aspect);cp.z+=17.8*f*(1-p)**1.5;cp.x+=4.9*f*(1-p);aim.x+=.65*f}
-   camera.fov=match?42-3*p:42+14*p*p;camera.updateProjectionMatrix();
+   camera.fov=match?42-3*p:42+14*p*p;if(guided&&p>.76)camera.fov=T.MathUtils.lerp(56,camera.aspect<1?69:51,T.MathUtils.smoothstep(p,.76,1));camera.updateProjectionMatrix();
    if(detail==='kitchen'){cp.set(-.28,1.39,1.64);aim.set(-2.40,1.10,-.95);camera.fov=camera.aspect<1?69:51}
    if(detail==='bedroom'){cp.set(-4.17,1.33,-1.24);aim.set(-6.22,.83,.18);camera.fov=camera.aspect<1?70:56}
    if(detail==='basin'){cp.set(-1.10,1.37,-.77);aim.set(-1.74,1.12,-1.79);camera.fov=43}

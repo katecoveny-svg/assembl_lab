@@ -2,12 +2,13 @@ export function tideCard(asset){
  const byId=id=>document.getElementById(id);
  let days=JSON.parse(byId('tide-data').textContent),keys=Object.keys(days);
  const host=byId('water-host'),slider=byId('tide-event'),open=byId('water-open'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
- const tool='https://assembl-waitemata-tides.pages.dev/';
+ const review=location.hostname.endsWith('.assembl-home.pages.dev');
+ const tool=review?'https://coastal-light-review.assembl-waitemata-tides.pages.dev/':'https://assembl-waitemata-tides.pages.dev/';
  let selectedSurface=false;
  let day=1,index=0,visible=false,frame=null,renderTimer=0,explicit=false,selectedHeight=0;
  function destination(embed){
   const url=new URL(tool);if(embed)url.searchParams.set('view','harbour');
-  url.searchParams.set('date',keys[day]);
+  url.searchParams.set('date',keys[day]);if(review)url.searchParams.set('event',String(index));
   return url.href;
  }
  function conservative(){
@@ -57,7 +58,7 @@ export function tideCard(asset){
  open.onclick=()=>{explicit=!explicit;mount()};
  function setEvent(i){
   index=Math.max(0,Math.min(i,days[keys[day]].length-1));const [time,height,,zone,kind]=days[keys[day]][index];
-  if(index>0)selectedSurface=true;
+  if(index>0&&!review)selectedSurface=true;
   selectedHeight=Number(height);const label=kind+' tide · '+time+' '+zone+' · '+height+' m';
   byId('water-reading').textContent=label;slider.value=String(index);slider.setAttribute('aria-valuetext',label);
   showSelection();byId('tide-stops').querySelectorAll('button').forEach((b,j)=>b.setAttribute('aria-pressed',String(index===j)));
