@@ -2,13 +2,11 @@ export function tideCard(asset){
  const byId=id=>document.getElementById(id);
  let days=JSON.parse(byId('tide-data').textContent),keys=Object.keys(days);
  const host=byId('water-host'),slider=byId('tide-event'),open=byId('water-open'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
- const review=location.hostname.endsWith('.assembl-home.pages.dev');
- const tool=review?'https://coastal-light-review.assembl-waitemata-tides.pages.dev/':'https://assembl-waitemata-tides.pages.dev/';
- let selectedSurface=false;
+ const tool='https://assembl-waitemata-tides.pages.dev/';
  let day=1,index=0,visible=false,frame=null,renderTimer=0,explicit=false,selectedHeight=0;
  function destination(embed){
   const url=new URL(tool);if(embed)url.searchParams.set('view','harbour');
-  url.searchParams.set('date',keys[day]);if(review)url.searchParams.set('event',String(index));
+  url.searchParams.set('date',keys[day]);url.searchParams.set('event',String(index));
   return url.href;
  }
  function conservative(){
@@ -30,27 +28,16 @@ export function tideCard(asset){
   if(!explicit&&conservative()){
    frame?.remove();frame=null;delete host.dataset.renderer;return;
   }
-  const src=selectedSurface?new URL('/pavilion/harbour-event.html',location.origin).href:destination(true);
-  if(frame?.src===src){sendSelection();return}
+  const src=destination(true);
+  if(frame?.src===src)return;
   if(!frame){
    frame=document.createElement('iframe');frame.title='Waitematā Harbour water and published Auckland tide prediction';
    frame.referrerPolicy='strict-origin-when-cross-origin';frame.loading='lazy';
-   frame.addEventListener('load',()=>{if(frame&&!selectedSurface)host.dataset.renderer='harbour';sendSelection()});
+   frame.addEventListener('load',()=>{if(frame)host.dataset.renderer='harbour'});
    inputMode();host.append(frame);
   }
-  if(selectedSurface)frame.setAttribute('sandbox','allow-scripts');else frame.removeAttribute('sandbox');
   frame.src=src;
  }
- function sendSelection(){
-  if(!selectedSurface||!frame?.contentWindow)return;
-  frame.contentWindow.postMessage({type:'assembl:prediction',height:selectedHeight,label:byId('water-reading').textContent},'*');
- }
- addEventListener('message',e=>{
-  if(!frame||e.source!==frame.contentWindow||!selectedSurface||e.origin!=='null')return;
-  if(e.data?.type==='assembl:harbour-listening')sendSelection();
-  if(e.data?.type==='assembl:harbour-ready')host.dataset.renderer='harbour';
-  if(e.data?.type==='assembl:harbour-still')host.dataset.renderer='still';
- });
  function showSelection(){
   byId('tide-link').href=destination(false);
   clearTimeout(renderTimer);if(visible)renderTimer=setTimeout(mount,140);
@@ -58,7 +45,6 @@ export function tideCard(asset){
  open.onclick=()=>{explicit=!explicit;mount()};
  function setEvent(i){
   index=Math.max(0,Math.min(i,days[keys[day]].length-1));const [time,height,,zone,kind]=days[keys[day]][index];
-  if(index>0&&!review)selectedSurface=true;
   selectedHeight=Number(height);const label=kind+' tide · '+time+' '+zone+' · '+height+' m';
   byId('water-reading').textContent=label;slider.value=String(index);slider.setAttribute('aria-valuetext',label);
   showSelection();byId('tide-stops').querySelectorAll('button').forEach((b,j)=>b.setAttribute('aria-pressed',String(index===j)));

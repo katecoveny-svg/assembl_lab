@@ -1,7 +1,7 @@
 const passage=document.querySelector('.passage');
 const surfaces=[...passage.querySelectorAll('.surface')];
 const media=matchMedia('(prefers-reduced-motion:reduce)');
-const harbour=location.hostname.endsWith('.assembl-lab.pages.dev')?'https://coastal-light-review.assembl-waitemata-tides.pages.dev/':'https://assembl-waitemata-tides.pages.dev/';
+const harbour='https://assembl-waitemata-tides.pages.dev/';
 const toggle=document.querySelector('#still-plate'),link=document.querySelector('#open-plate');
 let paused=media.matches,handle=0,active=-1,frame,shot,timeout;
 function paint(){
