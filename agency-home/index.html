@@ -127,7 +127,14 @@ body p:not(.eyebrow):not(.plate-line p){font-weight:400}
 #tides{display:block}.tides .study-copy{max-width:72ch;margin-bottom:28px}
 .tides .water-frame{aspect-ratio:2.3;margin-inline:calc(0px - var(--pad))}
 @media(max-width:680px){.tides .water-frame{aspect-ratio:1.56}}
+@media(min-width:681px){
+ .opening .opening-copy h1{max-width:19ch;font-size:clamp(47px,4.6vw,88px)}
+ .opening-copy{padding-block:clamp(24px,2.9vw,52px)}
+ html:not(.match-camera) .vista{height:clamp(420px,73svh,950px)}
+}
+@keyframes pavilion-arrival{from{transform:scale(1.025) translateX(-.32%)}to{transform:scale(1.045) translateX(.32%)}}
 @media(prefers-reduced-motion:no-preference){
+ .vista[data-warming]:not([data-ready]) picture img{animation:pavilion-arrival 10s linear both}
  .opening h1,.film-caption h2,.lab-intro h2{transform:translateY(var(--text-drift,0px))}
  .film-credit{transform:translateY(var(--text-drift,0px))}
  .film-wrap>img,.film-wrap>video{transform:scale(1.045) translateY(var(--film-drift,0%))}

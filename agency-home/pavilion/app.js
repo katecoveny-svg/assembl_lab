@@ -95,7 +95,15 @@ async function start(signal){
  const renderer=candidate.renderer;
  try {
   signal.throwIfAborted();candidate.size();candidate.draw(p,0,0);
-  await renderer.backend.device?.queue.onSubmittedWorkDone();
+  const queue=renderer.backend.device?.queue;
+  if(queue){
+   let onAbort;
+   try{
+    await Promise.race([queue.onSubmittedWorkDone(),new Promise((_,reject)=>{
+     onAbort=()=>reject(signal.reason);signal.addEventListener('abort',onAbort,{once:true});
+    })]);
+   }finally{signal.removeEventListener('abort',onAbort)}
+  }
   signal.throwIfAborted();
  }catch(error){renderer.dispose();throw error}
  world=candidate;
@@ -135,18 +143,18 @@ function loadWorld(automatic=false){
   pending.automatic=false;clearTimeout(pending.timeout);enter.disabled=true;note.textContent='Opening the pavilion…';return;
  }
  const job={controller:new AbortController(),automatic,retry:false};
- pending=job;automaticTried=true;
- if(automatic)job.timeout=setTimeout(()=>{if(job.automatic)job.controller.abort('slow')},7500);
+ pending=job;automaticTried=true;vista.toggleAttribute('data-warming',automatic);
+ if(automatic)job.timeout=setTimeout(()=>{if(job.automatic)job.controller.abort('slow')},10000);
  else {enter.disabled=true;note.textContent='Opening the pavilion…'}
  start(job.controller.signal).then(()=>{if(job.automatic&&eligible()&&!job.interacted)startTour()}).catch(()=>{
   staticMode(job.controller.signal.reason||'renderer unavailable');
  }).finally(()=>{
-  clearTimeout(job.timeout);pending=null;
+  clearTimeout(job.timeout);pending=null;vista.removeAttribute('data-warming');
   if(job.retry)loadWorld();
  });
 }
 // Scroll or a deliberate gesture during first-frame compilation also hands the camera to the visitor.
-function claimCamera(){if(pending)pending.interacted=true;stopTour()}
+function claimCamera(){if(pending){pending.interacted=true;vista.removeAttribute('data-warming')}stopTour()}
 window.addEventListener('scroll',claimCamera,{passive:true});
 window.addEventListener('pointerdown',claimCamera,{passive:true,capture:true});
 window.addEventListener('keydown',claimCamera,{capture:true});
