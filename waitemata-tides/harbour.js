@@ -43,10 +43,10 @@ export async function createHarbour(holder){
  const loader=new T.TextureLoader();
  let timeout;
  const textures=await Promise.race([
-  Promise.all(['./media/skyline-and-bridge.webp','./media/queens-wharf.webp','./vendor/waternormals.jpg','./media/surface.webp'].map(url=>loader.loadAsync(url))),
+  Promise.all(['./media/skyline-and-bridge.webp','./media/queens-wharf.webp','./vendor/waternormals.jpg'].map(url=>loader.loadAsync(url))),
   new Promise((_,reject)=>{timeout=setTimeout(()=>reject(new Error('Harbour images timed out')),10000)})
  ]).finally(()=>clearTimeout(timeout));
- const [city,plate,normals,colourDetail]=textures;
+ const [city,plate,normals]=textures;
  const renderer=new T.WebGLRenderer({antialias:true,alpha:false,powerPreference:'low-power'});
  const canvas=renderer.domElement;canvas.setAttribute('role','img');canvas.setAttribute('aria-label','Waitematā Harbour, the Harbour Bridge and the Auckland skyline. A model sailing boat rides illustrative waves.');
  renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.outputColorSpace=T.SRGBColorSpace;
@@ -63,44 +63,43 @@ export async function createHarbour(holder){
  // Put fine tessellation by the lens and progressively coarsen it towards the horizon.
  const S=144,points=[],indices=[];for(let j=0;j<=S;j++){const u=j/S,depth=28-540*(.085*u+.915*u**3);for(let i=0;i<=S;i++){const x=(i/S-.5)*2;points.push(x*(31+Math.max(0,-depth)*1.18),-depth,0);if(i&&j){let k=j*(S+1)+i;indices.push(k-S-2,k-S-1,k,k-S-2,k,k-1);}}}
  const geom=new T.BufferGeometry();geom.setAttribute('position',new T.Float32BufferAttribute(points,3));geom.setIndex(indices);geom.computeVertexNormals();
- const water=new Water(geom,{textureWidth:512,textureHeight:256,waterNormals:normals,sunDirection:sun,sunColor:0xf6ede1,waterColor:0x365651,distortionScale:.32,side:T.DoubleSide});
+ const water=new Water(geom,{textureWidth:1024,textureHeight:512,waterNormals:normals,sunDirection:sun,sunColor:0xf6ede1,waterColor:0x365651,distortionScale:.70,side:T.DoubleSide});
  water.rotation.x=-Math.PI/2;scene.add(water);const m=water.material;
  m.uniforms.size.value=3.4;
  m.vertexShader=m.vertexShader.replace('void main() {','float surface(vec2 p,float s){return '+waveGL+';}\nvoid main() { vec3 waved=position;waved.z+=surface(vec2(position.x,-position.y),time)* (1.0-smoothstep(50.,150.,abs(position.y)));').replaceAll('vec4( position, 1.0 )','vec4(waved,1.)');
- // Match small (centimetre) capillary ripples and broader swell; prevent a flat mirror band near the horizon.
- colourDetail.wrapS=colourDetail.wrapT=T.RepeatWrapping;colourDetail.colorSpace=T.SRGBColorSpace;
- m.uniforms.shore={value:city};m.uniforms.plateScale={value:new T.Vector2(800,539)};m.uniforms.plateOffset={value:new T.Vector2(0,0)};m.uniforms.surfaceDetail={value:colourDetail};m.uniforms.isReverse={value:0};
- m.fragmentShader='uniform sampler2D surfaceDetail;uniform sampler2D shore;uniform vec2 plateScale;uniform vec2 plateOffset;uniform float isReverse;\n'+m.fragmentShader.replace('float rf0 = 0.3;','float rf0 = 0.035;').replace('vec3 outgoingLight = albedo;',`
- vec2 pos=worldPosition.xz;
- vec2 ripple=vec2(sin(pos.y*0.82+pos.x*.24-time*.97),sin(pos.x*.72-pos.y*.52+time*.79))*.008;
- vec3 fine=texture2D(surfaceDetail,pos*vec2(.024,.072)+ripple+vec2(.0017,.0023)*time).rgb;
- vec3 varied=texture2D(surfaceDetail,pos*vec2(.043,.117)-ripple.yx+vec2(-.0015,.0010)*time+.27).rgb;
- vec3 realSea=mix(fine,varied,.33);
- float photographicLuma=dot(realSea,vec3(.2126,.7152,.0722));
- realSea=mix(realSea,photographicLuma*vec3(.82,1.04,1.04),isReverse*.78);
- vec3 reflected=texture2D(mirrorSampler,mirrorCoord.xy/mirrorCoord.w+distortion).rgb;
- float subject=1.-smoothstep(6.,12.,length((pos-vec2(4.5,-16.))*vec2(1.,.50)));
- vec3 ray=normalize(worldPosition.xyz-eye);
- vec2 projected=(eye.xy+ray.xy*((-400.-eye.z)/ray.z)-plateOffset)/plateScale+.5;
- float lineY=mix(.339,.250,isReverse);vec2 phys=vec2(projected.x,lineY-max(0.,lineY-projected.y)*.82);
- phys.y=lineY-abs(mod((lineY-phys.y)+lineY,lineY*2.)-lineY);
- phys+=ripple*vec2(.19,.10)*(1.-smoothstep(30.,300.,distance));
- vec3 bay=texture2D(shore,clamp(phys,vec2(.004,.003),vec2(.995,lineY-.003))).rgb;
- realSea=bay*(.86+.14*clamp(photographicLuma/.18,.4,1.6));
- float reflectMix=.012+subject*.13;
- vec3 outgoingLight = mix(realSea,reflected,reflectMix)+vec3(.013)*specularLight*sunColor;
- `).replace('#include <tonemapping_fragment>','');
- const boat=makeBoat(scene);boat.position.set(4.5,0,-16);
+ // Fresnel, reflected skyline/boat and coloured downwelling light. No projected photograph on the water.
+ const waveSlope=waves.map(([a,k,dx,dz,w])=>'vec2('+number(dx)+','+number(dz)+')*'+number(a*k)+'*cos('+number(k)+'*dot(p,vec2('+number(dx)+','+number(dz)+'))-'+number(w)+'*time)').join('+');
+ m.fragmentShader=m.fragmentShader.replace('void main() {','vec2 waveSlope(vec2 p){return '+waveSlope+';}\nvoid main() {')
+  .replace('vec4 noise = getNoise( worldPosition.xz * size );','vec4 noise = getNoise( worldPosition.xz * 63.0 );')
+  .replace('vec3 surfaceNormal = normalize( noise.xzy * vec3( 1.5, 1.0, 1.5 ) );',`
+   float surfaceDistance=length(eye-worldPosition.xyz);
+   vec2 g=waveSlope(worldPosition.xz)*(1.-smoothstep(55.,145.,surfaceDistance));
+   vec2 p=worldPosition.xz;
+   vec2 cap=vec2(sin(dot(p,vec2(8.1,-5.5))-time*3.9),sin(dot(p,vec2(3.5,10.1))+time*4.1));
+   vec2 secondary=vec2(sin(dot(p,vec2(1.9,4.5))-time*2.8),cos(dot(p,vec2(3.3,-2.4))+time*2.0));
+   vec2 chop=noise.xy*.45*(1.-smoothstep(35.,235.,surfaceDistance))
+     + cap*.026*(1.-smoothstep(20.,110.,surfaceDistance))
+     + secondary*.048*(1.-smoothstep(90.,315.,surfaceDistance));
+   vec3 surfaceNormal=normalize(vec3(-g.x+chop.x,1.,-g.y+chop.y));
+  `)
+  .replace('surfaceNormal.xz * ( 0.001 + 1.0 / distance ) * distortionScale','surfaceNormal.xz * (0.014+0.9/max(15.,distance))*distortionScale')
+  .replace('float rf0 = 0.3;','float rf0 = 0.0204;')
+  .replace('vec3 outgoingLight = albedo;',`
+   vec3 body=vec3(.011,.053,.057)*(0.88+0.12*clamp(surfaceNormal.y+noise.z*.5,0.,1.35));
+   vec3 reflected=mix(reflectionSample,vec3(.18,.28,.34),.09);
+   vec3 outgoingLight=mix(body,reflected,reflectance*.65)+specularLight*.27;
+  `);
+ const boat=makeBoat(scene);boat.position.set(6,0,-47);
  let ready=false;
  function render(){if(!active)return;const w=holder.clientWidth,h=holder.clientHeight;if(w<2||h<2)return;
  if(w!==width||h!==hh){width=w;hh=h;renderer.setSize(w,h,false)}
- camera.aspect=w/h;camera.fov=T.MathUtils.clamp(31/zoom,20,40);camera.updateProjectionMatrix();
+ camera.aspect=w/h;camera.fov=T.MathUtils.clamp(31/zoom,27,39);camera.updateProjectionMatrix();
  // Prevent a narrow portrait crop from cutting the mast or a wide embed from exposing the plate edge.
  const frameScale=Math.min(1,w/h/1.2);const dist=27/Math.max(.69,frameScale);
- camera.position.set((w/h>1.25?0:4.5)+Math.sin(pan)*2,3.9+tilt,boat.position.z+dist+4.4);
+ camera.position.set((w/h>1.25?0:4.5)+Math.sin(pan)*2,3.9+tilt,-16+dist+4.4);
  const targetX=(w/h>1.25?0:4.5)+pan*2.3;
  camera.lookAt(targetX,2.75+tilt*.70,-16);
- const bw=Math.max(410,(w/h)*335);const bh=bw*(reverse?0.5625:1641/2437);back.scale.set(bw,bh,1);back.position.set(w/h<1.35&&!reverse?-57:0,(reverse?.75:.661)*bh-bh*.5,-400);back.material.map=reverse?plate:city;m.uniforms.shore.value=back.material.map;m.uniforms.plateScale.value.set(bw,bh);m.uniforms.plateOffset.value.set(back.position.x,back.position.y);m.uniforms.isReverse.value=reverse?1:0;
+ const bw=Math.max(336,(w/h)*271);const bh=bw*(reverse?0.5625:1641/2437);back.scale.set(bw,bh,1);back.position.set(w/h<1.35&&!reverse?-46:0,(reverse?.75:.661)*bh-bh*.5,-400);back.material.map=reverse?plate:city;
  water.position.y=height-1.65;const by=water.position.y+swell(boat.position.x,boat.position.z,clock);
  boat.position.y=by;const yaw=boat.rotation.y,x=boat.position.x,z=boat.position.z;
  const pitch=(swell(x+Math.sin(yaw)*1.95,z+Math.cos(yaw)*1.95,clock)-swell(x-Math.sin(yaw)*1.95,z-Math.cos(yaw)*1.95,clock))/3.9;
@@ -122,5 +121,5 @@ export async function createHarbour(holder){
  render();new ResizeObserver(render).observe(holder);new IntersectionObserver(([e])=>{visible=e.isIntersecting;if(visible)render()}).observe(holder);
  canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();active=false;holder.replaceChildren();holder.dataset.fallback='true';document.getElementById('sceneNote').textContent='Photo view. Interactive water is unavailable; the tide table is unchanged.'});
  renderer.setAnimationLoop(t=>{const dt=Math.max(0,Math.min(.065,(t-last)/1000));last=t;if(!active||!visible||paused||document.hidden)return;clock+=dt;render()});
- return{setHeight(v){height=v;render()},setActive(v){active=v;if(v)render()},pause(v){paused=v;render()},zoom(f){zoom=T.MathUtils.clamp(zoom/f,.86,1.43);render()},setView(v){reverse=v;canvas.setAttribute('aria-label',v?'Queens Wharf looking northeast to Devonport. Illustrative animated water and sailboat.':'The Auckland skyline and Harbour Bridge. Illustrative animated water and sailboat.');render()},reset(){zoom=1;pan=0;tilt=0;render()}}
+ return{setHeight(v){height=v;render()},setActive(v){active=v;if(v)render()},pause(v){paused=v;render()},zoom(f){zoom=T.MathUtils.clamp(zoom/f,.82,1.13);render()},setView(v){reverse=v;canvas.setAttribute('aria-label',v?'Queens Wharf looking northeast to Devonport. Illustrative animated water and sailboat.':'The Auckland skyline and Harbour Bridge. Illustrative animated water and sailboat.');render()},reset(){zoom=1;pan=0;tilt=0;render()}}
 }
