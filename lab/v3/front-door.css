@@ -89,3 +89,10 @@ h3 { font: 500 clamp(1.26rem, 2.1vw, 2rem)/1.08 var(--sans); letter-spacing: -.0
 
 .passage .water .surface.ready,.passage .water .surface.ready iframe{pointer-events:auto}
 .passage .plate.roof{pointer-events:none}
+
+.garden-feature{display:grid;grid-template-columns:1.58fr 1fr;align-items:stretch;gap:0;margin-top:clamp(20px,4vw,52px);background:#f4e9e9;color:#654a4e;text-decoration:none;border:1px solid #654a4e30}
+.garden-feature img{width:100%;height:100%;min-height:220px;aspect-ratio:16/9;object-fit:cover}
+.garden-feature .tool-copy{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:clamp(18px,4vw,55px);gap:12px}
+.garden-feature h3{font-size:clamp(27px,3.9vw,54px);font-weight:550;line-height:.98;letter-spacing:-.055em}
+.garden-feature:hover .tool-action{text-decoration:underline}
+@media(max-width:690px){.garden-feature{grid-template-columns:1fr}.garden-feature img{min-height:0;height:auto}.garden-feature .tool-copy{padding:21px}}
