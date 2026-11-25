@@ -2,3 +2,5 @@ Queens Wharf photographic shore plate: “Devonport, Auckland PA01”, photograp
 
 
 Main panorama: “Auckland skyline from harbour”, WBPchur, 28 May 2019, https://commons.wikimedia.org/wiki/File:Auckland_skyline_from_harbour.png . CC BY-SA 4.0 https://creativecommons.org/licenses/by-sa/4.0/ . Resized and cropped photo, real-time reflected imagery, and composite imagery incorporating this photo are shared under the same CC BY-SA 4.0 licence. No endorsement implied.
+
+Current primary panorama: Chiara Coetzee, Auckland skyline from Viaduct Harbour (Wynyard Quarter), Wikimedia Commons, CC0. Cropped and encoded locally.

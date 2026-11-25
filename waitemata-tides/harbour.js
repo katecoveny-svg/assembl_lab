@@ -10,7 +10,7 @@ const xyz=(x,y,z)=>new T.Vector3(x,y,z);
 function makeBoat(scene){
  const boat=new T.Group();scene.add(boat);
  const paint=(c,r=.55,m=.04)=>new T.MeshStandardMaterial({color:c,roughness:r,metalness:m,side:T.DoubleSide});
- const hull=paint(0x304b51,.36),under=paint(0x663832),stripe=paint(0xe7dfc7),mahogany=paint(0x916548),seam=paint(0x4b3d32),deck=paint(0xb0926d),linen=paint(0xe9e6d9,.92),jib=paint(0xd9d5c9,.91),steel=paint(0x9ca7aa,.26,.7),rope=paint(0xb2a891,.85);
+ const hull=paint(0x172125,.36),under=paint(0xbb342d),stripe=paint(0xc44b42),mahogany=paint(0x2d3335),seam=paint(0x4b3d32),deck=paint(0x43494a),linen=paint(0x29363d,.55),jib=paint(0x46535a,.63),steel=paint(0x9ca7aa,.26,.7),rope=paint(0x59656a,.85);
  function add(g,m){const o=new T.Mesh(g,m);boat.add(o);return o}
  function segment(a,b,r,m){const start=xyz(...a),end=xyz(...b),d=end.clone().sub(start);const o=add(new T.CylinderGeometry(r,r,d.length(),7),m);o.position.copy(start).lerp(end,.5);o.quaternion.setFromUnitVectors(xyz(0,1,0),d.normalize());}
  function sheet(points,idx,m){const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(points,3));g.setIndex(idx);g.computeVertexNormals();return add(g,m)}
@@ -21,21 +21,19 @@ function makeBoat(scene){
   const rings=[[0,0,-.59],[.56,0,-.35],[.85,0,-.06],[.90,0,.025],[.905,0,.057],[.99,1,-.047],[1,1,0],[.982,1,.024]];
   [under,under,hull,stripe,hull,stripe,mahogany].forEach((m,k)=>ribbon(skin(side,rings[k]),skin(side,rings[k+1]),m));
  }
- // A cambered coachroof sits within the existing deck footprint.
- const cabin=new T.Shape();
- cabin.moveTo(-.62,0);cabin.lineTo(.62,0);cabin.quadraticCurveTo(.59,.31,.44,.40);
- cabin.quadraticCurveTo(0,.48,-.44,.40);cabin.quadraticCurveTo(-.59,.31,-.62,0);
- const trunk=add(new T.ExtrudeGeometry(cabin,{depth:1.68,bevelEnabled:true,bevelSize:.035,bevelThickness:.04,bevelSegments:2}),stripe);
- trunk.position.set(0,.44,-.30);
- for(const side of [-1,1])for(const z of [.05,.63,1.11]){
-  const port=add(new T.SphereGeometry(1,14,7),hull);port.position.set(side*.559,.70,z);port.scale.set(.038,.09,.19);
+ // Original foiling monohull with asymmetric cant arms and transverse wing tips.
+ for(const side of [-1,1]){
+  const drop=side<0?-.54:1.01;
+  const arm=[[side*.86,.35,.28],[side*1.67,drop+.33,.19],[side*2.56,drop,.10]];
+  for(let i=0;i<2;i++)segment(arm[i],arm[i+1],.076,under);
+  const wing=add(new T.SphereGeometry(1,20,8),hull);wing.scale.set(.72,.036,.20);wing.position.set(...arm[2]);
  }
  // Deck split around the cockpit instead of a solid box on top of the hull.
  const slot=stations.map(([z])=>z>=-2.31&&z<=-.53?.51:0);
  for(const side of [-1,1]){
   const rail=skin(side,[.982,1,.024]);
   const inner=stations.map(([z,w,h],i)=>[side*slot[i],h+.032,z]);ribbon(rail,inner,deck);
-  for(let j=1;j<8;j++){let f=j/8;let line=rail.map((v,i)=>v.map((x,k)=>x*f+inner[i][k]*(1-f)+(k===1?.012:0)));line.slice(1).forEach((p,i)=>segment(line[i],p,.005,seam));}
+  for(let j=1;j<2;j++){let f=j/2;let line=rail.map((v,i)=>v.map((x,k)=>x*f+inner[i][k]*(1-f)+(k===1?.012:0)));line.slice(1).forEach((p,i)=>segment(line[i],p,.005,seam));}
   for(let i=1;i<stations.length;i++)segment(rail[i-1],rail[i],.029,mahogany);
   ribbon(inner,inner.map(([x,y,z])=>[x*.91,y-.22,z]),mahogany);
  }
@@ -43,7 +41,7 @@ function makeBoat(scene){
  const transom=stations[0];sheet([-.51,.67,-3.34,.51,.67,-3.34,.34,-.06,-3.34,-.34,-.06,-3.34],[0,1,2,0,2,3],mahogany);
  segment([0,.49,.48],[0,6.68,.48],.048,mahogany);segment([0,1.17,.47],[.35,1.28,-2.71],.045,mahogany);
  for(const [x,y,z] of [[0,.73,3.38],[0,.68,-3.28],[-1.03,.45,-.4],[1.03,.45,-.4]])segment([0,6.61,.48],[x,y,z],.010,steel);
- function sail(a,b,c,bulge,m){const p=[],ix=[],N=17,ids=[];function pos(u,v){const w=1-u-v;return [a[0]*w+b[0]*u+c[0]*v+bulge*9*u*v*w,a[1]*w+b[1]*u+c[1]*v,a[2]*w+b[2]*u+c[2]*v]};for(let i=0;i<=N;i++){ids[i]=[];for(let j=0;j<=N-i;j++){ids[i][j]=p.length/3;p.push(...pos(i/N,j/N));}}for(let i=0;i<N;i++)for(let j=0;j<N-i;j++){ix.push(ids[i][j],ids[i+1][j],ids[i][j+1]);if(j<N-i-1)ix.push(ids[i+1][j],ids[i+1][j+1],ids[i][j+1]);}sheet(p,ix,m);for(let t=1;t<=6;t++){let u=t/7;for(let i=0;i<8;i++){let q=pos(u,i/8*(1-u)),r=pos(u,(i+1)/8*(1-u));q[0]+=.005;r[0]+=.005;segment(q,r,.005,rope);}}}
+ function sail(a,b,c,bulge,m){const p=[],ix=[],N=17,ids=[];function pos(u,v){const w=1-u-v;return [a[0]*w+b[0]*u+c[0]*v+bulge*9*u*v*w,a[1]*w+b[1]*u+c[1]*v,a[2]*w+b[2]*u+c[2]*v-(m===linen?.72:0)*u*u]};for(let i=0;i<=N;i++){ids[i]=[];for(let j=0;j<=N-i;j++){ids[i][j]=p.length/3;p.push(...pos(i/N,j/N));}}for(let i=0;i<N;i++)for(let j=0;j<N-i;j++){ix.push(ids[i][j],ids[i+1][j],ids[i][j+1]);if(j<N-i-1)ix.push(ids[i+1][j],ids[i+1][j+1],ids[i][j+1]);}sheet(p,ix,m);for(let t=1;t<=6;t++){let u=t/7;for(let i=0;i<8;i++){let q=pos(u,i/8*(1-u)),r=pos(u,(i+1)/8*(1-u));q[0]+=.005;r[0]+=.005;segment(q,r,.005,rope);}}}
  sail([.012,1.29,.41],[.018,6.47,.44],[.35,1.38,-2.63],.66,linen);sail([.02,.9,3.24],[.013,5.94,.78],[-.31,1.15,-.11],-.61,jib);
  segment([.35,1.28,-2.62],[.27,.51,-2.2],.018,rope);boat.rotation.y=-.99;return boat;
 }
@@ -52,14 +50,14 @@ export async function createHarbour(holder){
  const loader=new T.TextureLoader();
  let timeout;
  const textures=await Promise.race([
-  Promise.all(['./media/skyline-and-bridge.webp','./media/queens-wharf.webp','./vendor/waternormals.jpg'].map(url=>loader.loadAsync(url))),
+  Promise.all(['./media/viaduct-panorama.webp','./media/queens-wharf.webp','./vendor/waternormals.jpg'].map(url=>loader.loadAsync(url))),
   new Promise((_,reject)=>{timeout=setTimeout(()=>reject(new Error('Harbour images timed out')),10000)})
  ]).finally(()=>clearTimeout(timeout));
  const [city,plate,normals]=textures;
  const renderer=new T.WebGLRenderer({antialias:true,alpha:false,powerPreference:'low-power'});
  let shaderFailed=false;
  renderer.debug.onShaderError=()=>{shaderFailed=true};
- const canvas=renderer.domElement;canvas.setAttribute('role','img');canvas.setAttribute('aria-label','Waitematā Harbour, the Harbour Bridge and the Auckland skyline. A model sailing boat rides illustrative waves.');
+ const canvas=renderer.domElement;canvas.setAttribute('role','img');canvas.setAttribute('aria-label','Waitematā Harbour, Wynyard Crossing and the Auckland skyline. A model sailing boat rides illustrative waves.');
  renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.outputColorSpace=T.SRGBColorSpace;
  renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.03;
  const scene=new T.Scene();scene.background=new T.Color(0xa1b2bb);
@@ -166,7 +164,7 @@ export async function createHarbour(holder){
  camera.position.set((w/h>1.25?0:4.5)+Math.sin(pan)*2,3.9+tilt,-16+dist+4.4);
  const targetX=(w/h>1.25?0:4.5)+pan*2.3;
  camera.lookAt(targetX,2.75+tilt*.70,-16);
- const bw=Math.max(336,(w/h)*271);const bh=bw*(reverse?0.5625:1641/2437);back.scale.set(bw,bh,1);back.position.set(w/h<1.35&&!reverse?-46:0,(reverse?.75:.661)*bh-bh*.5,-400);back.material.map=reverse?plate:city;
+ const bw=Math.max(336,(w/h)*271);const bh=bw*(reverse?0.5625:.47);back.scale.set(bw,bh,1);back.position.set(w/h<1.35&&!reverse?-46:0,(reverse?.75:.71)*bh-bh*.5,-400);back.material.map=reverse?plate:city;
  water.position.y=height-1.65;const by=water.position.y+swell(boat.position.x,boat.position.z,clock);
  boat.position.y=by;const yaw=boat.rotation.y,x=boat.position.x,z=boat.position.z;
  const pitch=(swell(x+Math.sin(yaw)*1.95,z+Math.cos(yaw)*1.95,clock)-swell(x-Math.sin(yaw)*1.95,z-Math.cos(yaw)*1.95,clock))/3.9;
