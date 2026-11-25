@@ -429,15 +429,15 @@ const tipMatrix = (t: Tip, size: number, rnd: () => number, m = new THREE.Matrix
 const exposure = (p: THREE.Vector3, yLo: number, yHi: number, R: number) => Math.max(0, Math.min(1, 0.62 * ((p.y - yLo) / Math.max(0.5, yHi - yLo)) + 0.42 * Math.min(1, Math.hypot(p.x, p.z) / Math.max(0.5, R))));
 
 /** one whole tree for drawing many times: wood and foliage, base at the origin */
-function kit(kind: Kind, variant: number, G: Grade, tuftLod: number): Kit {
+function kit(kind: Kind, variant: number, G: Grade, tuftLod: number, flowers = true, displayFlower = false): Kit {
   const rnd = rng32(variant * 7919 + (kind === 'kanuka' ? 11 : 97) + G.lod * 131), wood = new Buf(), leaves = new Buf();
   const H0 = kind === 'kanuka' ? 11 : 10, R0 = kind === 'kanuka' ? 2.4 : 4.6;
   const tips = kind === 'kanuka' ? growKanuka(wood, rnd, H0, R0, G) : growPohutukawa(wood, rnd, H0, R0, G);
   let yHi = 0, yLo = 1e9, R = 0; for (const t of tips) { yHi = Math.max(yHi, t.p.y); yLo = Math.min(yLo, t.p.y); R = Math.max(R, Math.hypot(t.p.x, t.p.z)); }
   const m = new THREE.Matrix4();
   for (const t of tips) {
-    const ex = exposure(t.p, yLo, yHi, R), fl = kind === 'kanuka' ? ex > 0.4 && rnd() < 0.62 : ex > 0.5 && rnd() < 0.45, sh = 0.6 + 0.55 * ex;
-    leaves.add(tuft(kind, tuftLod, fl, Math.floor(rnd() * 3)), tipMatrix(t, G.tuft, rnd, m), sh, sh, sh);
+    const ex = exposure(t.p, yLo, yHi, R), fl = kind === 'kanuka' ? ex > 0.4 && rnd() < 0.62 : ex > (displayFlower ? .42 : .5) && rnd() < (displayFlower ? .76 : .45), sh = 0.6 + 0.55 * ex;
+    leaves.add(tuft(kind, tuftLod, flowers && fl, Math.floor(rnd() * 3)), tipMatrix(t, G.tuft, rnd, m), sh, sh, sh);
   }
   return { wood: wood.geo(true), leaves: leaves.geo(), H: yHi + 0.38 * G.tuft, R: R + 0.34 * G.tuft };
 }
@@ -774,4 +774,19 @@ export async function nativeBush(trees: Tree[], groundAt: (x: number, z: number)
     clearing: C ? { source: 'proposed', note: C.note ?? '', zones: zones.map((z) => z.name ?? 'zone'), removed, kept } : null,
   };
   return g;
+}
+
+
+// A separately labelled proposed specimen: never use this to decorate surveyed trees.
+export function proposedPohutukawa() {
+  const warm=kit('pohutukawa',3,GRADES[1],1,true,true), cool=kit('pohutukawa',3,GRADES[1],1,false,true);
+  cool.wood.dispose();
+  const g=new THREE.Group();
+  g.name='Proposed pōhutukawa · illustrative';g.scale.setScalar(0.34);
+  const bark=new THREE.MeshStandardMaterial({vertexColors:true,color:0x52432e,roughness:.96});
+  void scanSet('bark',1,1).then(([albedo,normal,roughness])=>{bark.map=albedo;bark.normalMap=normal;bark.roughnessMap=roughness;bark.needsUpdate=true;}).catch(()=>{});
+  const wood=new THREE.Mesh(warm.wood,bark);
+  const leaves=new THREE.Mesh(warm.leaves,new THREE.MeshStandardMaterial({vertexColors:true,roughness:.72,side:THREE.DoubleSide}));
+  for(const m of [wood,leaves]){m.castShadow=m.receiveShadow=true;m.userData={kind:'planting',source:'proposed',name:'Pōhutukawa (proposed)',note:'Illustrative specimen and season, not a surveyed tree or prediction.'};}
+  g.add(wood,leaves);g.userData.bloom=(on:boolean)=>{leaves.geometry=on?warm.leaves:cool.leaves;};return g;
 }
