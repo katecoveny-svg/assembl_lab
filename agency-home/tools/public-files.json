@@ -113,6 +113,8 @@
     "pavilion/drape.js": "agency-home/pavilion/drape.js",
     "pavilion/explore.js": "agency-home/pavilion/explore.js",
     "pavilion/folio-shading.js": "agency-home/pavilion/folio-shading.js",
+    "pavilion/garden-bed.js": "agency-home/pavilion/garden-bed.js",
+    "pavilion/garden-sampling.js": "agency-home/pavilion/garden-sampling.js",
     "pavilion/harbour-event.html": "agency-home/pavilion/harbour-event.html",
     "pavilion/harbour-vendor/Sky.js": "agency-home/pavilion/harbour-vendor/Sky.js",
     "pavilion/harbour-vendor/THREE-LICENSE.txt": "agency-home/pavilion/harbour-vendor/THREE-LICENSE.txt",

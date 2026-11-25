@@ -44,7 +44,7 @@ function furnishInterior(){
  const current=world;furnishedWorld=current;
  current.furnishLivingRoom().then(()=>{if(world===current){dirty=true;wake()}}).catch(()=>{});
 }
-function sync(){if(!touring&&!exploring&&!paused&&manual===null){p=Math.max(0,Math.min(1,scrollPosition()+carry*Math.max(0,1-Math.abs(scrollY-carryOrigin)/300)))}furnishInterior();document.querySelectorAll('[data-shot]').forEach(b=>b.setAttribute('aria-pressed',String(!detail&&Math.abs(p-Number(b.dataset.shot))<=.25)));dirty=true;wake()}
+function sync(){if(!garden?.active&&!touring&&!exploring&&!paused&&manual===null){p=Math.max(0,Math.min(1,scrollPosition()+carry*Math.max(0,1-Math.abs(scrollY-carryOrigin)/300)))}furnishInterior();document.querySelectorAll('[data-shot]').forEach(b=>b.setAttribute('aria-pressed',String(!garden?.active&&!detail&&Math.abs(p-Number(b.dataset.shot))<=.25)));dirty=true;wake()}
 function frame(now){id=0;if(!world||!visible||document.hidden)return;const delta=Math.min(.1,Math.max(0,(now-prev)/1000));const active=!paused||time-gustAt<3.6;
  if(dirty||(active&&now-prev>=(1000/30-.6))){if(active)time+=delta;
  if(touring&&!paused){
@@ -56,14 +56,14 @@ function frame(now){id=0;if(!world||!visible||document.hidden)return;const delta
  prev=now;world.draw(p,time,Math.max(0,1-(time-gustAt)/3.6));if(settings.has('profile')){if(lastPaint&&now-lastPaint<250)intervals.push(now-lastPaint);if(intervals.length>500)intervals.shift();lastPaint=now}dirty=false;vista.dataset.position=p.toFixed(3)}
  if(active)id=requestAnimationFrame(frame)}
 function wake(){if(!id)id=requestAnimationFrame(frame)}
-function jump(t,view=null){stopTour();carry=0;free.leave(false);free.releaseGlance();detail=view;world?.setDetail(view);document.querySelectorAll("[data-detail]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.detail===view)));manual=t;p=t;if(!paused&&!reduced.matches){const b=bounds();let u=t<.5?t*2:(t-.5)*2;const inv=.5-Math.sin(Math.asin(1-2*u)/3);const coordinate=settings.has('match')?t:(t<.5?inv*.5:.5+inv*.5);window.scrollTo(0,b.top+coordinate*b.range+(t===1&&!settings.has('match')?Math.min(95,innerHeight*.09):0))}sync();event('pavilion_view',view??t)}
+function jump(t,view=null){finishGarden();stopTour();carry=0;free.leave(false);free.releaseGlance();detail=view;world?.setDetail(view);document.querySelectorAll("[data-detail]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.detail===view)));manual=t;p=t;if(!paused&&!reduced.matches){const b=bounds();let u=t<.5?t*2:(t-.5)*2;const inv=.5-Math.sin(Math.asin(1-2*u)/3);const coordinate=settings.has('match')?t:(t<.5?inv*.5:.5+inv*.5);window.scrollTo(0,b.top+coordinate*b.range+(t===1&&!settings.has('match')?Math.min(95,innerHeight*.09):0))}sync();event('pavilion_view',view??t)}
 function traceAt(x,y){lx=Math.min(1,Math.max(0,x));ly=Math.min(1,Math.max(0,y));vista.style.setProperty('--mx',(lx*100)+'%');vista.style.setProperty('--my',(ly*100)+'%')}
 vista.addEventListener('pointermove',e=>{if(trace){const b=vista.getBoundingClientRect();traceAt((e.clientX-b.x)/b.width,(e.clientY-b.y)/b.height)}});
 vista.addEventListener('pointerdown',e=>{if(trace){const b=vista.getBoundingClientRect();traceAt((e.clientX-b.x)/b.width,(e.clientY-b.y)/b.height)}});
-vista.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;if(trace){e.preventDefault();traceAt(lx+(e.key==='ArrowRight'?.06:e.key==='ArrowLeft'?-.06:0),ly+(e.key==='ArrowDown'?.06:e.key==='ArrowUp'?-.06:0))}else if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();jump(Math.min(1,Math.max(0,p+(e.key==='ArrowLeft'?-.25:.25))))}});
+vista.addEventListener('keydown',e=>{if(garden?.active)return;if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;if(trace){e.preventDefault();traceAt(lx+(e.key==='ArrowRight'?.06:e.key==='ArrowLeft'?-.06:0),ly+(e.key==='ArrowDown'?.06:e.key==='ArrowUp'?-.06:0))}else if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();jump(Math.min(1,Math.max(0,p+(e.key==='ArrowLeft'?-.25:.25))))}});
 document.querySelectorAll('[data-shot]').forEach(b=>b.onclick=()=>jump(Number(b.dataset.shot)));
 document.querySelectorAll('[data-detail]').forEach(b=>b.onclick=()=>{jump(['deck','tree'].includes(b.dataset.detail)?.5:1,b.dataset.detail);b.closest('details')?.removeAttribute('open')});
-function resumePath(){if(detail&&!exploring){detail=null;world?.setDetail(null);document.querySelectorAll('[data-detail]').forEach(b=>b.setAttribute('aria-pressed','false'));sync()}}
+function resumePath(){if(!garden?.active&&detail&&!exploring){detail=null;world?.setDetail(null);document.querySelectorAll('[data-detail]').forEach(b=>b.setAttribute('aria-pressed','false'));sync()}}
 window.addEventListener('wheel',resumePath,{passive:true});window.addEventListener('touchmove',resumePath,{passive:true});
 window.addEventListener('keydown',e=>{if(['PageDown','PageUp','End'].includes(e.key))resumePath()});
 $('#trace').onclick=()=>{trace=!trace;$('.tracing').hidden=!trace;$('#trace').setAttribute('aria-pressed',String(trace));if(trace)vista.focus({preventScroll:true});event('pavilion_grid',trace)};
@@ -71,7 +71,7 @@ function motionLabel(){$('#pause').setAttribute('aria-pressed',String(paused));$
 $('#pause').onclick=()=>{stopTour();paused=!paused;motionLabel();dirty=true;wake()};
 $('#gust').onclick=()=>{gustAt=time;dirty=true;wake();event('pavilion_gust',true)};
 function staticMode(reason){
- stopTour();
+ finishGarden();garden=null;gardenButton.hidden=true;stopTour();
  free.lost();world=null;window.pavilionStatus=undefined;
  vista.dataset.renderer='still';delete vista.dataset.ready;
  $('#gpu').replaceChildren();journey.classList.add('still');
@@ -112,15 +112,42 @@ async function start(signal){
  renderer.backend.device?.lost.then(lost);
  vista.dataset.ready='true';vista.dataset.renderer=world.backend;journey.classList.remove('still');
  document.documentElement.classList.remove('no-js');$('#backend').textContent=world.backend;
- $('.scene-controls').hidden=false;enter.hidden=true;note.textContent='';motionLabel();free.ready();sync();
- window.pavilionStatus=()=>({touring,exploring,detail,backend:world.backend,draw:world.renderer.info.render,position:p,paused,visible,triangles:Math.round(world.triangleCount),pose:world.pose(),intervals});
+ $('.scene-controls').hidden=false;gardenButton.hidden=false;enter.hidden=true;note.textContent='';motionLabel();free.ready();sync();
+ window.pavilionStatus=()=>({touring,exploring,detail,garden:garden?{active:garden.active,planted:garden.count()}:null,backend:world.backend,draw:world.renderer.info.render,position:p,paused,visible,triangles:Math.round(world.triangleCount),pose:world.pose(),intervals});
  requestAnimationFrame(()=>{if(world!==candidate)return;
   candidate.refine().then(()=>{if(world===candidate){dirty=true;wake()}}).catch(()=>{});
  });
 }
 
+const gardenButton=$('#garden-enter'),gardenBar=$('#garden-bar');
+let garden=null,gardenTicket=0;
+function repaintGarden(){dirty=true;wake()}
+function planted(count){$('#garden-status').textContent=count===0?'The planting bed is clear.':count+' clumps planted.'}
+function finishGarden(focus=false){
+ gardenTicket++;gardenButton.disabled=false;if(!garden?.active)return;
+ garden.leave();vista.classList.remove('planting');vista.removeAttribute('aria-describedby');
+ gardenBar.hidden=true;gardenButton.setAttribute('aria-expanded','false');
+ if(focus)gardenButton.focus({preventScroll:true});repaintGarden();
+}
+gardenButton.onclick=async()=>{
+ if(!world||garden?.active)return;
+ const ticket=++gardenTicket,current=world;gardenButton.disabled=true;stopTour();
+ try{
+  const bed=await current.gardenBed();if(ticket!==gardenTicket||world!==current)return;
+  garden=bed;free.leave(false);free.releaseGlance();
+  if(trace)$('#trace').click();
+  garden.activate({surface:$('#gpu'),vista,repaint:repaintGarden,announce:planted,close:()=>finishGarden(true)});
+  gardenBar.hidden=false;gardenButton.setAttribute('aria-expanded','true');vista.classList.add('planting');
+  vista.setAttribute('aria-describedby','garden-help');vista.focus({preventScroll:true});repaintGarden();
+  event('pavilion_garden_open',true);
+ }catch{if(ticket===gardenTicket)note.textContent='Garden could not open. Select Garden to retry.'}
+ finally{if(ticket===gardenTicket)gardenButton.disabled=false}
+};
+$('#garden-done').onclick=()=>finishGarden(true);
+$('#garden-reset').onclick=()=>{garden?.reset();planted(0);repaintGarden();vista.focus({preventScroll:true})};
+
 const free=installExplore(vista,{
- available:()=>!!world,paused:()=>paused,
+ available:()=>!!world&&!garden?.active,paused:()=>paused,
  togglePause(){paused=!paused;motionLabel();dirty=true;wake()},
  lock(value){stopTour();exploring=value;if(value&&trace){trace=false;$('.tracing').hidden=true;$('#trace').setAttribute('aria-pressed','false')}},
  inside:()=>world?.inside(),step:(f,r)=>world?.step(f,r),resetWalk:()=>world?.resetWalk(),setCamera(view){world?.setExplore(view)},repaint(){dirty=true;wake()}
