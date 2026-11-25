@@ -64,3 +64,7 @@ h3 { font: 500 clamp(1.26rem, 2.1vw, 2rem)/1.08 var(--sans); letter-spacing: -.0
   .tool-grid { grid-template-columns: 1fr; }
 }
 :where([id]) { scroll-margin-top: 1rem; }
+
+.tile-credit { margin: .9rem 0 0; text-align: right; color: var(--plum); font-size: .78rem; }
+.tile-credit a { color: inherit; text-underline-offset: .15em; }
+@media (max-width: 700px) { .tile-credit { text-align: left; } }
