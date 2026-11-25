@@ -135,10 +135,10 @@ export function createBeacons(scene, max = 1600, phone = false) {
   g.setAttribute('position', new T.BufferAttribute(pos, 3)); g.setAttribute('color', new T.BufferAttribute(col, 3)); g.setAttribute('kind', new T.BufferAttribute(kind, 1)); g.setAttribute('sel', new T.BufferAttribute(sel, 1));
   const mat = new T.ShaderMaterial({
     transparent: true, depthWrite: false,
-    uniforms: { uSize: { value: phone ? 15 : 13 }, uPR: { value: 1 } },
+    uniforms: { uSize: { value: phone ? 12 : 11 }, uPR: { value: 1 } },
     vertexShader: `attribute vec3 color; attribute float kind; attribute float sel; varying vec3 vC; varying float vK; varying float vS; varying float vFade; uniform float uSize; uniform float uPR;
-      void main(){ vC=color; vK=kind; vS=sel; vec4 mv=modelViewMatrix*vec4(position,1.0); float d=-mv.z; vFade=smoothstep(250.0,700.0,d)*0.9+0.1*sel+sel*0.0;
-        vFade=max(vFade, sel); gl_Position=projectionMatrix*mv; gl_PointSize=uSize*uPR*(1.0+0.6*sel)*mix(1.0,0.8,smoothstep(4000.0,15000.0,d)); }`,
+      void main(){ vC=color; vK=kind; vS=sel; vec4 mv=modelViewMatrix*vec4(position,1.0); float d=-mv.z; vFade=smoothstep(250.0,700.0,d) * mix(.84,.23,smoothstep(1350.0,3650.0,d));
+        vFade=max(vFade, sel); gl_Position=projectionMatrix*mv; gl_PointSize=uSize*uPR*(1.0+0.6*sel)*mix(1.0,0.66,smoothstep(1800.0,6500.0,d)); }`,
     fragmentShader: `varying vec3 vC; varying float vK; varying float vS; varying float vFade;
       void main(){ vec2 p=gl_PointCoord*2.0-1.0; float r = vK<0.5 ? length(p) : (vK<1.5 ? max(abs(p.x),abs(p.y))*1.05 : (abs(p.x)+abs(p.y))*0.85);
         if(r>1.0) discard; float ring=smoothstep(0.74,0.82,r); vec3 c=mix(vC, vec3(0.1,0.12,0.14), ring*0.8); float a=(1.0-smoothstep(0.92,1.0,r))*vFade; gl_FragColor=vec4(c,a); }`,

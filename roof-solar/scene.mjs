@@ -12,9 +12,10 @@ import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { GTAOPass } from "three/addons/postprocessing/GTAOPass.js";
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
-import { mergeGeometries, mergeVertices } from "three/addons/utils/BufferGeometryUtils.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { sunPosition, sunVector, daySteps } from "./sun.mjs";
 import { heightAt, planeZ, inRings, cellIndex, PANEL } from "./roof.mjs";
+import { drawCanopy } from "./foliage.mjs";
 import { drawRoof, roofCap, nearestOnRings, ringsBox, canopyTrees } from "./look.mjs";
 
 const UP = 2; // measured-surface view: each LiDAR cell is drawn as UP x UP quads, smoothly between the heights
@@ -46,7 +47,7 @@ const GradeShader = {
 // a small deterministic random from a number, so the same building always gets the same finish
 const hash = (x) => { const s = Math.sin(x * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
 // finishes are drawn, not read: a palette of common New Zealand roofing and cladding colours
-const ROOFS = ["#3d4144", "#4a4d4f", "#5b5e5f", "#6e6a64", "#2f3436", "#5a3f35", "#4b5547", "#7d7f80", "#8a8c8b"];
+const ROOFS = ["#3b4448", "#454c4c", "#53595b", "#69625a", "#2e383a", "#6c5143", "#46514b", "#74797a", "#838681"];
 const WALLS = ["#e9e5dc", "#d9d4c8", "#cfc8b9", "#bdb6a7", "#e3ddd2", "#a39a8a", "#c9c4bb", "#f0ece4"];
 
 /** a box blur of a height grid, radius r cells: a cheap measure of how far below its surroundings a point sits (for contact shading) */
@@ -57,25 +58,6 @@ function blurGrid(g, r) {
   return { n: N, originE: g.originE, originN: g.originN, data: out };
 }
 const nearB = (e, n, build, bb, d) => { for (let q = 0; q < build.length; q++) { const t = bb[q]; if (e < t[0] || e > t[2] || n < t[1] || n > t[3]) continue; for (const r of build[q].rings) for (let i = 0; i < r.length - 1; i++) { const [x1, y1] = r[i], [x2, y2] = r[i + 1], dx = x2 - x1, dy = y2 - y1, L = dx * dx + dy * dy, u = L ? Math.max(0, Math.min(1, ((e - x1) * dx + (n - y1) * dy) / L)) : 0; if (Math.hypot(e - (x1 + u * dx), n - (y1 + u * dy)) <= d) return true; } } return false; };
-
-/** a lumpy crown: overlapping spheres, displaced, normalised to x and z in -1..1 and y in 0..1 (so a scale puts its top at the measured top) */
-function crownGeometry(seed, detail, lobes) {
-  const parts = [];
-  for (let i = 0; i < lobes; i++) {
-    const a = hash(seed * 13 + i) * Math.PI * 2, rr = i === 0 ? 0 : 0.35 + 0.3 * hash(seed * 7 + i * 3), y = i === 0 ? 0.55 : 0.3 + 0.5 * hash(seed * 5 + i * 11), s = i === 0 ? 0.62 : 0.34 + 0.18 * hash(seed * 3 + i * 17);
-    const g = new THREE.IcosahedronGeometry(s, detail);
-    // Broad, uneven shelves of foliage, with daylight under the outer branches.
-    // The final bounds retain the measured canopy top and horizontal extent.
-    const tier = i === 0 ? 0 : (i % 3 - 1) * 0.09;
-    g.scale(1.08, i === 0 ? 0.84 : 0.57 + 0.16 * hash(i + seed), 0.94);
-    g.translate(Math.cos(a) * rr, y + tier, Math.sin(a) * rr);
-    parts.push(g);
-  }
-  const g = mergeVertices(mergeGeometries(parts.map((q) => { q.deleteAttribute("normal"); q.deleteAttribute("uv"); return q; }))), p = g.attributes.position, v = new THREE.Vector3();
-  for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i); const k = 1 + 0.12 * Math.sin(v.x * 9.1 + seed) * Math.sin(v.y * 7.3 + seed * 2) * Math.sin(v.z * 8.7 + seed * 3); p.setXYZ(i, v.x * k, v.y * k, v.z * k); }
-  g.computeBoundingBox(); const b = g.boundingBox, sx = 2 / (b.max.x - b.min.x), sy = 1 / (b.max.y - b.min.y), sz = 2 / (b.max.z - b.min.z);
-  g.translate(-(b.max.x + b.min.x) / 2, -b.min.y, -(b.max.z + b.min.z) / 2); g.scale(sx, sy, sz); g.computeVertexNormals(); return g;
-}
 
 export class RoofScene {
   constructor(canvas, { tier = "high" } = {}) {
@@ -104,7 +86,7 @@ export class RoofScene {
     this.pickables = []; this.ray = new THREE.Raycaster(); this.needs = true; this.resize();
     r.setAnimationLoop(() => { this.controls.update(); if (this.needs || this.controls._moved) { this.draw(); this.needs = false; } });
     this.controls.addEventListener("change", () => (this.needs = true));
-    new ResizeObserver(() => this.resize()).observe(canvas.parentElement);
+    this.observer = new ResizeObserver(() => this.resize()); this.observer.observe(canvas.parentElement);
   }
   draw() { if (this.composer) this.composer.render(); else this.renderer.render(this.scene, this.camera); }
   resize() { const p = this.canvas.parentElement, w = Math.max(200, p.clientWidth), h = Math.max(200, p.clientHeight); this.renderer.setSize(w, h, false); this.composer?.setPixelRatio(this.renderer.getPixelRatio()); this.composer?.setSize(w, h); this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); this.needs = true; }
@@ -113,7 +95,7 @@ export class RoofScene {
   fromScene(v) { const s = this.site; return { e: v.x + s.e0, n: -v.z + s.n0, z: v.y + s.z0 }; }
 
   clearSite() {
-    for (const g of [this.root, this.look]) for (const o of [...g.children]) { if (o === this.look) continue; g.remove(o); o.traverse((c) => { c.geometry?.dispose?.(); if (c.material) (Array.isArray(c.material) ? c.material : [c.material]).forEach((m) => { m.map?.dispose?.(); m.dispose(); }); }); }
+    for (const g of [this.root, this.look]) for (const o of [...g.children]) { if (o === this.look) continue; g.remove(o); o.traverse((c) => { c.geometry?.dispose?.(); c.customDepthMaterial?.dispose(); if (c.material) (Array.isArray(c.material) ? c.material : [c.material]).forEach((m) => { m.map?.dispose?.(); m.dispose(); }); }); }
     this.pickables = []; this.clay = null; this.panelMesh = this.frameMesh = this.heatMesh = this.railMesh = null;
   }
 
@@ -165,7 +147,7 @@ export class RoofScene {
       sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec3 vG; varying vec3 vW; varying float vUpN; float bumpH;\n" + NOISE_GLSL)
         .replace("#include <color_fragment>", `#include <color_fragment>
           float big = fbm3(vW*0.045), mid = fbm3(vW*0.28), fine = vn3(vW*6.0), fine2 = vn3(vW*17.0), blade = vn3(vW*vec3(40.,4.,40.));
-          vec3 g1 = vec3(0.155,0.235,0.075), g2 = vec3(0.245,0.315,0.105), dry = vec3(0.42,0.39,0.22), soil = vec3(0.30,0.24,0.16);
+          vec3 g1 = vec3(0.108,0.160,0.057), g2 = vec3(0.185,0.230,0.083), dry = vec3(0.35,0.31,0.17), soil = vec3(0.30,0.24,0.16);
           vec3 grass = mix(g1, g2, smoothstep(0.3,0.7,mid)); grass = mix(grass, dry, smoothstep(0.58,0.8,big)*0.55);
           grass *= 0.82 + 0.3*fine + 0.14*(blade-0.5);
           float slope = 1.0 - clamp(vUpN, 0.0, 1.0); grass = mix(grass, soil, smoothstep(0.35,0.7,slope));
@@ -184,15 +166,38 @@ export class RoofScene {
   buildBuildings(site, plan) {
     const { dsm, dem } = site, e0 = this.site.e0, n0 = this.site.n0, z0 = this.site.z0, hi = this.tier === "high";
     
-    const walls = { p: [], n: [], c: [], uv: [] }, roofs = { p: [], c: [], d: [], k: [] }, mine = { p: [], c: [], d: [], k: [] };
+    const edge = [], walls = { p: [], n: [], c: [], uv: [] }, roofs = { p: [], c: [], d: [], k: [] }, mine = { p: [], c: [], d: [], k: [] };
     let count = 0;
     for (const b of site.buildings) {
       const box = ringsBox(b.rings), cx = (box[0] + box[2]) / 2, cy = (box[1] + box[3]) / 2; if (Math.hypot(cx - e0, cy - n0) > R_DRAW - 6) continue;
       const isMine = b === site.chosen, rf = isMine ? drawRoof(dsm, b.rings, plan.planes, dsm) : drawRoof(dsm, b.rings), roofAt = rf.roofAt, cap = roofCap(dsm, b.rings, rf.planes, rf.grid), seed = typeof b.id === "number" ? b.id : [...String(b.id ?? cx)].reduce((s, ch) => s * 31 + ch.charCodeAt(0), 7) % 100003;
       // the foot of the walls: the lowest ground under the outline, less a little so no wall floats on a slope
       let base = Infinity; for (const r of b.rings) for (const [x, y] of r) { const z = heightAt(dem, x, y); if (z === z && z < base) base = z; } if (!isFinite(base)) base = z0; base -= 0.3;
-      const inset = (e, n) => { const q = nearestOnRings(e, n, b.rings); return q.d < 0.9 ? [q.e + q.inE * 0.9, q.n + q.inN * 0.9] : [e, n]; };
-      const roofZ = (e, n) => { const [qe, qn] = inset(e, n), r = roofAt(e, n, qe, qn); return { z: r.z === r.z ? Math.min(r.z, cap) : base + 3, plane: r.plane }; };
+      // LiDAR cells that straddle an eave can include the ground below it. Pull
+      // a supported plane back to that edge only when the nearer return is lower.
+      // The clamp and short reach keep this drawing-only repair from hiding a real
+      // adjacent pitched plane. The raw switch and solar plan keep their inputs.
+      const roofZ = (e, n) => {
+        const q = nearestOnRings(e, n, b.rings);
+        const point = (d) => [q.e + q.inE * d, q.n + q.inN * d];
+        let [qe, qn] = q.d < 0.95 ? point(.95) : [e, n];
+        let r = roofAt(e, n, qe, qn);
+        if (q.d < 2.1 && !r.plane) {
+          const [ie, inn] = point(2.1);
+          if (inRings(ie, inn, b.rings)) {
+            const v = roofAt(ie, inn);
+            if (Number.isFinite(v.z)) {
+              const proposed = v.plane ? planeZ(v.plane, e, n) : v.z;
+              const dz = proposed - r.z;
+              if (!Number.isFinite(r.z) || (dz > .48 && dz < 3.6)) {
+                const edge = Math.max(0, Math.min(1, (2.1-q.d)/1.35));
+                r = { z: Number.isFinite(r.z) ? r.z + dz * edge : proposed, plane: edge > .6 ? v.plane : null };
+              }
+            }
+          }
+        }
+        return { z: Number.isFinite(r.z) ? Math.min(r.z, cap) : base + 3, plane: r.plane };
+      };
       const wc = new THREE.Color(WALLS[Math.floor(hash(seed) * WALLS.length)]), rc = new THREE.Color(ROOFS[Math.floor(hash(seed + 1) * ROOFS.length)]);
       // walls: each edge in steps of at most a metre, from the foot to the roof's edge
       for (const ring of b.rings) for (let i = 0; i < ring.length - 1; i++) {
@@ -202,6 +207,12 @@ export class RoofScene {
         for (let s = 0; s < segs; s++) {
           const ta = s / segs, tb = (s + 1) / segs, ea = x1 + (x2 - x1) * ta, na = y1 + (y2 - y1) * ta, eb = x1 + (x2 - x1) * tb, nb = y1 + (y2 - y1) * tb, za = roofZ(ea, na).z, zb = roofZ(eb, nb).z, u1 = u0 + L / segs;
           const A = [ea - e0, base - z0, -(na - n0)], B = [eb - e0, base - z0, -(nb - n0)], C = [eb - e0, zb - z0, -(nb - n0)], D = [ea - e0, za - z0, -(na - n0)];
+          // Slim folded roof edge catches light and visually anchors the roof to the wall.
+          // Do not add an overhang outside the recorded footprint.
+          const oc = .013, dep = .11;
+          const E = [D[0] + nx * oc, D[1] + .023, D[2] - ny * oc], F = [C[0] + nx * oc, C[1] + .023, C[2] - ny * oc];
+          const G = [F[0], F[1] - dep, F[2]], H = [E[0], E[1] - dep, E[2]];
+          edge.push(...E, ...F, ...G, ...E, ...G, ...H);
           for (const [P, uu, vv, top] of [[A, u0, 0, za], [B, u1, 0, zb], [C, u1, zb - base, zb], [A, u0, 0, za], [C, u1, zb - base, zb], [D, u0, za - base, za]]) { walls.p.push(...P); walls.n.push(nx, 0, -ny); walls.c.push(wc.r, wc.g, wc.b); walls.uv.push(uu, vv, top - z0); }
           u0 = u1;
         }
@@ -227,6 +238,11 @@ export class RoofScene {
       count++;
     }
     this.drawnBuildings = count;
+    if (edge.length) {
+      const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(edge,3)); g.computeVertexNormals();
+      const m = new THREE.MeshStandardMaterial({color:0x505351, roughness:.72, metalness:.17, side:THREE.DoubleSide});
+      const trim = new THREE.Mesh(g,m); trim.receiveShadow = true; this.look.add(trim);
+    }
     const wg = new THREE.BufferGeometry(); wg.setAttribute("position", new THREE.Float32BufferAttribute(walls.p, 3)); wg.setAttribute("normal", new THREE.Float32BufferAttribute(walls.n, 3)); wg.setAttribute("color", new THREE.Float32BufferAttribute(walls.c, 3)); wg.setAttribute("aWall", new THREE.Float32BufferAttribute(walls.uv, 3));
     const wm = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.82, metalness: 0, side: THREE.DoubleSide });
     wm.onBeforeCompile = (sh) => {
@@ -254,13 +270,13 @@ export class RoofScene {
             vec2 dn = length(vDir) > 0.1 ? normalize(vDir) : vec2(0.,1.); vec2 ac = vec2(-dn.y, dn.x);
             float s = dot(vW.xz, ac), t = dot(vW.xz, dn); float w = fwidth(s);
             float kTile = step(0.5, vKind) * (1.0 - step(1.5, vKind)), kFlat = step(1.5, vKind), kIron = 1.0 - kTile - kFlat;
-            float corr = sin(s * 6.2832 / 0.076); float fadeC = 1.0 - smoothstep(0.02, 0.05, w);
-            float row = fract(t / 0.34 + 0.5*step(0.5, fract(s / 0.42))); float tileCol = fract(s / 0.21);
+            float corr = sin(s * 6.2832 / 0.076); float fadeC = 1.0 - smoothstep(0.016, 0.040, w);
+            float row = fract(t / 0.34 + 0.5*step(0.5, fract(s / 0.42))); float tileCol = fract(s / 0.21); float fadeTile = 1.0 - smoothstep(.025, .12, fwidth(t));
             vec3 rc = diffuseColor.rgb * (0.92 + 0.1*vn3(vW*1.5) + 0.06*vn3(vW*9.0));
             rc *= mix(1.0, 0.88 + 0.12*smoothstep(0.0, 0.25, row), kTile);
             rc = mix(rc, diffuseColor.rgb * (0.8 + 0.25*fbm3(vW*2.0)), kFlat);
             rc *= 1.0 + kIron * 0.05 * corr * fadeC;
-            diffuseColor.rgb = rc; rSlope = kIron * cos(s * 6.2832 / 0.076) * 0.9 * fadeC + kTile * (row < 0.08 ? -1.4 : 0.12);`)
+            diffuseColor.rgb = rc; rSlope = kIron * cos(s * 6.2832 / 0.076) * 0.9 * fadeC + kTile * fadeTile * (-1.2 * (1.0 - smoothstep(.04,.14,row)) + .12);`)
           .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.85, kTile + kFlat);")
           .replace("#include <metalnessmap_fragment>", "#include <metalnessmap_fragment>\nmetalnessFactor = mix(metalnessFactor, 0.0, kTile + kFlat);")
           .replace("#include <normal_fragment_maps>", `#include <normal_fragment_maps>
@@ -275,33 +291,7 @@ export class RoofScene {
   buildTrees(site) {
     const hi = this.tier === "high", trees = canopyTrees(site.dsm, site.dem, site.buildings, { maxTrees: hi ? 700 : 280, centre: { e: this.site.e0, n: this.site.n0 }, radius: R_DRAW - 8 });
     this.trees = trees; if (!trees.length) return;
-    const V = 4, geos = Array.from({ length: V }, (_, i) => crownGeometry(i + 1, hi ? 2 : 1, hi ? 9 : 6));
-    const leaf = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.88, metalness: 0, side: THREE.DoubleSide });
-    leaf.onBeforeCompile = (sh) => {
-      sh.vertexShader = sh.vertexShader.replace("#include <common>", "#include <common>\nvarying vec3 vW; varying vec3 vL;").replace("#include <begin_vertex>", "#include <begin_vertex>\nvL = position; vW = (modelMatrix * instanceMatrix * vec4(position,1.)).xyz;");
-      sh.fragmentShader = sh.fragmentShader.replace("#include <common>", "#include <common>\nvarying vec3 vW; varying vec3 vL; float bumpH;\n" + NOISE_GLSL)
-        .replace("#include <clipping_planes_fragment>", `#include <clipping_planes_fragment>
-          float lf = vn3(vW*5.5), lf2 = vn3(vW*13.0); float rim = 1.0 - abs(dot(normalize(vViewPosition), normalize(vNormal)));
-          if (lf*0.7 + lf2*0.3 < rim*0.95 - 0.28) discard;`)
-        .replace("#include <color_fragment>", `#include <color_fragment>
-          float cl = fbm3(vW*1.6); float hgt = clamp(vL.y, 0.0, 1.0);
-          diffuseColor.rgb *= (0.55 + 0.75*cl) * (0.62 + 0.5*hgt) * (0.85 + 0.25*lf2);
-          bumpH = 0.06*lf + 0.03*lf2;`)
-        .replace("#include <normal_fragment_maps>", "#include <normal_fragment_maps>\n" + BUMP_GLSL);
-    };
-    const bark = new THREE.MeshStandardMaterial({ color: 0x4a3f33, roughness: 0.95 }), trunkG = new THREE.CylinderGeometry(0.55, 1, 1, hi ? 7 : 5, 1); trunkG.translate(0, 0.5, 0);
-    const greens = ["#3c5a24", "#4b6a2a", "#33502a", "#566f2e", "#2f4a26", "#61773a", "#445e33"].map((c) => new THREE.Color(c));
-    const byV = Array.from({ length: V }, () => []); trees.forEach((t, i) => byV[i % V].push(t));
-    const M4 = new THREE.Matrix4(), Q = new THREE.Quaternion(), Y = new THREE.Vector3(0, 1, 0), P = new THREE.Vector3(), Sc = new THREE.Vector3();
-    byV.forEach((list, v) => {
-      if (!list.length) return; const im = new THREE.InstancedMesh(geos[v], leaf, list.length);
-      list.forEach((t, i) => { const r = t.radius * (0.95 + 0.1 * hash(t.e + t.n)); Q.setFromAxisAngle(Y, hash(t.e * 3.1 + t.n) * Math.PI * 2); P.copy(this.toScene(t.e, t.n, t.base)); Sc.set(r, t.top - t.base, r); M4.compose(P, Q, Sc); im.setMatrixAt(i, M4); im.setColorAt(i, greens[Math.floor(hash(t.e * 1.7 + t.n * 2.3) * greens.length)]); });
-      im.castShadow = true; im.receiveShadow = true; im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true; this.look.add(im);
-    });
-    const tall = trees.filter((t) => t.kind === "tree"); if (!tall.length) return;
-    const tm = new THREE.InstancedMesh(trunkG, bark, tall.length);
-    tall.forEach((t, i) => { const h = t.base - t.ground + 0.35 * (t.top - t.base) + 0.2, rad = Math.max(0.08, Math.min(0.45, 0.022 * Math.pow(t.height, 1.1))); P.copy(this.toScene(t.e, t.n, t.ground - 0.2)); Sc.set(rad, h, rad); M4.compose(P, Q.identity(), Sc); tm.setMatrixAt(i, M4); });
-    tm.castShadow = true; tm.receiveShadow = true; tm.instanceMatrix.needsUpdate = true; this.look.add(tm);
+    this.look.add(drawCanopy(trees, hi, this.siteData.point, this.toScene.bind(this)));
   }
 
   // ---- panels: frame, glass over 108 half-cut cells, and rails at the stated stand-off ---------------------------------------------------------
@@ -336,7 +326,7 @@ export class RoofScene {
     panels.forEach((p, i) => {
       const az = (p.azimuth * Math.PI) / 180; X.set(Math.cos(az), 0, Math.sin(az)); Y.set(p.normal[0], p.normal[2], -p.normal[1]); Z.crossVectors(X, Y).normalize(); X.crossVectors(Y, Z).normalize();
       if (p.landscape) { const t = X.clone(); X.copy(Z); Z.copy(t).negate(); }
-      M4.makeBasis(X, Y, Z); M4.setPosition(this.toScene(p.e, p.n, p.z).addScaledVector(Y, T / 2)); for (const m of [this.panelMesh, this.frameMesh, this.heatMesh, this.railMesh]) m.setMatrixAt(i, M4);
+      M4.makeBasis(X, Y, Z); M4.setPosition(this.toScene(p.e, p.n, p.z + T / 2)); for (const m of [this.panelMesh, this.frameMesh, this.heatMesh, this.railMesh]) m.setMatrixAt(i, M4);
       this.heatMesh.setColorAt(i, rampColour(p.year ? p.year.share : 0.5));
     });
     for (const m of [this.panelMesh, this.frameMesh, this.heatMesh, this.railMesh]) { m.instanceMatrix.needsUpdate = true; m.castShadow = m !== this.heatMesh; m.receiveShadow = true; m.frustumCulled = false; this.root.add(m); }
@@ -373,10 +363,10 @@ export class RoofScene {
     const k = Math.max(0, Math.min(1, p.elevation / 12)), warm = new THREE.Color(0xff9a52).lerp(new THREE.Color(0xfff4e6), Math.min(1, p.elevation / 30));
     this.sun.color.copy(warm); this.sun.intensity = up ? 3.6 * Math.pow(k, 0.6) : 0; this.sun.castShadow = up && k > 0.01;
     for (const s of [this.sky, this.skySky]) { s.material.uniforms.sunPosition.value.copy(dir); s.material.uniforms.rayleigh.value = 1.5 + (p.elevation < 8 ? 1.2 : 0); s.material.uniforms.turbidity.value = 2.2; }
-    const dusk = Math.max(0, Math.min(1, (p.elevation + 6) / 12)); this.renderer.toneMappingExposure = 0.25 + 0.45 * dusk; this.hemi.intensity = 0.12 + 0.75 * dusk;
+    const dusk = Math.max(0, Math.min(1, (p.elevation + 6) / 12)); this.renderer.toneMappingExposure = 0.24 + 0.48 * dusk; this.hemi.intensity = 0.09 + 0.49 * dusk;
     this.scene.fog.color.setRGB(0.6 * dusk + 0.03, 0.68 * dusk + 0.04, 0.78 * dusk + 0.07);
     if (this.sunBall) this.sunBall.position.set(v[0] * 78, v[2] * 78, -v[1] * 78), (this.sunBall.visible = up);
-    clearTimeout(this._env); this._env = setTimeout(() => { const old = this.envRT; this.envRT = this.pmrem.fromScene(this.skyScene, 0.02); this.scene.environment = this.envRT.texture; this.scene.environmentIntensity = 0.2 + 0.6 * dusk; old?.dispose(); this.needs = true; }, force ? 0 : 140);
+    clearTimeout(this._env); this._env = setTimeout(() => { const old = this.envRT; this.envRT = this.pmrem.fromScene(this.skyScene, 0.02); this.scene.environment = this.envRT.texture; this.scene.environmentIntensity = 0.17 + 0.45 * dusk; old?.dispose(); this.needs = true; }, force ? 0 : 140);
     this.needs = true;
   }
   /** the point on the drawn place under a pointer, as east and north, or null */
@@ -384,7 +374,7 @@ export class RoofScene {
     const r = this.canvas.getBoundingClientRect(); this.ray.setFromCamera(new THREE.Vector2(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1), this.camera);
     const hit = this.ray.intersectObjects(this.pickables, false)[0]; return hit ? this.fromScene(hit.point) : null;
   }
-  dispose() { this.renderer.setAnimationLoop(null); this.clearSite(); this.renderer.dispose(); }
+  dispose() { this.renderer.setAnimationLoop(null); this.observer?.disconnect(); this.controls.dispose(); clearTimeout(this._env); this.clearSite(); this.envRT?.dispose(); this.pmrem.dispose(); this.renderer.dispose(); }
   /** the measured surface (DSM) as one clay sheet, as the page drew it before: what the shade sums walk across */
   buildClay(site, plan) {
     const { dsm, dem } = site, N = dsm.n, M = (N - 1) * UP + 1, pos = new Float32Array(M * M * 3), col = new Float32Array(M * M * 3), wr = new Float32Array(M * M), wv = new Float32Array(M * M), agl = new Float32Array(M * M), aoA = new Float32Array(M * M), blur = blurGrid(dsm, 3);

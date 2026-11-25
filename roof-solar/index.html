@@ -1,4 +1,4 @@
-<!doctype html><html lang="en-NZ"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#180B18">
+<!doctype html><html lang="en-NZ"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f5eeef">
 <title>Roof solar twin · assembl lab</title>
 <meta name="description" content="A New Zealand roof from LINZ's open LiDAR, panels laid on it, the real sun for a year, and a likely yearly generation with the method and sources stated. An estimate, not a quote.">
 <link rel="icon" href="/lab/favicon.svg" type="image/svg+xml"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -6,23 +6,25 @@
 <link rel="stylesheet" href="../site-v2/site-v2.css"><link rel="stylesheet" href="../site-v2/lab.css"><link rel="stylesheet" href="../site-v2/standard.css"><link rel="stylesheet" href="./style.css">
 <script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
 <script src="/lab/navigation.js" defer></script></head>
-<body class="site-v2 lab-std v2-tone-plum rs">
+<body class="site-v2 lab-std v2-tone-ivory rs">
 <a class="skip" href="#stage">Skip to the roof</a>
 <main>
   <header class="rs-head">
     <p class="v2-eyebrow">Roof solar twin / New Zealand</p>
     <h1 class="v2-display">The real sun on a <span class="v2-accent">real roof.</span></h1>
-    <p class="v2-lede">Give an address or pick a point. LINZ's open LiDAR gives the roof and what shades it. Panels go on, the real sun runs for a year, and the likely yearly power is worked out.</p>
+    <p class="v2-lede">Explore solar on the proposed 16A roofs, or <span>give an address or pick a point. LINZ's open LiDAR gives the roof and what shades it. Panels go on, the real sun runs for a year, and the likely yearly power is worked out.</span></p>
   </header>
 
   <div class="rs-grid">
     <section class="rs-stage" aria-label="3D roof and sun">
       <div id="stage" class="rs-canvas" tabindex="-1"><canvas id="gl" aria-label="3D view of the roof, its neighbours and the sun. Drag to turn, scroll to zoom."></canvas>
+        <div id="twinView" class="rs-twin" hidden></div>
         <div class="rs-badge" id="badge" role="status" aria-live="polite">Starting</div>
         <div class="rs-readout" id="readout" aria-live="off"></div>
         <div class="rs-legend" id="legend" hidden><span>Yearly sun on each panel</span><i></i><span class="rs-leg-lo">less</span><span class="rs-leg-hi">best roof</span></div>
       </div>
-      <div class="rs-ctl" role="group" aria-label="Sun controls">
+      <div id="twinControls" class="rs-ctl rs-study-controls" hidden><button type="button" id="roofView" class="rs-btn rs-ghost">Reset roof view</button><label class="rs-tg"><input id="showSolar" type="checkbox" checked> Show panels</label><label class="rs-sl rs-study-sun"><span>Sun time <output id="studySunTime"></output></span><input id="studySun" type="range" min="8" max="20" step="1" value="14"></label></div>
+      <div id="measuredControls" class="rs-ctl" role="group" aria-label="Sun controls">
         <label class="rs-sl"><span>Day <output id="dayOut"></output></span><input id="day" type="range" min="1" max="365" step="1" value="1"></label>
         <label class="rs-sl"><span>Time <output id="minOut"></output></span><input id="min" type="range" min="0" max="1439" step="5" value="900"></label>
         <div class="rs-btns">
@@ -43,7 +45,7 @@
         <div class="sa"><label for="addr" id="addrLab">New Zealand address</label>
           <div class="sa-f"><input id="addr" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="addrList" aria-labelledby="addrLab" aria-describedby="addrMsg" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="120" placeholder="Number, street, suburb"><ul id="addrList" role="listbox" aria-labelledby="addrLab" hidden></ul></div>
           <p id="addrMsg" class="rs-msg" role="status" aria-live="polite"></p></div>
-        <div class="rs-row"><button type="button" class="rs-btn" id="mapBtn" aria-expanded="false" aria-controls="mapWrap">Pick on the map</button><button type="button" class="rs-btn rs-ghost" id="landmark">Public landmark</button></div>
+        <div class="rs-row"><button type="button" class="rs-btn rs-ghost" id="sampleStudy" aria-pressed="false">16A design study</button><button type="button" class="rs-btn" id="mapBtn" aria-expanded="false" aria-controls="mapWrap">Pick on the map</button><button type="button" class="rs-btn rs-ghost" id="landmark">Public landmark</button></div>
         <div id="mapWrap" hidden><div id="map" class="rs-map" aria-label="Map. Click a place to choose it."></div><p class="rs-msg">Click a building. Drag to move, + and − to zoom.</p></div>
         <p class="rs-priv">Where your choice goes: LINZ gets the point, to read heights and outlines. NASA gets it rounded to half a degree. An address you type goes to the lab's address search and is not kept. Nothing is saved.</p>
       </section>

@@ -1,6 +1,7 @@
 // assembl lab · Auckland live: the 3D city. Real ground (LINZ heights, OSM land cover), OSM building heights, a sky and sun
 // set by the real time in Auckland, a moving harbour, and the live vehicles (vehicles.js). Natural colours only.
 import * as T from 'three';
+import { Reflector } from 'three/addons/objects/Reflector.js';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { Sky } from 'three/addons/objects/Sky.js';
 import { Line2 } from 'three/addons/lines/Line2.js';
@@ -70,6 +71,13 @@ export async function createWorld(canvas, { phone = false, capture = false, time
 
   // ---------------------------------------------------------------- sky, sun, light
   const sky = new Sky(); sky.scale.setScalar(150000); scene.add(sky);
+  // A camera-only upper-sky gradient. Keep the physical sun and the unfiltered sky used by scene lighting.
+  sky.material.fragmentShader = sky.material.fragmentShader.replace('#include <tonemapping_fragment>', `
+    float skyElevation = normalize(vWorldPosition-cameraPosition).y;
+    float gradient = smoothstep(0.01,0.58,skyElevation) * smoothstep(-.08,.14,vSunDirection.y);
+    gl_FragColor.rgb = mix(gl_FragColor.rgb,vec3(.22,.35,.54),gradient*.55);
+    #include <tonemapping_fragment>`);
+
   const su = sky.material.uniforms; su.turbidity.value = 3.2; su.rayleigh.value = 1.4; su.mieCoefficient.value = 0.004; su.mieDirectionalG.value = 0.8;
   // after dark the sky model drifts purple; a plain night gradient (navy to near-black) fades in over it
   const nightSky = new T.Mesh(new T.SphereGeometry(140000, 32, 16), new T.ShaderMaterial({ side: T.BackSide, transparent: true, depthWrite: false, fog: false,
@@ -79,7 +87,7 @@ export async function createWorld(canvas, { phone = false, capture = false, time
   // horizon haze: blends the far edge of the sea into the sky in the fog's own colour, so there is no hard line
   const haze = new T.Mesh(new T.CylinderGeometry(60000, 60000, 12000, 64, 1, true), new T.ShaderMaterial({ side: T.BackSide, transparent: true, depthWrite: false, fog: false,
     uniforms: { uC: { value: new T.Color() } }, vertexShader: 'varying float vY; void main(){ vY = position.y / 6000.0; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-    fragmentShader: 'varying float vY; uniform vec3 uC; void main(){ float a = 1.0 - smoothstep(-0.6, 0.15, vY); gl_FragColor = vec4(uC, a); }' }));
+    fragmentShader: 'varying float vY; uniform vec3 uC; void main(){ float a = 1.0 - smoothstep(-0.6, 0.15, vY); gl_FragColor = vec4(uC, a);\n#include <colorspace_fragment>\n}' }));
   haze.position.y = 1000; haze.renderOrder = -1; haze.frustumCulled = false; scene.add(haze);
   const sun = new T.DirectionalLight('#fff4e5', 3); sun.castShadow = true;
   const sm = phone ? 1024 : 2048; sun.shadow.mapSize.set(sm, sm); const sc = sun.shadow.camera; sc.near = 100; sc.far = 12000; sc.left = sc.bottom = -1600; sc.right = sc.top = 1600;
@@ -94,20 +102,20 @@ export async function createWorld(canvas, { phone = false, capture = false, time
     const dir = new T.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el));
     su.sunPosition.value.copy(dir);
     const cloud = cloudPct == null ? 0.25 : Math.min(1, Math.max(0, cloudPct / 100));
-    su.turbidity.value = 2.6 + cloud * 7; su.rayleigh.value = 1.2 + cloud * 1.2; su.mieCoefficient.value = 0.003 + cloud * 0.012;
+    su.turbidity.value = 2.2 + cloud * 6.2; su.rayleigh.value = 1.35 + cloud * 1.1; su.mieCoefficient.value = 0.003 + cloud * 0.012;
     for (const k of ['turbidity', 'rayleigh', 'mieCoefficient', 'mieDirectionalG', 'sunPosition']) skyCopy.material.uniforms[k].value = su[k].value.clone ? su[k].value.clone() : su[k].value;
     const day = T.MathUtils.smoothstep(s.elevation, -6, 10), golden = 1 - T.MathUtils.smoothstep(s.elevation, 2, 22);
     const twilight = Math.max(0, 1 - Math.abs(s.elevation + 3) / 7);
     night = 1 - T.MathUtils.smoothstep(s.elevation, -8, 1);
     nightSky.material.uniforms.uA.value = T.MathUtils.clamp((-s.elevation - 3) / 9, 0, 1);
-    sun.intensity = day * (3.2 - cloud * 1.8); sun.color.set('#fff4e5').lerp(new T.Color('#ffb36b'), golden * 0.8);
-    hemi.intensity = 0.1 + twilight * 0.3 + day * (0.45 + cloud * 0.22); hemi.color.set('#cfe0ff').lerp(new T.Color('#1d2a44'), night);
+    sun.intensity = day * (2.75 - cloud * 1.42); sun.color.set('#fff4e5').lerp(new T.Color('#ffb36b'), golden * 0.8);
+    hemi.intensity = 0.1 + twilight * 0.3 + day * (0.36 + cloud * 0.27); hemi.color.set('#cfe0ff').lerp(new T.Color('#1d2a44'), night);
     hemi.groundColor.set('#5d5a4c').lerp(new T.Color('#111318'), night);
     scene.fog.color.set('#bcc9d4').lerp(new T.Color('#e6c3a3'), golden * day * 0.6).lerp(new T.Color('#0b1119'), night).lerp(new T.Color('#b4bac0'), cloud * day * 0.4);
-    renderer.toneMappingExposure = 0.8 - cloud * day * 0.16 + night * 0.3; haze.material.uniforms.uC.value.copy(scene.fog.color);
+    renderer.toneMappingExposure = 0.9 - cloud * day * 0.18 + night * 0.23; haze.material.uniforms.uC.value.copy(scene.fog.color);
     sky.visible = true; sun.userData.dir = dir;
     if (envRT) envRT.dispose(); envRT = pmrem.fromScene(skyScene, 0, 1, 2000); scene.environment = envRT.texture;
-    scene.environmentIntensity = 0.05 + twilight * 0.35 + day * 0.6;
+    scene.environmentIntensity = 0.05 + twilight * 0.35 + day * 0.45;
     fleet.setNight(night); bMat.userData.uNight.value = night; gMat.userData.uNight.value = night;
     return s;
   }
@@ -121,44 +129,88 @@ export async function createWorld(canvas, { phone = false, capture = false, time
   gMat.userData.uNight = { value: 0 };
   gMat.onBeforeCompile = (s) => {
     s.uniforms.uNight = gMat.userData.uNight; s.uniforms.uLights = { value: lightsTex };
+    s.uniforms.uWaterfront = aerial; s.uniforms.uHasWaterfront = hasAerial;
     s.vertexShader = s.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;');
-    s.fragmentShader = s.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nuniform float uNight;\nuniform sampler2D uLights;' + NOISE)
+    s.fragmentShader = s.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nuniform float uNight;\nuniform sampler2D uLights;\nuniform sampler2D uWaterfront;\nuniform float uHasWaterfront;' + NOISE)
       .replace('#include <map_fragment>', `#include <map_fragment>
         float dn = fbm(vWPos.xz / 3.5) * 0.6 + fbm(vWPos.xz / 40.0) * 0.4;
+        // GeoTIFF crop bounds in NZTM: 1756960–1758400 E, 5920080–5921520 N.
+        // North is negative Z, and the texture's upper edge is north.
+        vec2 orthoUv = vec2((vWPos.x + 2336.0) / 1440.0, (vWPos.z + 816.0) / 1440.0);
+        vec2 inset = min(orthoUv,vec2(1.0)-orthoUv);
+        float feather = smoothstep(0.0,0.075,inset.x) * smoothstep(0.0,0.11,inset.y);
         diffuseColor.rgb *= 0.86 + 0.28 * dn;
+        if (uHasWaterfront > 0.5 && feather > 0.0) {
+        vec3 photo = texture2D(uWaterfront, clamp(vec2(orthoUv.x,1.0-orthoUv.y),0.0,1.0)).rgb;
+        // No overlay if the tile is missing/nodata; preserve authoritative water alpha.
+        float present = smoothstep(.004,.018,max(photo.r,max(photo.g,photo.b)));
+        float blend = feather * uHasWaterfront * present;
+        diffuseColor.rgb = mix(diffuseColor.rgb, photo * (1.12 + 0.04 * dn), blend);
+        }
         // street lights at night, from the OSM road map (ground-lights.webp); dimmer and patchy away from the road centre
         float road = texture2D(uLights, vMapUv).r;
         vec3 nightGlow = mix(vec3(1.0, 0.66, 0.34), vec3(0.95, 0.9, 0.82), step(0.8, road)) * road * (0.7 + 0.6 * vnoise(vWPos.xz / 18.0)) * uNight;`)
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += nightGlow * 0.3 + diffuseColor.rgb * uNight * 0.04;');
   };
+  // Auckland Council open orthophoto is a visual overlay only, not a height/shore/transit source.
+  const aerial = { value: null }, hasAerial = { value: 0 };
+  new T.TextureLoader().load(DATA + 'waterfront-aerial.webp', (t) => {
+    t.colorSpace = T.SRGBColorSpace; t.anisotropy = Math.min(phone ? 4 : 8, renderer.capabilities.getMaxAnisotropy());
+    aerial.value = t; hasAerial.value = 1;
+  }, undefined, () => {});
   const ground = new T.Mesh(gGeo, gMat); ground.receiveShadow = true; ground.name = 'ground_LINZ_heights_OSM_landcover'; scene.add(ground);
 
   // ---------------------------------------------------------------- the sea
-  const wn = waterNormals(); wn.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-  const wMat = new T.MeshStandardMaterial({ color: '#1b3b44', roughness: 0.1, metalness: 0.0, normalMap: wn, normalScale: new T.Vector2(0.4, 0.4), envMapIntensity: 1.25 });
+  const wn = waterNormals(128); wn.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  const wMat = new T.MeshStandardMaterial({ color: '#244848', roughness: 0.23, metalness: 0.0, normalMap: wn, normalScale: new T.Vector2(0.19, 0.19), envMapIntensity: 1.0 });
   wMat.userData.t = { value: 0 };
+  // One quarter-resolution, throttled planar sampling pass; no extra pass on phones.
+  const reflection = (phone || !renderer.extensions.has('EXT_color_buffer_float')) ? null : new Reflector(new T.PlaneGeometry(1, 1), { textureWidth: 480, textureHeight: 270, multisample: 0, clipBias: 0.002 });
+  const reflected = { value: 0 };
+  if (reflection) { reflection.rotation.x = -Math.PI / 2; reflection.updateMatrixWorld(); }
+  const reflectionMatrix = reflection ? reflection.material.uniforms.textureMatrix.value.clone() : new T.Matrix4();
+  const inverseReceiver = reflection ? reflection.matrixWorld.clone().invert() : new T.Matrix4();
+
   wMat.onBeforeCompile = (s) => {
     s.uniforms.uT = wMat.userData.t;
+    if (reflection) {
+      s.uniforms.uMirror = { value: reflection.getRenderTarget().texture };
+      s.uniforms.uReflect = reflected; s.uniforms.uMirrorMatrix = { value: reflectionMatrix };
+    }
     s.vertexShader = s.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;');
-    s.fragmentShader = s.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nuniform float uT;')
+    s.fragmentShader = s.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nuniform float uT;' + (reflection ? '\nuniform sampler2D uMirror; uniform float uReflect; uniform mat4 uMirrorMatrix;' : ''))
       .replace('#include <normal_fragment_maps>', `
-        vec2 wa = vWPos.xz / 38.0 + vec2(uT * 0.011, uT * 0.006), wb = vWPos.xz / 13.0 + vec2(-uT * 0.017, uT * 0.013), wc = vWPos.xz / 260.0 + vec2(uT*0.002, -uT*0.003);
+        vec2 drift = vec2(sin(vWPos.z * 0.019 + vWPos.x * 0.004), cos(vWPos.x * 0.017 - vWPos.z * 0.003));
+        vec2 wa = vWPos.xz / 32.7 + drift * 0.12 + vec2(uT * 0.013, uT * 0.003),
+          wb = mat2(0.97, -0.24, 0.24, 0.97) * vWPos.xz / 11.6 + drift.yx * 0.17 + vec2(-uT * 0.012, uT * 0.016),
+          wc = mat2(0.56, 0.83, -0.83, 0.56) * vWPos.xz / 181.1 + vec2(uT*0.002, -uT*0.003);
         vec3 n1 = texture2D(normalMap, wa).xyz * 2.0 - 1.0, n2 = texture2D(normalMap, wb).xyz * 2.0 - 1.0, n3 = texture2D(normalMap, wc).xyz * 2.0 - 1.0;
         vec3 mapN = normalize(vec3((n1.xy + n2.xy * 0.6 + n3.xy * 0.8) * normalScale, 1.0));
-        float fadeN = 1.0 - smoothstep(1200.0, 6000.0, length(vViewPosition));
+        float fadeN = 1.0 - smoothstep(720.0, 3500.0, length(vViewPosition));
         mapN = normalize(mix(vec3(0.0, 0.0, 1.0), mapN, 0.08 + 0.92 * fadeN)); // far water calms to a mirror instead of shimmering stripes
         normal = normalize(tbn * mapN);`)
-      .replace('#include <color_fragment>', '#include <color_fragment>\n diffuseColor.rgb *= 0.9 + 0.2 * smoothstep(-0.5, 0.5, sin(vWPos.x * 0.002 + vWPos.z * 0.0013));');
+      .replace('#include <color_fragment>', '#include <color_fragment>\n diffuseColor.rgb *= 0.91 + 0.17 * smoothstep(-0.5, 0.5, sin(vWPos.x * 0.0017 + vWPos.z * 0.0011) * sin(vWPos.z * 0.0008));');
+    if (reflection) s.fragmentShader = s.fragmentShader.replace('#include <opaque_fragment>', `
+      vec4 mc = uMirrorMatrix * vec4(vWPos,1.0);
+      vec2 reflUV = mc.xy / max(0.00001, mc.w) + mapN.xy * vec2(0.16, 0.11);
+      float viewNormal = clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0);
+      float fresnel = 0.020 + 0.98 * pow(1.0 - viewNormal, 5.0);
+      float edge = smoothstep(0.0,0.035,reflUV.x) * (1.0-smoothstep(0.965,1.0,reflUV.x)) * smoothstep(0.0,0.035,reflUV.y) * (1.0-smoothstep(0.965,1.0,reflUV.y));
+      if (uReflect > 0.0 && edge > 0.0) {
+        vec3 localReflection = texture2D(uMirror, clamp(reflUV,vec2(0.003),vec2(0.997))).rgb;
+        outgoingLight = mix(outgoingLight, localReflection * vec3(.62,.72,.70), min(.42,fresnel*.72) * uReflect * edge);
+      }
+      #include <opaque_fragment>`);
   };
   const wGeo = new T.PlaneGeometry(140000, 140000, 1, 1); wGeo.rotateX(-Math.PI / 2);
   { const uv = wGeo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 140, uv.getY(i) * 140); }
-  const sea = new T.Mesh(wGeo, wMat); sea.receiveShadow = false; sea.name = 'sea_surface_not_bathymetry'; scene.add(sea);
+  const sea = new T.Mesh(wGeo, wMat); sea.renderOrder = -3; sea.receiveShadow = false; sea.name = 'sea_surface_not_bathymetry'; scene.add(sea);
   // far land beyond the data box: a flat, hazy ring so the horizon is not an edge (not data; hidden by fog at distance)
 
   // ---------------------------------------------------------------- buildings (OSM heights via OpenMapTiles)
   const words = new Int16Array(bBuf), allowTier1 = !phone;
-  const WALLS = ['#9c978d', '#a8987c', '#7a4f40', '#bdb9b0', '#858b8e', '#8f877d', '#a7a296', '#6b7176'].map((c) => new T.Color(c));
-  const TOWERS = ['#56656f', '#6f7d86', '#9a988f', '#46535c', '#8a8e8c', '#aaa69c'].map((c) => new T.Color(c));
+  const WALLS = ['#a29989', '#a78e6b', '#865c4a', '#c2bbb1', '#858e91', '#8f8674', '#afa497', '#697176'].map((c) => new T.Color(c));
+  const TOWERS = ['#556775', '#6d8792', '#a49b8b', '#414f59', '#808d87', '#ada799'].map((c) => new T.Color(c));
   const ROOF = ['#7d7b77', '#8f8b84', '#5f6163', '#9a968e', '#6c625a'].map((c) => new T.Color(c));
   const P = [], N = [], C = [], F = [], I = []; let vtx = 0, nb = 0;
   function pushV(x, y, z, nx, ny, nz, c, fu, fv, seed) { P.push(x, y, z); N.push(nx, ny, nz); C.push(c.r, c.g, c.b); F.push(fu, fv, seed); return vtx++; }
@@ -167,21 +219,25 @@ export async function createWorld(canvas, { phone = false, capture = false, time
     const pts = []; for (let i = 0; i < n; i++) pts.push([words[k + i * 2] / 2, words[k + i * 2 + 1] / 2]); k += n * 2;
     if (tier === 1 && !allowTier1) continue;
     nb++; const seed = (nb * 0.61803) % 1, wall = (h > 40 ? TOWERS : WALLS)[Math.floor(seed * 997) % (h > 40 ? TOWERS.length : WALLS.length)], roof = ROOF[Math.floor(seed * 7919) % ROOF.length];
+    // Ferry Building: OSM's footprint and tower are each mapped here (cross-checked in the orthophoto).
+    const bx = pts.reduce((a,q) => a+q[0],0)/n, bz = pts.reduce((a,q) => a+q[1],0)/n;
+    const ferry = Math.abs(bx+1756) < 2 && Math.abs(bz+382) < 3 && (h === 19 || h === 26);
+    const facadeWall = ferry ? new T.Color('#b9935d') : wall;
+    const facadeRoof = ferry ? new T.Color('#434039') : roof;
     const y0 = g + mh - (mh > 0 ? 0 : 2), y1 = g + h; // walls start 2 m below the grid ground so slopes do not show gaps
     // walls: winding-independent (normals from the outline's orientation)
     let area = 0; for (let i = 0; i < n; i++) { const a = pts[i], b = pts[(i + 1) % n]; area += a[0] * b[1] - b[0] * a[1]; }
-    const sgn = area > 0 ? 1 : -1; let per = 0;
+    const sgn = area > 0 ? 1 : -1;
     for (let i = 0; i < n; i++) {
       const a = pts[i], b = pts[(i + 1) % n], dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz); if (L < 0.3) continue;
       const nx = (dz / L) * sgn, nz = (-dx / L) * sgn;
-      const fz = Math.floor(h) + seed * 0.99; // building height in metres + a per-building seed in the fraction
-      const v0 = pushV(a[0], y0, a[1], nx, 0, nz, wall, per, y0 - g, fz), v1 = pushV(b[0], y0, b[1], nx, 0, nz, wall, per + L, y0 - g, fz);
-      const v2 = pushV(b[0], y1, b[1], nx, 0, nz, wall, per + L, h, fz), v3 = pushV(a[0], y1, a[1], nx, 0, nz, wall, per, h, fz);
+      const fz = Math.floor(h) + (ferry ? 300 : 0) + seed * 0.99; // building height in metres + a per-building seed in the fraction
+      const v0 = pushV(a[0], y0, a[1], nx, 0, nz, facadeWall, 0, y0 - g, fz), v1 = pushV(b[0], y0, b[1], nx, 0, nz, facadeWall, L, y0 - g, fz);
+      const v2 = pushV(b[0], y1, b[1], nx, 0, nz, facadeWall, L, h, fz), v3 = pushV(a[0], y1, a[1], nx, 0, nz, facadeWall, 0, h, fz);
       if (sgn > 0) I.push(v0, v2, v1, v0, v3, v2); else I.push(v0, v1, v2, v0, v2, v3);
-      per += L;
     }
     const tri = T.ShapeUtils.triangulateShape(pts.map(([x, z]) => new T.Vector2(x, z)), []), base = vtx;
-    for (const [x, z] of pts) pushV(x, y1, z, 0, 1, 0, roof, x, z, -1);
+    for (const [x, z] of pts) pushV(x, y1, z, 0, 1, 0, facadeRoof, x, z, -1);
     for (const t of tri) { // keep every roof triangle facing up
       const [a, b, c] = t.map((q) => pts[q]), up = (b[1] - a[1]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[1] - a[1]);
       if (up > 0) I.push(base + t[0], base + t[1], base + t[2]); else I.push(base + t[0], base + t[2], base + t[1]);
@@ -199,24 +255,46 @@ export async function createWorld(canvas, { phone = false, capture = false, time
     s.fragmentShader = s.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vFac;\nvarying float vUp;\nuniform float uNight;' + NOISE)
       .replace('#include <color_fragment>', `#include <color_fragment>
         float isWall = 1.0 - step(0.5, abs(vUp));
-        float bH = floor(vFac.z), bSeed = fract(vFac.z);
+        float isFerry = step(300.0,vFac.z);
+        float bH = floor(vFac.z) - 300.0 * isFerry, bSeed = fract(vFac.z);
         float ribbon = step(0.58, bSeed) * step(18.0, bH);
         float warehouse = (1.0 - step(13.0, bH)) * step(0.46, bSeed);
-        float fl = vFac.y / mix(3.1, 4.3, bSeed), bay = vFac.x / mix(2.2, 5.6, bSeed);
+        float fl = vFac.y / mix(3.1,4.3,bSeed), bay = vFac.x / mix(2.2,5.6,bSeed);
         vec2 cell = vec2(floor(bay), floor(fl)); vec2 f = vec2(fract(bay), fract(fl));
-        float win = isWall * step(0.9, vFac.y) * step(0.14, f.x) * step(f.x, 0.86) * step(0.3, f.y) * step(f.y, 0.86);
-        win = mix(win, isWall * step(1.2, vFac.y) * step(0.06, f.x) * step(0.25, f.y) * step(f.y, 0.89), ribbon);
-        float glazing = mix(1.0, step(bH * 0.56, vFac.y), warehouse);
-        float aa = clamp(1.6 - max(fwidth(bay), fwidth(fl)) * 2.0, 0.0, 1.0); // windows smaller than a pixel average out, no shimmer
-        win = mix(isWall * step(0.9, vFac.y) * 0.4, win, aa) * glazing;
+        // Smooth silhouettes and blend into facade colour as a window becomes subpixel.
+        float fw = max(fwidth(bay), 0.001), fh = max(fwidth(fl), 0.001);
+        float margin = mix(0.13,0.065,ribbon);
+        float wx = smoothstep(margin-fw,margin+fw,f.x) * (1.0-smoothstep(1.0-margin-fw,1.0-margin+fw,f.x));
+        float wy = smoothstep(0.27-fh,0.27+fh,f.y) * (1.0-smoothstep(0.86-fh,0.86+fh,f.y));
+        float aa = 1.0 - smoothstep(0.12,0.72,max(fw,fh));
+        float glazing = mix(1.0, smoothstep(bH*0.44,bH*0.64,vFac.y), warehouse);
+        float win = isWall * smoothstep(0.55,1.2,vFac.y) * mix(0.39,wx*wy,aa) * glazing;
+        float pane = hash12(cell + bSeed * 17.0);
+        float glassTower = smoothstep(22.0,58.0,bH);
+        vec3 streetGlass = mix(vec3(0.045,0.065,0.075),vec3(0.15,0.19,0.20),glassTower);
+        vec3 tint = mix(vec3(0.67,0.83,0.96),vec3(0.92,0.94,0.86),bSeed);
+        vec3 paneColor = streetGlass * tint * (1.0 + (pane-0.5)*0.20*aa);
         float grime = fbm(vec2(vFac.x * 0.4, vFac.y * 0.25) + bSeed * 31.0);
         diffuseColor.rgb *= mix(0.88 + 0.2 * grime, 0.9 + 0.18 * fbm(vFac.xy * 0.15), 1.0 - isWall);
         diffuseColor.rgb *= mix(1.0, 0.55 + 0.45 * smoothstep(0.0, 4.0, vFac.y), isWall); // contact shade at the foot of walls
-        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.09, 0.11, 0.13) + diffuseColor.rgb * 0.12, win * 0.88);
+        diffuseColor.rgb = mix(diffuseColor.rgb, paneColor + diffuseColor.rgb * 0.08, win * 0.92);
+        // The listed Edwardian terminal has sandstone columns and arch-headed recesses over a granite base.
+        if (isFerry > 0.5 && isWall > 0.5) {
+          float hx = fract(vFac.x / 5.25);
+          float hy = fract((vFac.y - 1.2) / 4.8);
+          float pilaster = 1.0-smoothstep(.10,.20,abs(hx-.5));
+          float arch = (1.0-smoothstep(.21,.32,abs(hx-.03))) * smoothstep(.11,.23,hy) * (1.0-smoothstep(.71,.82,hy+pow(abs(hx-.03)*1.1,2.0)));
+          arch += (1.0-smoothstep(.21,.32,abs(hx-.97))) * smoothstep(.11,.23,hy) * (1.0-smoothstep(.71,.82,hy+pow(abs(hx-.97)*1.1,2.0)));
+          float cornice = smoothstep(.88,.92,hy) * (1.0-smoothstep(.96,.98,hy));
+          vec3 stone = vec3(.42,.285,.147) * (.94+.13*grime);
+          stone = mix(stone,vec3(.54,.39,.21),max(pilaster*.7,cornice));
+          stone = mix(stone,vec3(.034,.037,.033),clamp(arch*.85,0.0,.88));
+          diffuseColor.rgb = mix(vec3(.16,.15,.145)*(0.9+grime*.2),stone,smoothstep(.75,1.55,vFac.y));
+        }
         float tallB = smoothstep(8.0, 30.0, bH);
         float pLit = mix(0.04, 0.42, tallB);
         float lit = mix(pLit * 0.6, step(1.0 - pLit, hash12(cell + bSeed * 113.0)), aa) * win;`)
-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.12, win);')
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.18, win);')
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += mix(vec3(1.0, 0.76, 0.48), vec3(0.85, 0.92, 1.0), step(0.7, hash12(cell * 1.7))) * lit * uNight * 1.1;');
   };
   const buildings = new T.Mesh(bGeo, bMat); buildings.castShadow = true; buildings.receiveShadow = true; buildings.name = 'buildings_OSM_render_height'; scene.add(buildings);
@@ -260,8 +338,8 @@ export async function createWorld(canvas, { phone = false, capture = false, time
 
   // ---------------------------------------------------------------- camera
   const views = {
-    harbour: { t: [-2100, 0, 600], p: [-600, 900, -2300] },
-    city: { t: [-2185, 0, 300], p: [-1500, 520, -650] },
+    harbour: { t: [-2040, 55, -15], p: [-1520, 275, -1365] },
+    city: { t: [-2150, 45, 315], p: [-1450, 420, -690] },
     overview: { t: [-900, 0, 1500], p: [5200, 9000, -9500] },
   };
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -275,7 +353,7 @@ export async function createWorld(canvas, { phone = false, capture = false, time
   }
   let inset = 0;
   function resize() { const w = canvas.clientWidth, h = canvas.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h; if (inset) camera.setViewOffset(w, h, 0, inset / 2, w, h); else camera.clearViewOffset(); camera.fov = w < h ? 55 : 42; camera.updateProjectionMatrix(); lineMat.resolution.set(w, h); beacons.material.uniforms.uPR.value = renderer.getPixelRatio(); }
-  new ResizeObserver(resize).observe(canvas); resize(); setView(phone ? { t: [-2150, 0, -200], p: [-1300, 1500, -3300] } : views.harbour);
+  new ResizeObserver(resize).observe(canvas); resize(); setView(phone ? { t: [-2020, 45, -20], p: [-1430, 550, -1780] } : views.harbour);
 
   // ---------------------------------------------------------------- live vehicle state with short tweens between real fixes
   const state = new Map(); let list = [], selectedId = null;
@@ -312,6 +390,7 @@ export async function createWorld(canvas, { phone = false, capture = false, time
 
   // ---------------------------------------------------------------- loop
   let running = true, last = 0, frames = 0, onFrame = null;
+  let lastReflect = -Infinity;
   const loop = (t) => {
     if (!running) return; requestAnimationFrame(loop);
     if (phone && t - last < 30) return; last = t; frames++;
@@ -327,6 +406,18 @@ export async function createWorld(canvas, { phone = false, capture = false, time
     const span = T.MathUtils.clamp(dist * 1.2, 400, 4000);
     if (Math.abs(sc.right - span) > 50) { sc.left = sc.bottom = -span; sc.right = sc.top = span; sc.updateProjectionMatrix(); }
     wMat.userData.t.value = t / 1000; haze.position.x = camera.position.x; haze.position.z = camera.position.z; nightSky.position.copy(camera.position);
+    if (reflection) {
+      const enabled = dist < 3200 && Math.abs(controls.target.x + 2020) < 1800 && Math.abs(controls.target.z + 250) < 1600;
+      reflected.value = enabled ? 1 - T.MathUtils.smoothstep(dist, 2450, 3200) : 0;
+      if (enabled && t - lastReflect >= 120) {
+        lastReflect = t;
+        sea.visible = false; camera.updateMatrixWorld();
+        try {
+          reflection.onBeforeRender(renderer, scene, camera);
+          reflectionMatrix.multiplyMatrices(reflection.material.uniforms.textureMatrix.value, inverseReceiver);
+        } finally { sea.visible = true; }
+      }
+    }
     renderer.render(scene, camera); onFrame?.();
   };
   requestAnimationFrame(loop);
@@ -339,6 +430,6 @@ export async function createWorld(canvas, { phone = false, capture = false, time
     select(id) { selectedId = id; follow = id; },
     unfollow() { follow = null; },
     setInset(px) { inset = Math.max(0, Math.round(px)); resize(); }, // keep the middle of the view above a bottom sheet
-    stats: () => ({ buildings: nb, groundVerts: gGeo.attributes.position.count, buildingTris: I.length / 3, drawCalls: renderer.info.render.calls, sun: sunNow }),
+    stats: () => ({ aerial: !!hasAerial.value, reflecting: reflected.value > 0, buildings: nb, groundVerts: gGeo.attributes.position.count, buildingTris: I.length / 3, drawCalls: renderer.info.render.calls, sun: sunNow }),
   };
 }

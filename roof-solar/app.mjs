@@ -32,7 +32,7 @@ function sunChanged() {
   if (!S.sc) return; S.sc.setSun(d); const p = S.sc.sunPos; let line = p.elevation > 0 ? `Sun ${p.elevation.toFixed(0)}° up, bearing ${p.azimuth.toFixed(0)}° (${compass(p.azimuth)})` : "Sun below the horizon";
   if (S.plan?.panels.length && p.elevation > 0) { const v = sunVector(p); let lit = 0; for (const pn of S.plan.panels) { const cos = v[0] * pn.normal[0] + v[1] * pn.normal[1] + v[2] * pn.normal[2]; if (cos > 0 && panelPoints(pn).filter((pt, i) => i % 2 === 0).some((pt) => !blocked(S.site.dsm, pt[0], pt[1], pt[2], v))) lit++; }
     line += `<br>${lit} of ${S.plan.panels.length} panels in direct sun`; }
-  $("#readout").innerHTML = line;
+  $("#readout").innerHTML = line + (S.study ? "<br>Auckland-region sun · design study" : "");
 }
 for (const id of ["day", "min"]) $("#" + id).addEventListener("input", sunChanged);
 for (const b of document.querySelectorAll("[data-doy]")) b.addEventListener("click", () => { $("#day").value = b.dataset.doy; $("#min").value = 12 * 60 + 40 + (+b.dataset.doy > 300 || +b.dataset.doy < 40 ? 60 : 0); sunChanged(); });
@@ -47,6 +47,8 @@ $("#play").addEventListener("click", () => {
 // ---- loading a place --------------------------------------------------------------------------------------------------------------------
 const badge = (t, load) => { $("#badge").innerHTML = (load ? '<i class="rs-load"></i>' : "") + esc(t); };
 export async function choose(lat, lon, label) {
+  S.study = false; S.twin = null; $("#twinView").replaceChildren(); $("#twinView").hidden = $("#twinControls").hidden = true; $("#gl").hidden = $("#measuredControls").hidden = false;
+  S.playing=false; cancelAnimationFrame(S.raf); $("#play").textContent="Play the day"; $("#clay").disabled = $("#heat").disabled = false; $("#sampleStudy").setAttribute("aria-pressed","false");
   S.abort?.abort(); const ctl = (S.abort = new AbortController()), run = ++S.run; badge("Reading LINZ's LiDAR", true);
   $("#result").innerHTML = `<h2>Likely generation</h2><p class="rs-msg"><i class="rs-load"></i>Reading the roof and the sun for this place. About 2 MB from LINZ.</p>`; $("#roofs").hidden = true;
   try {
@@ -63,6 +65,42 @@ async function work(site, building, run) {
   S.sc.setSite(site, plan); S.sc.setHeat($("#heat").checked); S.sc.setPaths($("#paths").checked); S.sc.setClay($("#clay").checked); $("#legend").hidden = !$("#heat").checked || !plan.panels.length;
   badge(site.label || "Chosen roof"); sunChanged(); render(site, plan); $("#roofs").hidden = false; S.ready = true; document.documentElement.dataset.ready = "1";
 }
+/** Default for the bare entry route: a plan study; address and map still use measured LiDAR. */
+async function show16a(){
+ S.abort?.abort(); const run=++S.run;
+ S.study=true; S.site=null; S.plan=null; S.ready=false; S.twin=null;
+ if(S.sc){ S.sc.canvas.removeEventListener("pointerdown",pd); S.sc.canvas.removeEventListener("pointerup",pu); S.sc.dispose(); S.sc=null; }
+ delete document.documentElement.dataset.ready;
+ $("#clay").checked=$("#heat").checked=false; $("#clay").disabled=$("#heat").disabled=true;
+ $("#sampleStudy").setAttribute("aria-pressed","true"); $("#legend").hidden=$("#roofs").hidden=true;
+ badge("Preparing the 16A plan study",true);
+ $("#result").innerHTML='<h2>16A · roof design study</h2><p class="rs-msg">Preparing the proposed timber homes.</p>';
+ try{
+  $("#gl").hidden=$("#measuredControls").hidden=true;
+  $("#twinControls").hidden=true;
+  $("#readout").textContent="";
+  const m=await import('./twin16a.mjs');
+  S.twin=await m.mountTwin16a($("#twinView"),()=>run===S.run);if(run!==S.run)return;
+  const panels=Object.values(S.twin.units).reduce((a,b)=>a+b,0);
+  $("#twinControls").hidden=false; $("#showSolar").checked=true;
+  $("#studySun").value=new Intl.DateTimeFormat("en-NZ",{timeZone:"Pacific/Auckland",hour:"numeric",hourCycle:"h23"}).format(S.twin.app.when); $("#studySunTime").textContent=$("#studySun").value.padStart(2,"0")+":00";
+  badge("16A · roof design study");
+  $("#result").innerHTML='<h2>16A · roof design study</h2><p><strong>'+panels+' illustrative panels</strong> on 16C and 16D, the proposed roofs.</p><p class="rs-msg">Roof shapes and true-north orientation follow the consent drawings and traced survey. The original interactive 16A model keeps its materials and landscaping. The drawing has no verified geographic anchor in this tool; no yield or measured shade is calculated.</p><p><a href="/plan-studio/twins/16a/">Open the full 16A twin</a></p><p class="rs-msg">For measured roof data and a generation estimate, choose a New Zealand address, map point or the public landmark.</p>';
+  $("#methodBody").textContent="Design view only: illustrative panels on the north-facing slope of each roof; local geometry on traced survey terrain. Visual shade includes the geometry shown, not measured surroundings.";
+  $("#sourcesBody").textContent="16A draft resource-consent set, issue A, 12 May 2025; RC-02 survey, RC-05 area plan, RC-06 plans, RC-07 sections. Survey traced, not survey-grade. Approximate Auckland-region sun; no new address or parcel location is included.";
+  S.ready=true;document.documentElement.dataset.ready="1";
+ }catch(e){if(run!==S.run)return;$("#twinView").replaceChildren();badge("Could not open 16A");$("#result").innerHTML='<p role="alert">'+esc(e.message)+'</p><p><a href="/plan-studio/twins/16a/">Open the original 16A viewer</a>, or use the address search for an estimate.</p>';}
+}
+$("#sampleStudy").addEventListener('click',()=>{if(!S.study||!S.ready)show16a();});
+$("#roofView").addEventListener("click",()=>S.twin?.reset());
+$("#studySun").addEventListener("input",e=>{if(!S.twin)return;const hour=+e.target.value;
+ const m=S.twin.app.when;
+ const d=new Date(m); const dateParts=new Intl.DateTimeFormat("en-NZ",{timeZone:"Pacific/Auckland",year:"numeric",month:"numeric",day:"numeric"}).formatToParts(d);
+ const get=k=>+dateParts.find(p=>p.type===k).value;
+ S.twin.app.setSun(S.twin.app.constructor.nzToUTC(get("year"),get("month"),get("day"),hour));
+ $("#studySunTime").textContent=String(hour).padStart(2,"0")+":00";
+});
+$("#showSolar").addEventListener("change",e=>{if(S.twin)S.twin.overlay.visible=e.target.checked;});
 // click a building in the 3D view to work on that one
 let pdown = null; const pd = (e) => { pdown = { x: e.clientX, y: e.clientY, t: performance.now() }; };
 const pu = async (e) => { if (!pdown || Math.hypot(e.clientX - pdown.x, e.clientY - pdown.y) > 5 || performance.now() - pdown.t > 450) return; const hit = S.sc.pick(e.clientX, e.clientY); pdown = null; if (!hit) return;
@@ -145,5 +183,5 @@ $("#landmark").addEventListener("click", () => { choose(LANDMARK.lat, LANDMARK.l
   const now = new Date(), start = q.get("d") ? +q.get("d") : Math.floor((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - Date.UTC(now.getFullYear(), 0, 0)) / 864e5);
   $("#day").value = Math.max(1, Math.min(365, start)); $("#min").value = q.get("m") ? +q.get("m") : 15 * 60 + 30; sunChanged();
   const lat = parseFloat(q.get("lat")), lon = parseFloat(q.get("lon"));
-  if (inNZ(lat, lon)) choose(lat, lon, "The point in the link"); else choose(LANDMARK.lat, LANDMARK.lon, LANDMARK.name);
+  if (inNZ(lat, lon)) choose(lat, lon, "The point in the link"); else if(q.get("study")==="landmark") choose(LANDMARK.lat, LANDMARK.lon, LANDMARK.name); else show16a();
 }

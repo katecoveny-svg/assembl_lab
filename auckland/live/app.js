@@ -118,7 +118,7 @@ function pushVehicles() {
 
 // ------------------------------------------------------------------------------------------------ selection
 async function select(sel, { fly = true } = {}) { // a later choice always wins over a slower earlier one (S.sel !== sel checks)
-  S.sel = sel; S.arrivals = null; $('#panel').classList.remove('small');
+  S.sel = sel; S.arrivals = null; setPanelSmall(false);
   const w = S.world;
   if (w) { w.select(sel?.kind === 'vehicle' ? sel.id : null); if (sel?.kind !== 'vehicle') w.unfollow(); }
   if (sel?.kind === 'route') { await ensureShapes(); if (S.sel !== sel) return; const r = S.index.routes.get(sel.id); w?.showRoute(S.shapes[sel.id], r?.color && r.color !== '000000' ? '#' + r.color : '#ffffff'); w?.showStop(null); fitRoute(sel.id); }
@@ -165,11 +165,13 @@ function delayNote() {
 }
 function render() {
   const d = $('#detail'), sel = S.sel, now = Math.round(Date.now() / 1000);
+  $('#panel').hidden = !document.body.classList.contains('list-only') && !sel;
+  if ($('#panel').hidden) setPanelSmall(false);
   if (!S.positions && !sel) { d.innerHTML = '<p class="muted">Loading the live positions…</p>'; renderTruth(); return; }
   let html = '';
   if (!sel) {
     const c = S.counts || { bus: 0, train: 0, ferry: 0 };
-    html += `<h2>Where is my bus?</h2><p>${S.posSource === 'sample' ? 'In this saved sample' : (!S.posError && X.timestampFresh(S.positions?.newestFix, now)) ? 'Latest live snapshot' : 'In the last available snapshot (not current)'}: <b>${c.bus}</b> buses, <b>${c.train}</b> trains and <b>${c.ferry}</b> ferries are out on trips across Auckland. Search a route, stop or ferry terminal, or tap a vehicle.</p>`;
+    html += `<h2>Routes and vehicles</h2><p>${S.posSource === 'sample' ? 'In this saved sample' : (!S.posError && X.timestampFresh(S.positions?.newestFix, now)) ? 'Latest live snapshot' : 'In the last available snapshot (not current)'}: <b>${c.bus}</b> buses, <b>${c.train}</b> trains and <b>${c.ferry}</b> ferries are out on trips across Auckland. Search a route, stop or ferry terminal, or tap a vehicle.</p>`;
     if (S.atLive.state === 'on') {
       const tally = { 'on-time': 0, late: 0, early: 0, unknown: 0, cancelled: 0 };
       for (const v of S.positions.vehicles) if (v.routeId) tally[vehicleInfo(v).st.status]++;
@@ -223,7 +225,7 @@ function render() {
     html += `<h3>Next arriving</h3>` + arrivalsHtml(s);
     html += `<div class="actions"><button class="ghost" data-clear>Close</button></div>`;
   }
-  d.innerHTML = html + '<p class="sources"></p>'; renderTruth();
+  d.innerHTML = html; renderTruth();
 }
 function arrivalsHtml(s) {
   const a = S.arrivals;
@@ -251,16 +253,24 @@ function renderTruth() {
   const del = S.atLive.state === 'on' ? `Delays and alerts: AT trip updates ${ago(S.atLive.at)}` : `Delays: not connected yet`;
   const sunTxt = sun ? (sun.elevation > 0 ? ` · sun ${Math.round(sun.elevation)}° up` : ' · sun down') : '';
   const short = !p ? 'Loading' : S.posSource === 'sample' ? `SAVED SAMPLE ${fmtTime(S.sampleAt)}, not live` : `${current ? 'Live' : 'Stale or unavailable'} · newest fix ${X.nzClock(p.newestFix)} (${ago(p.newestFix)})`;
-  const src = document.querySelector('.sources'); if (src) src.innerHTML = sourcesHtml(pos, del);
-  $('#truth').innerHTML = `<span class="short">${esc(short)} · ${S.atLive.state === 'on' ? 'trip updates connected' : 'delays not connected'} · AT data CC BY 4.0 · more in the panel</span><span class="long">${esc(pos)} · ${esc(del)} · Routes and stops: AT GTFS timetable ${esc(gtfsSpan())} · Contains Auckland Transport data, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> · Ground: LINZ CC BY 4.0, © OpenStreetMap contributors ODbL${esc(sunTxt + skyNote)}</span>`;
+  const src = $('#source-detail'), content = sourcesHtml(pos, del) + esc(sunTxt + skyNote);
+  if (src.innerHTML !== content && !src.contains(document.activeElement)) src.innerHTML = content;
+  const live = $('#truth-live');
+  live.dataset.state = S.posSource === 'sample' ? 'sample' : current ? 'current' : 'other';
+  live.textContent = short + (S.atLive.state === 'on' ? '' : ' · no delay feed');
 }
 function gtfsSpan() { const f = (d) => d && /^\d{8}$/.test(d) ? new Intl.DateTimeFormat('en-NZ', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' }).format(Date.UTC(+d.slice(0, 4), +d.slice(4, 6) - 1, +d.slice(6, 8))) : ''; return S.gtfs?.feedStart ? `${f(S.gtfs.feedStart)} to ${f(S.gtfs.feedEnd)}` : ''; }
 function sourcesHtml(pos, del) {
-  return `<b>Where this comes from.</b> ${esc(pos)}. ${esc(del)}${S.atLive.state === 'on' ? '' : ' (at-live is not switched on)'}. Routes, stops and route lines: Auckland Transport GTFS, timetable ${esc(gtfsSpan())}. Contains Auckland Transport data, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Ground heights: LINZ 8 m DEM via AWS Terrain Tiles, CC BY 4.0 (underlying data © RSHL). Land, water, roads and buildings: © OpenStreetMap contributors, ODbL 1.0, via OpenFreeMap. Building heights are OSM heights or levels where mapped, otherwise a 5 m default. Weather: Open-Meteo, modelled. Vehicles are drawn in code at typical sizes; they are not the actual vehicle.`;
+  return `<b>Where this comes from.</b> ${esc(pos)}. ${esc(del)}${S.atLive.state === 'on' ? '' : ' (at-live is not switched on)'}. Routes, stops and route lines: Auckland Transport GTFS, timetable ${esc(gtfsSpan())}. Contains Auckland Transport data, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. <br><b>Static waterfront photography.</b> Auckland 0.075 m Urban Aerial Photos (2024–2025), Survey capture range: February 2024 to March 2025; exact flight days not supplied in these tiles’ metadata. Accessed 25 Nov 2026 from <a href="https://registry.opendata.aws/nz-imagery/">New Zealand Imagery</a>, licensed by Auckland Council for re-use under CC BY 4.0. A cropped, downsampled visual layer, not live imagery or measured façades.<br><b>Terrain and model.</b> Ground heights: LINZ 8 m DEM via AWS Terrain Tiles, CC BY 4.0 (underlying data © RSHL). Land, water, roads and buildings: © OpenStreetMap contributors, ODbL 1.0, via OpenFreeMap. Building heights are OSM heights or levels where mapped, otherwise a 5 m default. Weather: Open-Meteo, modelled. Vehicles are drawn in code at typical sizes; they are not the actual vehicle.`;
 }
 function fmtDate(iso) { const t = Date.parse(iso); return Number.isFinite(t) ? new Intl.DateTimeFormat('en-NZ', { timeZone: 'Pacific/Auckland', day: 'numeric', month: 'short', year: 'numeric' }).format(t) : ''; }
 
 // ------------------------------------------------------------------------------------------------ interactions
+function setPanelSmall(small) {
+  $('#panel').classList.toggle('small', small);
+  $('#grip').setAttribute('aria-expanded', String(!small));
+  $('#grip').textContent = small ? 'Show results' : 'Minimise';
+}
 function wireUi() {
   const q = $('#q'), list = $('#results'); let items = [], hi = -1;
   const show = () => {
@@ -271,17 +281,17 @@ function wireUi() {
     list.hidden = !items.length; q.setAttribute('aria-expanded', String(!!items.length));
   };
   if (q.value) show();
-  const choose = (it) => { if (!it) return; list.hidden = true; q.blur(); q.value = it.kind === 'route' ? it.route.short : it.stop.name; select(it.kind === 'route' ? { kind: 'route', id: it.id } : { kind: 'stop', id: it.id }); };
+  const choose = (it) => { if (!it) return; list.hidden = true; q.setAttribute('aria-expanded', 'false'); setPanelSmall(false); q.blur(); q.value = it.kind === 'route' ? it.route.short : it.stop.name; select(it.kind === 'route' ? { kind: 'route', id: it.id } : { kind: 'stop', id: it.id }); };
   q.addEventListener('input', show); q.addEventListener('focus', () => q.value && show());
   q.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); hi = Math.max(0, Math.min(items.length - 1, hi + (e.key === 'ArrowDown' ? 1 : -1))); [...list.children].forEach((li, i) => li.setAttribute('aria-selected', String(i === hi))); }
-    else if (e.key === 'Enter') { e.preventDefault(); choose(items[Math.max(0, hi)]); } else if (e.key === 'Escape') { list.hidden = true; }
+    else if (e.key === 'Enter') { e.preventDefault(); choose(items[Math.max(0, hi)]); } else if (e.key === 'Escape') { list.hidden = true; q.setAttribute('aria-expanded', 'false'); }
   });
   list.addEventListener('pointerdown', (e) => { const li = e.target.closest('li'); if (li) { e.preventDefault(); choose(items[+li.dataset.i]); } });
-  document.addEventListener('pointerdown', (e) => { if (!e.target.closest('.search')) list.hidden = true; });
+  document.addEventListener('pointerdown', (e) => { if (!e.target.closest('.search')) { list.hidden = true; q.setAttribute('aria-expanded', 'false'); } });
   document.querySelectorAll('[data-mode]').forEach((b) => b.onclick = () => { S.mode = b.dataset.mode; document.querySelectorAll('[data-mode]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); pushVehicles(); if (listOnly) render(); });
   document.querySelectorAll('[data-view]').forEach((b) => b.onclick = () => { S.world?.unfollow(); const v = S.world?.views[b.dataset.view]; if (v) S.world.flyTo(v.t, Math.hypot(v.p[0] - v.t[0], v.p[1], v.p[2] - v.t[2]), Math.asin(v.p[1] / Math.hypot(v.p[0] - v.t[0], v.p[1], v.p[2] - v.t[2]))); });
-  $('#grip').onclick = () => $('#panel').classList.toggle('small');
+  $('#grip').onclick = () => setPanelSmall(!$('#panel').classList.contains('small'));
   $('#detail').addEventListener('click', (e) => {
     const t = e.target.closest('[data-vehicle],[data-route],[data-clear],[data-try]'); if (!t) return;
     if (t.dataset.try) { q.value = t.dataset.try; q.focus(); show(); return; }
@@ -294,7 +304,7 @@ function wireUi() {
   canvas.addEventListener('pointerup', (e) => {
     if (!down || !e.isPrimary || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 6 || !S.world) return;
     const r = canvas.getBoundingClientRect(), id = S.world.pick(e.clientX - r.left, e.clientY - r.top, phone ? 34 : 24);
-    if (id) select({ kind: 'vehicle', id }, { fly: false });
+    if (id) { setPanelSmall(false); select({ kind: 'vehicle', id }, { fly: false }); }
   });
   canvas.addEventListener('pointerdown', () => S.world?.unfollow(), { capture: false });
   // label over the chosen vehicle
