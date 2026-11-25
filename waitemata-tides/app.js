@@ -66,7 +66,7 @@ function showDay(day) {
 function pick(day) {
   if (days[day]) {
     const url = new URL(location.href);
-    url.searchParams.set('date',day);
+    url.searchParams.set('date',day);url.searchParams.delete('event');
     history.replaceState(null,'',url);
   }
   showDay(day);
@@ -99,13 +99,17 @@ try {
   const requested = new URL(location.href).searchParams.get('date');
   const initial = days[requested] ? requested : days[settledDay] ? settledDay : settledDay < dates[0] ? dates[0] : dates.at(-1);
   showDay(initial);
+  const requestedEvent=Number(new URL(location.href).searchParams.get('event'));
+  if(Number.isInteger(requestedEvent)&&days[initial][requestedEvent]){
+    selectedIndex=requestedEvent;el('eventChoice').value=String(selectedIndex);updateScene();
+  }
   showNext();
   el('prev').onclick = ()=>pick(stepDay(selectedDate,-1));
   el('next').onclick = ()=>pick(stepDay(selectedDate,1));
   el('today').onclick = ()=>pick(inAuckland());
   el('day').onchange = event=>pick(event.target.value);
   el('toggle').onclick = toggleScene;
-  el('eventChoice').onchange = event=>{selectedIndex=Number(event.target.value);updateScene();};
+  el('eventChoice').onchange = event=>{selectedIndex=Number(event.target.value);const url=new URL(location.href);url.searchParams.set('event',String(selectedIndex));history.replaceState(null,'',url);updateScene();};
   let motionPaused=matchMedia('(prefers-reduced-motion: reduce)').matches;
   el('motion').textContent=motionPaused?'Animate water':'Pause water';
   el('motion').onclick=()=>{motionPaused=!motionPaused;scene?.pause(motionPaused);el('motion').textContent=motionPaused?'Animate water':'Pause water';};

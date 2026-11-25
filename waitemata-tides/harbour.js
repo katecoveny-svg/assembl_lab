@@ -54,7 +54,7 @@ export async function createHarbour(holder){
  const scene=new T.Scene();scene.background=new T.Color(0xa1b2bb);
  const camera=new T.PerspectiveCamera(31,1,.12,1400);
  const light=new T.HemisphereLight(0xf2f6fb,0x708b88,1.75);scene.add(light);
- const sun=xyz(-.61,.50,.61).normalize(),direct=new T.DirectionalLight(0xffead4,2.1);direct.position.copy(sun).multiplyScalar(100);scene.add(direct);
+ const sun=xyz(-.53,.48,-.70).normalize(),direct=new T.DirectionalLight(0xffead4,2.1);direct.position.copy(sun).multiplyScalar(100);scene.add(direct);
  let active=true,visible=true,paused=matchMedia('(prefers-reduced-motion: reduce)').matches,clock=0,last=0,height=1.65,zoom=1,pan=0,tilt=0,width=0,hh=0;
  let reverse=false;city.colorSpace=plate.colorSpace=T.SRGBColorSpace;
  // Photograph retains one perspective: our orbit is intentionally small, not a fabricated 360° view.
@@ -66,30 +66,41 @@ export async function createHarbour(holder){
  const water=new Water(geom,{textureWidth:1024,textureHeight:512,waterNormals:normals,sunDirection:sun,sunColor:0xf6ede1,waterColor:0x365651,distortionScale:.70,side:T.DoubleSide});
  water.rotation.x=-Math.PI/2;scene.add(water);const m=water.material;
  m.uniforms.size.value=3.4;
+ m.uniforms.hullCentre={value:new T.Vector2()};
  m.vertexShader=m.vertexShader.replace('void main() {','float surface(vec2 p,float s){return '+waveGL+';}\nvoid main() { vec3 waved=position;waved.z+=surface(vec2(position.x,-position.y),time)* (1.0-smoothstep(50.,150.,abs(position.y)));').replaceAll('vec4( position, 1.0 )','vec4(waved,1.)');
  // Fresnel, reflected skyline/boat and coloured downwelling light. No projected photograph on the water.
  const waveSlope=waves.map(([a,k,dx,dz,w])=>'vec2('+number(dx)+','+number(dz)+')*'+number(a*k)+'*cos('+number(k)+'*dot(p,vec2('+number(dx)+','+number(dz)+'))-'+number(w)+'*time)').join('+');
- m.fragmentShader=m.fragmentShader.replace('void main() {','vec2 waveSlope(vec2 p){return '+waveSlope+';}\nvoid main() {')
+ m.fragmentShader='uniform vec2 hullCentre;\n'+m.fragmentShader.replace('void main() {','vec2 waveSlope(vec2 p){return '+waveSlope+';}\nvoid main() {')
   .replace('vec4 noise = getNoise( worldPosition.xz * size );','vec4 noise = getNoise( worldPosition.xz * 63.0 );')
   .replace('vec3 surfaceNormal = normalize( noise.xzy * vec3( 1.5, 1.0, 1.5 ) );',`
    float surfaceDistance=length(eye-worldPosition.xyz);
    vec2 g=waveSlope(worldPosition.xz)*(1.-smoothstep(55.,145.,surfaceDistance));
    vec2 p=worldPosition.xz;
-   p+=vec2(sin(dot(p,vec2(.57,.37))-time*.42),cos(dot(p,vec2(.44,-.23))+time*.37))*.49;
-   float gust=.43+.57*smoothstep(-.7,.7,sin(dot(p,vec2(.31,.59))-time*.71));
-   vec2 cap=vec2(sin(dot(p,vec2(8.1,-5.5))-time*3.9),sin(dot(p,vec2(3.5,10.1))+time*4.1));
-   vec2 secondary=vec2(sin(dot(p,vec2(1.9,4.5))-time*2.8),cos(dot(p,vec2(3.3,-2.4))+time*2.0));
-   vec2 chop=noise.xy*.45*(1.-smoothstep(35.,235.,surfaceDistance))
-     + cap*.024*gust*(1.-smoothstep(20.,110.,surfaceDistance))
-     + secondary*.054*gust*(1.-smoothstep(90.,315.,surfaceDistance));
+   // Long swells carry shorter wind ripples. Suppress sub-pixel frequencies towards the shore.
+   vec2 wind=vec2(.85,.526),crossWind=vec2(-wind.y,wind.x);
+   float along=dot(p,wind),across=dot(p,crossWind);
+   float patch=.48+.52*smoothstep(-.85,.65,sin(across*.34+sin(along*.105)-time*.34));
+   float phase=along*8.7+sin(across*1.35+time*.34)*1.38-time*3.3;
+   float filtered=1.-smoothstep(.34,2.4,fwidth(phase));
+   vec2 capillary=wind*cos(phase)*.072*patch*filtered;
+   vec2 chop=noise.xy*.27*(1.-smoothstep(35.,175.,surfaceDistance))
+      +capillary+crossWind*.044*cos(across*2.2+along*.39-time*1.75)*patch;
+   // A rocking hull makes a short waterline disturbance, centred on the draggable boat.
+   vec2 boatLocal=p-hullCentre;
+   vec2 hullAxes=vec2(dot(boatLocal,vec2(.549,.836)),dot(boatLocal,vec2(-.836,.549)));
+   float ring=length(hullAxes/vec2(1.06,3.4));
+   float crest=sin(ring*12.-time*2.6)*exp(-2.9*abs(ring-1.17));
+   chop+=boatLocal/max(length(boatLocal),.2)*crest*.12;
    vec3 surfaceNormal=normalize(vec3(-g.x+chop.x,1.,-g.y+chop.y));
   `)
   .replace('surfaceNormal.xz * ( 0.001 + 1.0 / distance ) * distortionScale','surfaceNormal.xz * (0.014+0.9/max(15.,distance))*distortionScale')
   .replace('float rf0 = 0.3;','float rf0 = 0.0204;')
   .replace('vec3 outgoingLight = albedo;',`
-   vec3 body=vec3(.011,.053,.057)*(0.88+0.12*clamp(surfaceNormal.y+noise.z*.5,0.,1.35));
-   vec3 reflected=mix(reflectionSample,vec3(.18,.28,.34),.09);
-   vec3 outgoingLight=mix(body,reflected,reflectance*.65)+specularLight*.27;
+   float skyward=clamp(dot(surfaceNormal,normalize(vec3(-.3,1.,-.45))),0.,1.);
+   vec3 body=mix(vec3(.008,.046,.056),vec3(.029,.112,.128),skyward*skyward*patch);
+   float contact=.24*exp(-2.5*abs(ring-.90));
+   vec3 reflected=mix(reflectionSample,vec3(.27,.36,.40),.045);
+   vec3 outgoingLight=(mix(body,reflected,.10+.84*reflectance)+specularLight*.35)*(1.-contact);
   `);
  const boat=makeBoat(scene);boat.position.set(6,0,-47);
  const grip=document.createElement('button');grip.className='boat-grip';grip.type='button';
@@ -132,7 +143,7 @@ export async function createHarbour(holder){
  const pitch=(swell(x+Math.sin(yaw)*1.95,z+Math.cos(yaw)*1.95,clock)-swell(x-Math.sin(yaw)*1.95,z-Math.cos(yaw)*1.95,clock))/3.9;
  const roll=(swell(x+Math.cos(yaw)*.82,z-Math.sin(yaw)*.82,clock)-swell(x-Math.cos(yaw)*.82,z+Math.sin(yaw)*.82,clock))/1.64;
  boat.rotation.order='YXZ';boat.rotation.x=-Math.atan(pitch);boat.rotation.z=Math.atan(roll);
- m.uniforms.time.value=clock;renderer.render(scene,camera);
+ m.uniforms.hullCentre.value.set(x,z);m.uniforms.time.value=clock;renderer.render(scene,camera);
  if(!ready){
   const gl=renderer.getContext(), pixel=new Uint8Array(4);
   for(const y of [.18,.82]){
