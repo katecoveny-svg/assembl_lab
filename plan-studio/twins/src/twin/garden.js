@@ -62,7 +62,7 @@ export function mountGarden(a) {
   if(!group || !bed){out.textContent='Planting bed unavailable';return;}
   const coord=window.__at;
   const bb=new THREE.Box3().setFromObject(bed), centre=bb.getCenter(new THREE.Vector3());
-  let eye=coord('16C',5.25,12.7,2.65);a.camera.position.copy(eye);a.controls.target.copy(centre).add(new THREE.Vector3(0,.28,0));a.controls.update();
+  let eye=coord('16C',5.25,13.8,3.25);a.camera.position.copy(eye);a.controls.target.copy(centre).add(new THREE.Vector3(0,.28,0));a.controls.update();
   const native=proposedPohutukawa(), at=coord('16C',1.75,8.45,0);
   at.y=a.built.support?.(at)??at.y;native.position.copy(at);a.scene.add(native);
   const ring=new THREE.Mesh(new THREE.RingGeometry(.59,.64,56),new THREE.MeshBasicMaterial({color:0xfff2d6,side:THREE.DoubleSide,transparent:true,opacity:.95,depthWrite:false}));
@@ -90,7 +90,10 @@ export function mountGarden(a) {
   let k=groups[0]?.rows[0]?.p.clone()??centre.clone();
   const mode=el.querySelector('.brush-mode');
   const paint=()=>mode.getAttribute('aria-pressed')==='true';
-  const toggle=(on)=>{mode.setAttribute('aria-pressed',String(on));mode.textContent=on?'Brush on':'Orbit';a.controls.enabled=!on;canvas.style.touchAction=on?'none':'';ring.visible=false;finish();};
+  const previousPick=a.pickHook;
+  a.pickHook=e=>paint()||Boolean(previousPick?.(e));
+  canvas.addEventListener('click',e=>{if(paint()){e.stopImmediatePropagation();e.preventDefault();}},true);
+  const toggle=(on)=>{mode.setAttribute('aria-pressed',String(on));mode.textContent=on?'Brush on':'Orbit';a.controls.enabled=!on;document.body.classList.toggle('garden-brush-active',on);document.querySelector('#inspect').hidden=true;a.highlight.visible=false;canvas.style.touchAction=on?'none':'';ring.visible=false;finish();};
   mode.onclick=()=>toggle(!paint());toggle(true);
   el.querySelector('.brush-reset').onclick=()=>{for(const g of groups)for(const row of g.rows)row.seen=false;render(true);};
   canvas.addEventListener('pointerdown',e=>{if(!paint()||pointer!==null||e.button!==0)return;const p=pick(e);if(!p)return;pointer=e.pointerId;canvas.setPointerCapture(pointer);last=p;reticle(p);if(mark(p))render();});
