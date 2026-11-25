@@ -2,6 +2,11 @@
 <html lang="en-NZ"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><base href="https://assembl-waitemata-tides.pages.dev/"><title>Selected Auckland tide</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;height:100%;color:#654a4e;background:#fbf6f6;font:15px/1.35 system-ui,sans-serif}body{display:flex;flex-direction:column}#view{flex:1;min-height:140px;background:center/cover url(media/skyline-and-bridge.webp)}#view canvas{display:block;width:100%;height:100%}nav{display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:8px 14px}button{min-height:42px;border:1px solid #654a4e55;border-radius:2px;color:inherit;background:transparent;padding:4px 12px;font:inherit}button:focus-visible{outline:2px solid #654a4e}#sceneNote{margin:0;padding:0 14px 9px}
+#view{position:relative;overflow:hidden}
+.boat-grip{position:absolute;z-index:1;width:64px;height:52px;min-height:44px;padding:0;transform:translateX(-50%);touch-action:none;cursor:grab;user-select:none;background:transparent;border:0}
+.boat-grip span{position:absolute;top:100%;left:50%;transform:translateX(-50%);padding:2px 6px;background:#654a4e;color:#fbf6f6;font-size:10px;white-space:nowrap;pointer-events:none}
+.boat-grip:focus-visible{outline:2px solid #fbf6f6;box-shadow:0 0 0 4px #654a4e}
+.boat-grip[data-grabbing=true]{cursor:grabbing}.boat-grip[data-grabbing=true] span{visibility:hidden}
 </style></head>
 <body><div id="view"></div><nav aria-label="Harbour camera"><button id="reverse">Face Devonport</button><button id="closer" aria-label="Zoom in">＋</button><button id="wider" aria-label="Zoom out">−</button><button id="reset">Reset view</button><button id="wind">Pause water</button></nav><p id="sceneNote" role="status">Opening harbour…</p>
 <script type="module">

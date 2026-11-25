@@ -14,22 +14,31 @@ export function tideCard(asset){
   return reduced.matches||navigator.connection?.saveData||['2g','3g','slow-2g'].includes(navigator.connection?.effectiveType)
    ||!(navigator.gpu||window.WebGL2RenderingContext);
  }
+ function inputMode(){
+  host.dataset.interactive=String(explicit);
+  open.setAttribute('aria-pressed',String(explicit));
+  open.textContent=explicit?'Leave harbour':'Explore the harbour ↗';
+  if(frame){frame.inert=!explicit;frame.tabIndex=explicit?0:-1}
+ }
  function mount(){
-  if(!visible||document.hidden)return;
+  if(!visible||document.hidden)return;inputMode();
   if(new URLSearchParams(location.search).get('renderer')==='still'){
    host.dataset.renderer='still';byId('water-fallback').hidden=false;return;
   }
-  if(!explicit&&conservative()){open.hidden=false;return}
+  open.hidden=false;
+  if(!explicit&&conservative()){
+   frame?.remove();frame=null;delete host.dataset.renderer;return;
+  }
   const src=selectedSurface?new URL('/pavilion/harbour-event.html',location.origin).href:destination(true);
   if(frame?.src===src){sendSelection();return}
   if(!frame){
    frame=document.createElement('iframe');frame.title='Waitematā Harbour water and published Auckland tide prediction';
    frame.referrerPolicy='strict-origin-when-cross-origin';frame.loading='lazy';
    frame.addEventListener('load',()=>{if(frame&&!selectedSurface)host.dataset.renderer='harbour';sendSelection()});
-   host.append(frame);
+   inputMode();host.append(frame);
   }
   if(selectedSurface)frame.setAttribute('sandbox','allow-scripts');else frame.removeAttribute('sandbox');
-  frame.src=src;open.hidden=true;
+  frame.src=src;
  }
  function sendSelection(){
   if(!selectedSurface||!frame?.contentWindow)return;
@@ -45,7 +54,7 @@ export function tideCard(asset){
   byId('tide-link').href=destination(false);
   clearTimeout(renderTimer);if(visible)renderTimer=setTimeout(mount,140);
  }
- open.onclick=()=>{explicit=true;mount()};
+ open.onclick=()=>{explicit=!explicit;mount()};
  function setEvent(i){
   index=Math.max(0,Math.min(i,days[keys[day]].length-1));const [time,height,,zone,kind]=days[keys[day]][index];
   if(index>0)selectedSurface=true;
@@ -88,7 +97,7 @@ export function tideCard(asset){
   if(inView===visible)return;
   visible=inView;
   if(visible){loadPublishedDays();mount()}
-  else{clearTimeout(renderTimer);frame?.remove();frame=null;delete host.dataset.renderer}
+  else{clearTimeout(renderTimer);frame?.remove();frame=null;explicit=false;inputMode();delete host.dataset.renderer}
  }
  new IntersectionObserver(checkVisible).observe(host);
  addEventListener('scroll',checkVisible,{passive:true});
