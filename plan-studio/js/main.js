@@ -26,6 +26,7 @@ function show(tab) {
   if ((tab === "model" || tab === "visuals") && !stage) boot3d();
   if (stage) { stage.resize(); stage.render(); }
   if (tab === "drawings") drawSheets();
+  if (tab === "model") scheduleDoorReview();
 }
 $$(".steps button").forEach((b) => b.addEventListener("click", () => show(b.dataset.tab)));
 
@@ -127,7 +128,7 @@ function renderDoorBoard(keepRange=false){
   range.disabled=!d;wallCursor=null;
   $("#doorDraftRev").textContent=doorDraft?("PROPOSAL ONLY / "+(doorDraft.revision==="Unissued"?"UNISSUED MODEL":"REV "+doorDraft.revision)):"MODEL STUDY / LOCAL EDIT";
   if(!d){
-    $("#doorBoard").replaceChildren();$("#doorMotion").textContent="";$("#doorDragHint").hidden=true;return;
+    scheduleDoorReview();$("#doorBoard").replaceChildren();$("#doorMotion").textContent="";$("#doorDragHint").hidden=true;return;
   }
   range.max=Math.ceil(d.total);
   if(!keepRange)range.value=d.at;
@@ -135,7 +136,90 @@ function renderDoorBoard(keepRange=false){
   $("#doorDragHint").hidden=false;
   $("#doorBoard").innerHTML=doorCompareSvg(P,id,edit?.to);
   $("#doorMotion").textContent=edit?(doorMm(Math.abs(edit.to-edit.from))+" toward the wall "+(edit.to>edit.from?"end":"start")):"Door "+id+" / wall "+d.w.id;
+  scheduleDoorReview();
 }
+// The first impression is two actual views of the doorway. Rendering reuses
+// Studio's single WebGL context, and a swipe just composites the cached frames.
+let reviewFrames=null, reviewKey=null, reviewTimer, reviewRun=0, reviewDrag=null, reviewModule;
+const theatre=$("#doorTheatre"), reviewCanvas=$("#doorScene"), reviewRange=$("#doorReviewRange");
+function paintDoorScene(){
+  const split=reviewFrames?.after?Number(reviewRange.value):100;
+  const g=reviewCanvas.getContext("2d"),original=reviewFrames?.before;
+  if(original){
+    const {width:w,height:h}=original;
+    if(reviewCanvas.width!==w||reviewCanvas.height!==h){reviewCanvas.width=w;reviewCanvas.height=h;}
+    g.drawImage(original,0,0);
+    if(reviewFrames.after && split<100){
+      const x=Math.round(split*.01*w);
+      g.drawImage(reviewFrames.after,x,0,w-x,h,x,0,w-x,h);
+    }
+  }else g.clearRect(0,0,reviewCanvas.width,reviewCanvas.height);
+  theatre.style.setProperty("--wipe",split+"%");
+  const comparing=Boolean(reviewFrames?.after);
+  theatre.classList.toggle("is-comparing",comparing);
+  $("#reviewDivider").hidden=!comparing||split===0||split===100;
+  $("#reviewBefore").hidden=!original||split<15;$("#reviewAfter").hidden=!comparing||split>85;
+  $("#doorReviewControls").hidden=!comparing;
+  $("#reviewAllBefore").setAttribute("aria-pressed",String(split===100));
+  $("#reviewAllAfter").setAttribute("aria-pressed",String(comparing&&split===0));
+  const text=comparing?split+" percent original and "+(100-split)+" percent proposed":"Original model";
+  reviewRange.setAttribute("aria-valuetext",text);
+  reviewCanvas.setAttribute("aria-label",(reviewFrames?.inside?"Interior":"Exterior")+" model view of door "+$("#doorPick").value+". "+text);
+}
+function scheduleDoorReview(){
+  clearTimeout(reviewTimer);const run=++reviewRun;
+  if(state.tab!=="model")return;
+  if(doorDraft&&reviewFrames?.forDraft!==doorDraft){
+    $("#applyDoor").disabled=true;$("#reviewMessage").textContent="Preparing the proposed view…";$("#reviewMessage").hidden=false;
+    // Never show another proposal with the current draft's approval controls.
+    if(reviewFrames?.after){reviewFrames={...reviewFrames,after:null};reviewKey=null;paintDoorScene();}
+  }
+  reviewTimer=setTimeout(async()=>{
+    if(run!==reviewRun||state.tab!=="model")return;
+    const id=$("#doorPick").value,draft=doorDraft;
+    if(!id){reviewFrames=reviewKey=null;paintDoorScene();$("#reviewMessage").textContent="No editable door in this model.";$("#reviewMessage").hidden=false;return;}
+    try{
+      if(!stage)await boot3d();
+      const mod=await (reviewModule??=import("./door-scene.js"));
+      if(run!==reviewRun||state.tab!=="model")return;
+      if(stage.recording||inspection)return;
+      const dims=theatre.getBoundingClientRect();
+      if(dims.width<1||dims.height<1)return;
+      const w=Math.max(520,Math.min(1280,Math.round(dims.width*Math.min(devicePixelRatio||1,1.6))));
+      const h=Math.round(w*dims.height/dims.width);
+      const k=w+"|"+h+"|"+id+"|"+(draft?.edit.to??"original")+"|"+doorModelStamp(P);
+      if(reviewKey!==k){
+        const t=performance.now();
+        reviewFrames=mod.captureDoorScene(stage,P,draft?.after,id,w,h);
+        if(reviewFrames)reviewFrames.forDraft=draft;
+        if(draft&&!reviewFrames?.after)throw Error("No scene for this proposal.");
+        theatre.dataset.captureMs=Math.round(performance.now()-t);
+        reviewRange.value=reviewFrames?.after?"0":"100";reviewKey=k;
+      }
+      if(!reviewFrames)throw Error("No door view available.");
+      $("#reviewMessage").hidden=true;$("#applyDoor").disabled=false;paintDoorScene();
+    }catch(e){
+      reviewFrames=reviewKey=null;paintDoorScene();$("#reviewMessage").textContent="3D review unavailable. You can still compare the drawing under Details.";
+      $("#reviewMessage").hidden=false;
+      if(doorDraft){$("#doorExact").open=true;$("#applyDoor").disabled=false;}
+      console.warn("Door review:",e.message);
+    }
+  },100);
+}
+reviewRange.addEventListener("input",paintDoorScene);
+$("#reviewAllBefore").onclick=()=>{reviewRange.value=100;paintDoorScene();};
+$("#reviewAllAfter").onclick=()=>{reviewRange.value=0;paintDoorScene();};
+function dragDoorReview(e){
+  const r=theatre.getBoundingClientRect();
+  reviewRange.value=Math.round(100*Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)));paintDoorScene();
+}
+theatre.addEventListener("pointerdown",e=>{
+  if(!reviewFrames?.after||!e.isPrimary||e.button!==0)return;
+  reviewDrag=e.pointerId;theatre.setPointerCapture(reviewDrag);dragDoorReview(e);
+});
+theatre.addEventListener("pointermove",e=>{if(e.pointerId===reviewDrag)dragDoorReview(e);});
+theatre.addEventListener("lostpointercapture",()=>reviewDrag=null);
+addEventListener("resize",scheduleDoorReview);
 function renderDoorReference(){
   const o=P.openings.find(o=>o.id===$("#doorPick").value);
   const w=o&&P.walls.find(w=>w.id===o.wall);
@@ -297,7 +381,7 @@ function leaveBuild(explore=false) {
   stage.render=originalRender;stage.ctl.enabled=true;$("#buildControls").hidden=true;$("#buildDivider").hidden=true;
   $(".stagewrap").classList.remove("is-building");$("#drawingFolio").classList.remove("is-building","is-showcase");stage.resize();
   $("#folioHead").hidden=true;$("#folioSides").hidden=true;$("#showBuild").setAttribute("aria-expanded","false");
-  setLook(explore?"solid":previousLook);stage.render();
+  setLook(explore?"solid":previousLook);stage.render();scheduleDoorReview();
 }
 $("#showBuild").onclick=async()=>{
   if (inspection) return leaveBuild(true);

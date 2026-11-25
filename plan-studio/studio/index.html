@@ -96,8 +96,18 @@
       <div class="walk-handoff"><button id="prepareWalk" class="btn ghost sm" type="button">Prepare this model for a walkthrough</button> <a class="btn" id="walkLink" target="_blank" rel="noopener" hidden>Open walkthrough</a><span id="walkStatus" role="status" class="hint"></span></div>
       <section id="doorChange" class="card edit-desk" aria-labelledby="doorChangeTitle">
         <header><p class="mono" id="doorDraftRev">MODEL STUDY / LOCAL EDIT</p><h2 id="doorChangeTitle">Move a door</h2></header>
-        <div id="doorBoard" aria-describedby="doorReference doorDragHint"></div>
-        <div class="door-at-a-glance"><p id="doorMotion"></p><p id="doorDragHint">Drag or tap the lower wall to try a position.</p></div>
+        <figure class="door-still" id="doorTheatre">
+          <canvas id="doorScene" role="img" aria-label="Doorway review"></canvas>
+          <span class="door-side-tag" id="reviewBefore">Original</span><span class="door-side-tag" id="reviewAfter" hidden>Proposed</span>
+          <span class="door-wipe" id="reviewDivider" hidden aria-hidden="true"></span>
+          <span class="door-scene-message" id="reviewMessage">Preparing the model view…</span>
+        </figure>
+        <div class="door-review-controls" id="doorReviewControls" hidden>
+          <button type="button" id="reviewAllBefore" aria-label="Show entire original view">Original</button>
+          <label for="doorReviewRange" class="review-slider"><span>Drag to compare</span><input id="doorReviewRange" type="range" min="0" max="100" value="50" step="1"></label>
+          <button type="button" id="reviewAllAfter" aria-label="Show entire proposed view">Proposed</button>
+        </div>
+        <div class="door-at-a-glance"><p id="doorMotion"></p><p id="doorReviewHint">Fixed camera · doors shown open for review</p></div>
         <p id="doorStatus" role="status"></p>
         <section id="doorPreview" hidden aria-labelledby="doorDiffTitle">
           <h3 id="doorDiffTitle" tabindex="-1">Review door move</h3>
@@ -109,7 +119,9 @@
           <label>Door <select id="doorPick"></select></label>
           <label class="door-slider" for="doorRange">Proposed centre · whole wall<input id="doorRange" type="range" step="50" min="0" max="24000" value="7000"></label>
         </div>
-        <details id="doorExact"><summary>Enter an exact position</summary>
+        <details id="doorExact"><summary>Details · wall drawing and exact position</summary>
+          <div id="doorBoard" aria-describedby="doorReference doorDragHint"></div>
+          <p id="doorDragHint" class="hint">Drag or tap the lower wall strip to try a position.</p>
           <form id="doorForm" novalidate>
             <label>New centre from wall start <input id="doorPosition" type="text" inputmode="decimal" placeholder="e.g. 8.2" autocomplete="off" required aria-describedby="doorReference"></label>
             <label>Unit <select id="doorUnit"><option value="m">m</option><option value="mm">mm</option></select></label>
