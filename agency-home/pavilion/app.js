@@ -99,8 +99,8 @@ addEventListener('scroll',scrollStill,{passive:true});reduced.addEventListener('
 function frame(now){id=0;if(!world||!visible||document.hidden)return;const delta=Math.min(.1,Math.max(0,(now-prev)/1000));const active=!paused||time-gustAt<3.6;
  furnishExterior();
  if(dirty||(active&&now-prev>=(1000/30-.6))){if(active)time+=delta;
- if(cinema&&!paused){
-  tourTime=(tourTime+delta)%43;
+ if(cinema){
+  if(!paused)tourTime=(tourTime+delta)%43;
   // Hold each composition long enough to read its materials. Cut back on the exterior still.
   const beats=[[0,0],[3.6,.035],[9,.29],[12,.37],[18,.64],[22.5,.76],[25,.78],[32,1],[43,1]];
   let k=1;while(k<beats.length-1&&tourTime>beats[k][0])k++;
@@ -359,8 +359,8 @@ if(cinema){
   if(world||paused||document.hidden||!visible){video.pause();return}
   video.hidden=false;vista.dataset.medium='film';
  });
- video.addEventListener('error',()=>{videoFailed=true;video.hidden=true;vista.dataset.medium='still'});
- filmMotion.onclick=()=>{paused=!paused;visitorRequested=!paused;prev=performance.now();status();
+ video.addEventListener('error',()=>{videoFailed=true;video.hidden=true;vista.dataset.medium='still';if(!world){paused=true;status()}});
+ filmMotion.onclick=()=>{paused=!paused;visitorRequested=!paused;if(visitorRequested&&videoFailed){videoFailed=false;video.load()}prev=performance.now();status();
   if(!paused&&!world&&!pending&&settings.get('renderer')!=='still')loadWorld();syncMedium();dirty=true;wake();
  };
  reduced.addEventListener('change',()=>{status();syncMedium()});
