@@ -14,11 +14,13 @@ const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<
 const evTone = (ev) => (!ev ? "lo" : ev.src === "ai" || ev.conf < 0.6 ? "lo" : ev.conf < 0.8 ? "mid" : "hi");
 const SRC = { drawing: "Measured from the drawing's linework", text: "Read from the drawing's text", ai: "Inferred by AI from an image", user: "Set by a person", demo: "Fictional demo" };
 
+let planting=null, plantingLoading;
 let P = demoProject(), results = runChecks(P), sheets = [], stage = null, selected = null, read = null;
 const state = { tab: "plans", sheet: "A101", el: "openings", shape: "reel", path: "approach", ai: null, aiPreset: null };
 
 // ------------------------------------------------------------------------------------------------ tabs
 function show(tab) {
+  if(tab!=="model")planting?.close();
   if (tab !== "model" && inspection) leaveBuild();
   state.tab = tab;
   for (const b of $$(".steps button")) b.setAttribute("aria-selected", b.dataset.tab === tab);
@@ -33,7 +35,7 @@ $$(".steps button").forEach((b) => b.addEventListener("click", () => show(b.data
 // ------------------------------------------------------------------------------------------------ the model changed: refresh everything
 let t3d = 0;
 function changed(opts = {}) {
-  if(opts.geometry!==false){$("#walkLink").hidden=true;$("#walkStatus").textContent="";}
+  if(opts.geometry!==false){$("#walkLink").hidden=true;$("#walkStatus").textContent="";planting?.update(P);}
   if (opts.geometry !== false && inspection) leaveBuild();
   results = runChecks(P);
   renderCode(); renderTables(); renderInspector(); renderRevs(); renderDoorTools();
@@ -109,6 +111,10 @@ function downloadIFC() {
   const rev=last&&JSON.stringify(last.model)===JSON.stringify(snapshot(P))?last.rev:"draft";
   save(new Blob([toIFC(P)],{type:"application/x-step"}),`${P.meta.number}-${rev}.ifc`);
 }
+function projectJson(){
+  const value=planting?.saved(P);
+  return toJSON(value?.beds.length?{...P,proposed_planting:value}:P);
+}
 const fname = (ext) => `${P.meta.number}-${(P.revisions?.length ? P.revisions[P.revisions.length - 1].rev : "draft")}.${ext}`;
 $("#btnSvg").addEventListener("click", () => { const s = sheets.find((x) => x.id === state.sheet); save(new Blob([s.svg], { type: "image/svg+xml" }), `${P.meta.number}-${s.id}.svg`); });
 $("#btnDxf").addEventListener("click", () => save(new Blob([toDXF(P)], { type: "application/dxf" }), fname("dxf")));
@@ -182,7 +188,7 @@ function scheduleDoorReview(){
       if(!stage)await boot3d();
       const mod=await (reviewModule??=import("./door-scene.js"));
       if(run!==reviewRun||state.tab!=="model")return;
-      if(stage.recording||inspection)return;
+      if(stage.recording||inspection||planting?.active)return;
       const dims=theatre.getBoundingClientRect();
       if(dims.width<1||dims.height<1)return;
       const w=Math.max(520,Math.min(1280,Math.round(dims.width*Math.min(devicePixelRatio||1,1.6))));
@@ -383,7 +389,26 @@ function leaveBuild(explore=false) {
   $("#folioHead").hidden=true;$("#folioSides").hidden=true;$("#showBuild").setAttribute("aria-expanded","false");
   setLook(explore?"solid":previousLook);stage.render();scheduleDoorReview();
 }
+$("#plantingToggle").onclick=async()=>{
+  if(inspection)leaveBuild(true);
+  const toggle=$("#plantingToggle");toggle.disabled=true;
+  try{
+    await boot3d();
+    if(!planting){
+      const {createPlanting}=await (plantingLoading??=import("./planting/controller.js"));
+      planting=createPlanting(stage,{save,showSolid:()=>setLook("solid"),onExit:()=>{
+        $(".stagewrap").classList.remove("is-planting");stage.resize();stage.render();scheduleDoorReview();
+      }});
+    }
+    planting.open(P);
+    $(".stagewrap").classList.toggle("is-planting",planting.active);
+    if(planting.active){stage.resize();stage.render();$("#drawingFolio").scrollIntoView({block:"start",behavior:"instant"});}
+  }catch(e){
+    $("#plantingTools").hidden=false;$("#plantStatus").textContent="Planting preview could not open: "+e.message;
+  }finally{toggle.disabled=false;}
+};
 $("#showBuild").onclick=async()=>{
+  planting?.close();
   if (inspection) return leaveBuild(true);
   const token=++inspectToken, {buildView}=await import("./build-view.js");
   if(token!==inspectToken || state.tab!=="model")return;
@@ -579,11 +604,11 @@ $$(".files button").forEach((b) => b.addEventListener("click", async () => {
   const x = b.dataset.x;
   if (x === "ifc") return downloadIFC();
   if (x === "dxf") return save(new Blob([toDXF(P)], { type: "application/dxf" }), fname("dxf"));
-  if (x === "json") return save(new Blob([toJSON(P)], { type: "application/json" }), fname("json"));
+  if (x === "json") return save(new Blob([projectJson()], { type: "application/json" }), fname("json"));
   if (!stage) await boot3d();
   if (x === "glb") { const { GLTFExporter } = await import("three/addons/exporters/GLTFExporter.js"); const buf = await new GLTFExporter().parseAsync(stage.model, { binary: true }); return save(new Blob([buf], { type: "model/gltf-binary" }), fname("glb")); }
   if (x === "usdz") { const { USDZExporter } = await import("three/addons/exporters/USDZExporter.js"); const buf = await new USDZExporter().parseAsync(stage.model); return save(new Blob([buf], { type: "model/vnd.usdz+zip" }), fname("usdz")); }
-  if (x === "blend") { const { GLTFExporter } = await import("three/addons/exporters/GLTFExporter.js"); const buf = await new GLTFExporter().parseAsync(stage.model, { binary: true }); save(new Blob([buf], { type: "model/gltf-binary" }), fname("glb")); save(new Blob([toJSON(P)], { type: "application/json" }), fname("json")); alert("Saved the model (GLB) and project (JSON). assembl renders hero stills from these in Blender with tools/plan-studio/render_blender.py."); }
+  if (x === "blend") { const { GLTFExporter } = await import("three/addons/exporters/GLTFExporter.js"); const buf = await new GLTFExporter().parseAsync(stage.model, { binary: true }); save(new Blob([buf], { type: "model/gltf-binary" }), fname("glb")); save(new Blob([projectJson()], { type: "application/json" }), fname("json")); alert("Saved the model (GLB) and project (JSON). assembl renders hero stills from these in Blender with tools/plan-studio/render_blender.py."); }
 }));
 
 // ------------------------------------------------------------------------------------------------ 1 · reading a plan
@@ -694,4 +719,9 @@ if(new URLSearchParams(location.search).get("sample")==="door"){
     if(new URLSearchParams(location.search).get("preview")==="1")showDoorProposal(8200);
     $("#doorChange").scrollIntoView({block:"start",behavior:"instant"});
   }).catch(e=>console.warn("Sample preview:",e.message));
+}
+
+if(new URLSearchParams(location.search).get("sample")==="planting"){
+  setLook("solid");$("#btnDemo").click();
+  boot3d().then(()=>$("#plantingToggle").onclick()).catch(e=>console.warn("Sample planting:",e.message));
 }
