@@ -20,7 +20,9 @@ export async function openPavilion(host,asset,forceGL=false,signal){
  signal?.addEventListener('abort',abort,{once:true});
  try {
  signal?.throwIfAborted();
- await renderer.init();initialized=true;signal?.throwIfAborted();renderer.setPixelRatio(Math.min(devicePixelRatio,host.clientWidth<=680?1.15:1.55));renderer.shadowMap.enabled=true;
+ await renderer.init();initialized=true;signal?.throwIfAborted();
+ const compactGL=host.clientWidth<=680&&!renderer.backend.isWebGPUBackend;
+ renderer.setPixelRatio(Math.min(devicePixelRatio,compactGL?1:host.clientWidth<=680?1.15:1.55));renderer.shadowMap.enabled=true;
  renderer.shadowMap.type=T.PCFShadowMap;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.13;
  const scene=new T.Scene(), camera=new T.PerspectiveCamera(45,1,.065,1000),cube=new T.BoxGeometry(),matrix=new T.Matrix4(),q=new T.Quaternion();
  const v=(x=0,y=0,z=0)=>new T.Vector3(x,y,z);
@@ -29,7 +31,7 @@ export async function openPavilion(host,asset,forceGL=false,signal){
  const refinements=[];
  const flatNormals=new Map();
  function surface(name){
-  if(!/(?:-normal|-n)\.webp$/.test(name))return texLoader.loadAsync(asset(name));
+  if(name==='studio-glaze-normal.webp'||!/(?:-normal|-n)\.webp$/.test(name))return texLoader.loadAsync(asset(name));
   // Immutable WebGL texture storage must already match the deferred image's dimensions.
   const width=name==='rough_linen-n.webp'?639:640,height=640;
   if(!flatNormals.has(width)){
@@ -42,7 +44,7 @@ export async function openPavilion(host,asset,forceGL=false,signal){
  }
  let refined=false;
  async function refine(){if(refined)return;refined=true;
-   await refineApertures().catch(()=>{});
+   if(!compactGL)await refineApertures().catch(()=>{});
    while(refinements.length){await Promise.allSettled(refinements.splice(0,2).map(load=>load()))}
  }
  const [sky,wood,blackwood,grit,chair,terrain]=await Promise.all([
@@ -86,8 +88,9 @@ export async function openPavilion(host,asset,forceGL=false,signal){
  const {normalView,positionViewDirection,float}=T.TSL;
  const grazing=float(1).sub(normalView.dot(positionViewDirection).abs().clamp()).pow(4);
  glass.opacityNode=float(.012).add(grazing.mul(.21));
- const boxes=new Map();
- function register(m,transform){if(!boxes.has(m))boxes.set(m,[]);boxes.get(m).push(transform.clone())}
+ const boxes=new Map(), roofParts=new Map();
+ let sheet=boxes;
+ function register(m,transform){if(!sheet.has(m))sheet.set(m,[]);sheet.get(m).push(transform.clone())}
  function box(x,y,z,w,h,d,m,rx=0,ry=0,rz=0){q.setFromEuler(new T.Euler(rx,ry,rz));register(m,matrix.compose(v(x,y,z),q,v(w,h,d)))}
  function mesh(geo,m,x=0,y=0,z=0){const o=new T.Mesh(geo,m);o.position.set(x,y,z);o.castShadow=o.receiveShadow=true;scene.add(o);return o}
  function cylinder(x,y,z,r1,r2,h,m,sides=24){return mesh(new T.CylinderGeometry(r1,r2,h,sides),m,x,y,z)}
@@ -100,17 +103,23 @@ export async function openPavilion(host,asset,forceGL=false,signal){
     }else register(step==='floor'?cedar:step==='dboards'?deck:pine,t)
  }
  // Deep standing-seam canopy, with the joinery set well back behind the eave.
+ sheet=roofParts;
  const pitch=.085,roof=z=>2.91+z*pitch;
  box(0,roof(.55)+.10,.55,15.44,.2,6.13,edge,-Math.atan(pitch));
  for(let i=0;i<122;i++){const x=-7.64+i*.126;box(x,roof(.53)-.028,.53,.123,.045,6.1,cedar,-Math.atan(pitch))}
  for(let i=0;i<29;i++){const x=-7.53+i*.54;box(x,roof(.55)+.218,.55,.022,.043,6.08,metal,-Math.atan(pitch))}
  box(0,roof(3.6)+.065,3.61,15.5,.245,.052,metal);
+ sheet=boxes;
  // Continuous weatherboard screen on each end and a recessed solid service bay.
  function cladEnd(x){box(x,1.37,-.04,.13,2.76,4.22,dark);for(let i=0;i<34;i++){const z=-2.09+i*.126,h=roof(z)-.04;box(x+Math.sign(x)*.087,h/2,z,.045,h,.118,dark)}}
  cladEnd(-7.14);
  box(7.14,1.43,-.93,.18,2.86,2.33,lime);box(7.252,1.43,-.93,.039,2.86,2.33,dark);
  for(let j=0;j<18;j++)box(7.283,1.43,-2.048+j*.132,.027,2.86,.122,dark);
  box(7.14,.273,1.13,.19,.546,1.76,lime);box(7.14,2.955,1.15,.21,.34,1.84,lime);
+ // Close the gap between the rear lining and the pitched soffit with a continuous recessed head.
+ const rearHead=roof(-2.015)-.051;
+ box(0,(2.611+rearHead)/2,-2.014,14.21,rearHead-2.611,.122,cedar);
+ box(0,rearHead-.012,-1.949,14.18,.013,.013,edge);
  // Oiled oak lining, 156 mm face with a 2 mm shadow joint. The lighter reveals retain daylight.
  const lining=mat(0xdaae86,.84,oakMap,{normalMap:oakN,normalScale:new T.Vector2(.10,.10)});
  lining.userData={grain:true,repeatMetres:2.6};
@@ -163,13 +172,14 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  // Purpose-made cabinetry, recessed lights, curtain folds and furniture establish scale.
  // One softly lit pendant over the breakfast table leaves the view from the new doorway clear.
  box(-2.12,2.67,.49,.01,.58,.01,metal);cylinder(-2.12,2.32,.49,.053,.178,.135,cedar);cylinder(-2.12,2.249,.49,.155,.155,.010,glow);
+ const [limestoneMap,glazeNormal,basketWeave]=await Promise.all(['studio-limestone.webp','studio-glaze-normal.webp','studio-wool.webp'].map(surface));
+ for(const map of [limestoneMap,glazeNormal,basketWeave]){map.wrapS=map.wrapT=T.RepeatWrapping;map.anisotropy=4}
+ limestoneMap.colorSpace=basketWeave.colorSpace=T.SRGBColorSpace;
+ const slabStone=mat(0xe4dccb,.49,limestoneMap,{normalMap:concreteN,normalScale:new T.Vector2(.045,.045)});
  const limestone=mat(0xc6c4b6,.74,plaster,{normalMap:concreteN,normalScale:new T.Vector2(.11,.11)});
- furnishRoom({scene,mesh,box,cylinder,chair,cloth,oak,plaster:lime,metal,limestone,print,linenBump:fabricN,evalFloor});
- bedroom({mesh,box,cylinder,oak,cloth,metal,limestone,glow});
- const stoneCanvas=document.createElement('canvas');stoneCanvas.width=stoneCanvas.height=256;const sc=stoneCanvas.getContext('2d');sc.fillStyle='#cfc4b1';sc.fillRect(0,0,256,256);
- for(let i=0;i<8000;i++){const x=(i*71.737)%256,y=(i*43.195+7*Math.sin(i*6.17))%256,g=130+(i%62);sc.fillStyle='rgba('+g+','+(g-4)+','+(g-14)+',.25)';sc.fillRect(x,y,.5+i%3,.6)}
- const stoneMap=new T.CanvasTexture(stoneCanvas);stoneMap.colorSpace=T.SRGBColorSpace;stoneMap.wrapS=stoneMap.wrapT=T.RepeatWrapping;
- const honedStone=mat(0xf1e6d4,.52,stoneMap,{normalMap:concreteN,normalScale:new T.Vector2(.024,.024)});fitKitchen(scene,oak,honedStone);
+ furnishRoom({scene,mesh,box,cylinder,chair,cloth,oak,plaster:lime,metal,limestone,print,linenBump:fabricN,evalFloor,slabStone,basketWeave});
+ bedroom({mesh,box,cylinder,oak,cloth,metal,limestone,glow,basketWeave});
+ fitKitchen(scene,oak,slabStone,glazeNormal);
  {
  const cloth=new T.PlaneGeometry(.63,2.78,100,18),pos=cloth.attributes.position;
  for(let i=0;i<pos.count;i++){const xx=pos.getX(i),yy=pos.getY(i),t=(yy+1.39)/2.78;pos.setXYZ(i,xx*(1-.12*t),yy+.014*Math.sin(xx*18)*(1-t),Math.sin(xx*61+t*.9)*(.029+.017*(1-t))+.018*Math.sin(xx*17-t*1.4))}
@@ -192,10 +202,13 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
   box(x+.05,1.02,2.022,.021,.215,.034,metal);
  }
  for(const z of [1.91,1.953,2.014])box(0,.080,z,14.16,.014,.014,metal);
+ sheet=roofParts;
  for(let i=0;i<3;i++)box(0,roof(3.60)+.10-i*.033,3.636,15.46,.014,.02,edge);
+ sheet=boxes;
  box(0,-.137,4.499,14.41,.116,.028,deck);box(0,-.204,4.49,14.36,.012,.018,metal);
  deckFixings(scene);deckGarden({scene,mesh,box,grade,trim:deck,grit});
  buildBoards(boxes,scene,glass);
+ const roofStudy=new T.Group();scene.add(roofStudy);buildBoards(roofParts,roofStudy,glass);
 
  const contactCanvas=document.createElement('canvas');contactCanvas.width=contactCanvas.height=128;const cc=contactCanvas.getContext('2d'),gradient=cc.createRadialGradient(64,64,1,64,64,64);gradient.addColorStop(0,'rgba(28,25,20,.67)');gradient.addColorStop(.55,'rgba(28,25,20,.36)');gradient.addColorStop(1,'rgba(28,25,20,0)');cc.fillStyle=gradient;cc.fillRect(0,0,128,128);const contactMap=new T.CanvasTexture(contactCanvas);
  for(const [x,z,w,d,yy] of [[3.42,-1.34,2.65,1.02,.069],[3.64,.19,1.83,.99,.094],[5.88,.26,1.09,1.04,.092]]){
@@ -206,7 +219,7 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  addSedges({scene,range,rand,timeNode:windTime,gustNode:gustStrength});finePanicles(scene,windTime,gustStrength);
  const hemi=new T.HemisphereLight(0xe5edf2,0x99968b,.24);scene.add(hemi);
  const sun=new T.DirectionalLight(0xfff2da,2.6);sun.position.set(.6390*30,.6128*30,.4649*30);sun.target.position.set(0,0,0);scene.add(sun,sun.target);sun.castShadow=true;
- Object.assign(sun.shadow.camera,{left:-18,right:18,top:14,bottom:-13,near:.2,far:65});sun.shadow.mapSize.set(2048,2048);sun.shadow.normalBias=.003;sun.shadow.bias=-.00007;
+ Object.assign(sun.shadow.camera,{left:-18,right:18,top:14,bottom:-13,near:.2,far:65});const shadowSize=compactGL?1024:2048;sun.shadow.mapSize.set(shadowSize,shadowSize);sun.shadow.normalBias=.003;sun.shadow.bias=-.00007;
  const fill=new T.DirectionalLight(0xe4eef6,.12);fill.position.set(2,6,-3);scene.add(fill);
  for(const x of [-3,3]){const lamp=new T.SpotLight(0xffead2,3.3,5,1.04,.86,2);lamp.position.set(x,2.64,.20);lamp.target.position.set(x,.35,-.65);scene.add(lamp,lamp.target)}
  // Area emitters fill the actual apertures. They provide broad indoor sky transport without point hotspots.
@@ -214,6 +227,7 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  const {RectAreaLightTexturesLib}=await import('./vendor/RectAreaLightTexturesLib.js');
  T.RectAreaLightNode.setLTC(RectAreaLightTexturesLib.init());
  const aperture=(pos,aim,w,h,power,color)=>{const l=new T.RectAreaLight(color,power,w,h);l.position.set(...pos);l.lookAt(...aim);scene.add(l)};
+ aperture([-2.25,1.58,1.93],[-2.05,1.15,-1.91],2.1,1.85,2.5,0xf3efe6);
  aperture([7.13,1.61,1.12],[2.5,1.18,0],1.76,2.15,1.7,0xf4f4ed);
  aperture([3.64,1.66,-2.07],[3.66,.45,1],3.58,1.40,2.3,0xe9f0f4);
  aperture([3.80,1.49,2.05],[3.31,1.0,-1],6.35,2.74,1.25,0xf5eee0);
@@ -233,6 +247,8 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  const around=()=>{let x,z;do{x=range(-17,16);z=range(-8,16)}while(!plantable(x,z));return [x,z]};
  const fernHollow=()=>{let x,z;do{x=range(-13,8);z=range(2,11)}while(!plantable(x,z));return [x,z]};
  async function refinePlanting(){
+  // The procedural coastal planting is already present. Skip the three scanned layers on small WebGL devices.
+  if(compactGL)return;
  const [fern,shrub,grass]=await Promise.all(['fern_02','shrub_03','grass_medium_01'].map(n=>glLoader.loadAsync(asset(n+'.glb'))));
  scanPlant(fern,77,[.91,1.36],fernHollow,.02);scanPlant(shrub,88,[1.21,2.37],around,.016,true);scanPlant(grass,450,[1.9,3.3],around,.024);
  // Shade-tolerant fronds emerge between the open eastern bays, with the central pile faces still visible.
@@ -302,7 +318,10 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
   scene.add(shade,model);
  }
  function size(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
- function draw(progress,time,gust){windTime.value=time;gustStrength.value=gust;let p=Math.max(0,Math.min(1,progress));const cp=camPath.getPoint(p),aim=aimPath.getPoint(p);
+ function draw(progress,time,gust,roofLift=0){windTime.value=time;gustStrength.value=gust;let p=Math.max(0,Math.min(1,progress));const cp=camPath.getPoint(p),aim=aimPath.getPoint(p);
+   // Lift only the existing canopy, its lining and seams. Both still cast shadows on the rooms.
+   roofStudy.position.set(0,roofLift*3.2,-roofLift*2.1);
+   if(roofLift){cp.lerp(v(13.4,10.1,18.9),roofLift);aim.lerp(v(.1,2.65,0),roofLift)}
    if(camera.aspect<1.24){const f=Math.max(0,1.24-camera.aspect);cp.z+=17.8*f*(1-p)**1.5;cp.x+=4.9*f*(1-p);aim.x+=.65*f}
    camera.fov=match?42-3*p:42+14*p*p;camera.updateProjectionMatrix();
    if(detail==='kitchen'){cp.set(-.28,1.39,1.64);aim.set(-2.40,1.10,-.95);camera.fov=camera.aspect<1?69:51}
@@ -312,7 +331,7 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
    if(detail==='deck'){cp.set(6.75,1.41,4.0);aim.set(-1.10,1.04,2.61);camera.fov=57}
    if(garden?.active)garden.frame(cp,aim);
    indoors=!garden?.active&&p>.63&&!['deck','tree'].includes(detail);
-   scene.environmentIntensity=indoors?.74:1.15;
+   scene.environmentIntensity=indoors?.58:1.15;
    camera.updateProjectionMatrix();
    if(explorePose){
     const {yaw,pitch,travel}=explorePose;

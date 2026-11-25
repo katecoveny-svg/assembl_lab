@@ -16,20 +16,20 @@ for(const img of document.querySelectorAll('[data-image]'))pictures.observe(img)
 lab(asset);
 const vista=$('#vista'),journey=$('.journey'),settings=new URLSearchParams(location.search),reduced=matchMedia('(prefers-reduced-motion: reduce)');
 if(settings.has('match'))document.documentElement.classList.add('match-camera');
-let room=null;
+let room=null,roomMove=null,preferWebGL=false;
 let exploring=false,detail=null;
 let intervals=[],lastPaint=0;let world,p=0,paused=reduced.matches,visible=true,time=0,prev=0,id=0,gustAt=-10,manual=null,scrolled=window.scrollY,trace=false,lx=.5,ly=.49,dirty=true;
 function event(name,value){window.dispatchEvent(new CustomEvent('assembl:interaction',{detail:{name,value}}))}
 function bounds(){const r=journey.getBoundingClientRect();return {top:r.top+scrollY,range:Math.max(1,r.height-$('.pinned').offsetHeight)}}
 let touring=false,tourTime=0,tourFrom=0,carry=0,carryOrigin=0;
 const tourControl=$('#pavilion-tour');
-function scrollPosition(){
- const b=bounds(),f=Math.max(0,Math.min(1,(scrollY-b.top)/b.range)),u=f<.5?f*2:(f-.5)*2;
+function scrollPosition(at=scrollY){
+ const b=bounds(),f=Math.max(0,Math.min(1,(at-b.top)/b.range)),u=f<.5?f*2:(f-.5)*2;
  const eased=u*u*(3-2*u);return settings.has('match')?f:f<.5?eased*.5:.5+eased*.5;
 }
 function stopTour(){
  if(!touring)return;
- touring=false;carry=p-scrollPosition();carryOrigin=scrollY;manual=p;
+ touring=false;carry=p-scrollPosition(scrolled);carryOrigin=scrolled;manual=p;
  tourControl.hidden=true;
 }
 function startTour(){
@@ -50,7 +50,24 @@ function furnishInterior(){
  const current=world;furnishedWorld=current;
  current.furnishLivingRoom().then(()=>{if(world===current){dirty=true;wake()}}).catch(()=>{});
 }
-function sync(){if(!room&&!garden?.active&&!touring&&!exploring&&!paused&&manual===null){p=Math.max(0,Math.min(1,scrollPosition()+carry*Math.max(0,1-Math.abs(scrollY-carryOrigin)/300)))}furnishInterior();document.querySelectorAll('[data-shot]').forEach(b=>b.setAttribute('aria-pressed',String(!garden?.active&&!detail&&Math.abs(p-Number(b.dataset.shot))<=.25)));dirty=true;wake()}
+function sync(){if(!room&&!garden?.active&&!touring&&!exploring&&!paused&&manual===null){p=Math.max(0,Math.min(1,scrollPosition()+carry*Math.max(0,1-Math.abs(scrollY-carryOrigin)/300)))}furnishInterior();document.querySelectorAll('[data-shot]').forEach(b=>b.setAttribute('aria-pressed',String(!garden?.active&&!detail&&Math.abs(p-Number(b.dataset.shot))<.13)));dirty=true;wake()}
+const titleLayer=$('.scene-titles');
+function easeBetween(value,low,high){
+ const t=Math.min(1,Math.max(0,(value-low)/(high-low)));return t*t*(3-2*t);
+}
+function liftAt(value){
+ if(exploring||garden?.active||detail||(room&&!['roof','outside'].includes(room))||(settings.has('match')&&room!=='roof'))return 0;
+ return easeBetween(value,.055,.30)*(1-easeBetween(value,.42,.65));
+}
+function titleFrame(value,lift){
+ const fade=easeBetween(value,.018,.17);
+ titleLayer.style.setProperty('--title-alpha',(1-fade).toFixed(3));
+ titleLayer.style.setProperty('--title-shift',(-60*fade).toFixed(1)+'px');
+ titleLayer.style.setProperty('--line-shift',(44*fade).toFixed(1)+'px');
+ titleLayer.style.setProperty('--roof-alpha',easeBetween(lift,.57,.94).toFixed(3));
+ titleLayer.style.setProperty('--roof-shift',((1-lift)*28).toFixed(1)+'px');
+ vista.toggleAttribute('data-manual-detail',!!detail);
+}
 function frame(now){id=0;if(!world||!visible||document.hidden)return;const delta=Math.min(.1,Math.max(0,(now-prev)/1000));const active=!paused||time-gustAt<3.6;
  furnishExterior();
  if(dirty||(active&&now-prev>=(1000/30-.6))){if(active)time+=delta;
@@ -60,10 +77,18 @@ function frame(now){id=0;if(!world||!visible||document.hidden)return;const delta
   p=tourFrom+(.56-tourFrom)*(t*t*(3-2*t)*.55+t*.45);
   if(t===1)stopTour();
  }
- prev=now;world.draw(p,time,Math.max(0,1-(time-gustAt)/3.6));if(settings.has('profile')){if(lastPaint&&now-lastPaint<250)intervals.push(now-lastPaint);if(intervals.length>500)intervals.shift();lastPaint=now}dirty=false;vista.dataset.position=p.toFixed(3)}
- if(active)id=requestAnimationFrame(frame)}
+ if(roomMove){
+   const step=paused?1:Math.min(1,(now-roomMove.since)/1400),blend=step*step*(3-2*step);
+   p=roomMove.from+(roomMove.to-roomMove.from)*blend;
+   if(step===1)roomMove=null;
+ }
+ const lift=liftAt(p);prev=now;
+ try{world.draw(p,time,Math.max(0,1-(time-gustAt)/3.6),lift)}
+ catch{staticMode('render failed');return}
+ titleFrame(p,lift);if(settings.has('profile')){if(lastPaint&&now-lastPaint<250)intervals.push(now-lastPaint);if(intervals.length>500)intervals.shift();lastPaint=now}dirty=false;vista.dataset.position=p.toFixed(3)}
+ if(active||roomMove)id=requestAnimationFrame(frame)}
 function wake(){if(!id)id=requestAnimationFrame(frame)}
-function jump(t,view=null){finishGarden();setRoom(view==='kitchen'?'kitchen':t===1&&!view?'living':null);stopTour();carry=0;free.leave(false);free.releaseGlance();detail=view;world?.setDetail(view);document.querySelectorAll("[data-detail]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.detail===view)));manual=t;p=t;if(!paused&&!reduced.matches){const b=bounds();let u=t<.5?t*2:(t-.5)*2;const inv=.5-Math.sin(Math.asin(1-2*u)/3);const coordinate=settings.has('match')?t:(t<.5?inv*.5:.5+inv*.5);window.scrollTo(0,b.top+coordinate*b.range+(t===1&&!settings.has('match')?Math.min(95,innerHeight*.09):0))}sync();event('pavilion_view',view??t)}
+function jump(t,view=null){roomMove=null;finishGarden();setRoom(view==='kitchen'?'kitchen':t===1&&!view?'living':null);stopTour();carry=0;free.leave(false);free.releaseGlance();detail=view;world?.setDetail(view);document.querySelectorAll("[data-detail]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.detail===view)));manual=t;p=t;if(!paused&&!reduced.matches){const b=bounds();let u=t<.5?t*2:(t-.5)*2;const inv=.5-Math.sin(Math.asin(1-2*u)/3);const coordinate=settings.has('match')?t:(t<.5?inv*.5:.5+inv*.5);window.scrollTo(0,b.top+coordinate*b.range+(t===1&&!settings.has('match')?Math.min(95,innerHeight*.09):0))}sync();event('pavilion_view',view??t)}
 function traceAt(x,y){lx=Math.min(1,Math.max(0,x));ly=Math.min(1,Math.max(0,y));vista.style.setProperty('--mx',(lx*100)+'%');vista.style.setProperty('--my',(ly*100)+'%')}
 vista.addEventListener('pointermove',e=>{if(trace){const b=vista.getBoundingClientRect();traceAt((e.clientX-b.x)/b.width,(e.clientY-b.y)/b.height)}});
 vista.addEventListener('pointerdown',e=>{if(trace){const b=vista.getBoundingClientRect();traceAt((e.clientX-b.x)/b.width,(e.clientY-b.y)/b.height)}});
@@ -78,49 +103,54 @@ function motionLabel(){$('#pause').setAttribute('aria-pressed',String(paused));$
 $('#pause').onclick=()=>{stopTour();paused=!paused;motionLabel();dirty=true;wake()};
 $('#gust').onclick=()=>{gustAt=time;dirty=true;wake();event('pavilion_gust',true)};
 function staticMode(reason){
- finishGarden();garden=null;gardenButton.hidden=true;stopTour();
- free.lost();world=null;window.pavilionStatus=undefined;
- vista.dataset.renderer='still';delete vista.dataset.ready;
+ finishGarden();garden=null;gardenButton.hidden=true;stopTour();if(roomMove){p=roomMove.to;roomMove=null}
+ const failed=world;world=null;window.pavilionStatus=undefined;
+ if(failed?.backend==='WebGPU')preferWebGL=true;
+ free.lost();if(failed){try{failed.renderer.dispose()}catch{}}
+
+ titleFrame(0,0);vista.dataset.renderer='still';delete vista.dataset.ready;
  $('#gpu').replaceChildren();journey.classList.add('still');
  $('.scene-controls').hidden=true;enter.hidden=false;enter.disabled=false;
  note.textContent=reason==='slow'?'Still view · Open 3D when you’re ready.':'Still view · You can try 3D again.';
 }
-window.addEventListener('scroll',()=>{if(Math.abs(scrollY-scrolled)>1){stopTour();if(room==='outside')setRoom(null);if(!detail)manual=null;scrolled=scrollY}sync()},{passive:true});
+window.addEventListener('scroll',()=>{if(Math.abs(scrollY-scrolled)>1){stopTour();if(room==='outside'&&!roomMove)setRoom(null);if(!detail)manual=null;scrolled=scrollY}sync()},{passive:true});
 new ResizeObserver(()=>{world?.size();sync()}).observe(vista);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){dirty=true;wake()}});
 reduced.addEventListener('change',()=>{paused=reduced.matches;if(paused)stopTour();motionLabel();dirty=true;wake()});
-document.addEventListener('click',e=>{let a=e.target.closest('a');if(a?.closest('#lab'))event(a.target==='_blank'?'demo_launch':'brief_selected',a.href);if(a?.href.startsWith('mailto:'))event('contact_open',a.hash||'email')});
+document.addEventListener('click',e=>{let a=e.target.closest('a');if(a?.closest('#lab,#architecture'))event(a.target==='_blank'?'demo_launch':'brief_selected',a.href);if(a?.href.startsWith('mailto:'))event('contact_open',a.hash||'email')});
 async function start(signal){
  if(settings.get('renderer')==='still')throw new Error('Still view requested');
  const {openPavilion}=await import('./world.js');signal.throwIfAborted();
- const force=settings.get('renderer')==='webgl';
+ const force=preferWebGL||settings.get('renderer')==='webgl';
  let candidate,drawnP,drawnDetail;
- try{candidate=await openPavilion($('#gpu'),asset,force,signal)}catch(error){
+ async function firstFrame(webgl){
+  const scene=await openPavilion($('#gpu'),asset,webgl,signal);
+  try{
+   signal.throwIfAborted();drawnP=p;drawnDetail=detail;
+   scene.setDetail(detail);scene.size();scene.draw(p,0,0,liftAt(p));
+   const queue=scene.renderer.backend.device?.queue;
+   if(queue){
+    let abort;
+    try{await Promise.race([queue.onSubmittedWorkDone(),new Promise((_,reject)=>{
+     abort=()=>reject(signal.reason);signal.addEventListener('abort',abort,{once:true});
+    })])}finally{signal.removeEventListener('abort',abort)}
+   }
+   signal.throwIfAborted();return scene;
+  }catch(error){scene.renderer.dispose();throw error}
+ }
+ try{candidate=await firstFrame(force)}catch(error){
   if(force||signal.aborted)throw error;
-  candidate=await openPavilion($('#gpu'),asset,true,signal);
+  candidate=await firstFrame(true);
  }
  const renderer=candidate.renderer;
- try {
-  signal.throwIfAborted();drawnP=p;drawnDetail=detail;candidate.setDetail(detail);candidate.size();candidate.draw(p,0,0);
-  const queue=renderer.backend.device?.queue;
-  if(queue){
-   let onAbort;
-   try{
-    await Promise.race([queue.onSubmittedWorkDone(),new Promise((_,reject)=>{
-     onAbort=()=>reject(signal.reason);signal.addEventListener('abort',onAbort,{once:true});
-    })]);
-   }finally{signal.removeEventListener('abort',onAbort)}
-  }
-  signal.throwIfAborted();
- }catch(error){renderer.dispose();throw error}
- world=candidate;if(drawnP!==p||drawnDetail!==detail){world.setDetail(detail);world.draw(p,0,0)}
+ world=candidate;if(drawnP!==p||drawnDetail!==detail){world.setDetail(detail);world.draw(p,0,0,liftAt(p))}
  const lost=()=>{if(world===candidate)staticMode('context lost')};
  renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();lost()},{once:true});
  renderer.backend.device?.lost.then(lost);
  vista.dataset.ready='true';vista.dataset.renderer=world.backend;journey.classList.remove('still');
  document.documentElement.classList.remove('no-js');$('#backend').textContent=world.backend;
  $('.scene-controls').hidden=false;gardenButton.hidden=false;enter.hidden=true;note.textContent='';motionLabel();free.ready();sync();
- window.pavilionStatus=()=>({touring,exploring,detail,garden:garden?{active:garden.active,planted:garden.count()}:null,backend:world.backend,draw:world.renderer.info.render,position:p,paused,visible,triangles:Math.round(world.triangleCount),pose:world.pose(),intervals});
+ window.pavilionStatus=()=>({touring,exploring,detail,roofLift:liftAt(p),garden:garden?{active:garden.active,planted:garden.count()}:null,backend:world.backend,draw:world.renderer.info.render,position:p,paused,visible,triangles:Math.round(world.triangleCount),pose:world.pose(),intervals});
  requestAnimationFrame(()=>{if(world!==candidate)return;
   candidate.refine().then(()=>{if(world===candidate){dirty=true;wake()}}).catch(()=>{});
  });
@@ -130,13 +160,16 @@ function setRoom(value){room=value;window.pavilionEntry.show(value)}
 function chooseRoom(value){
  finishGarden();stopTour();free.leave(false);free.releaseGlance();carry=0;
  if(trace)$('#trace').click();
- detail=value==='kitchen'?'kitchen':null;p=value==='outside'?0:1;manual=p;room=value;
+ const target=value==='roof'?.35:value==='outside'?0:1;
+ const move=!!world&&!paused&&!reduced.matches&&(value==='roof'||(value==='outside'&&room==='roof'));
+ roomMove=move?{from:p,to:target,since:performance.now()}:null;
+ detail=value==='kitchen'?'kitchen':null;if(!move)p=target;manual=target;room=value;
  world?.setDetail(detail);
  document.querySelectorAll('[data-detail]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.detail===detail)));
  sync();event('pavilion_view',value);
  // The room still is immediate. Slow connections keep that view and may explicitly request the live renderer.
  const net=navigator.connection,constrained=net?.saveData||['3g','2g','slow-2g'].includes(net?.effectiveType)||net?.downlink>0&&(net.downlink<.7||net.downlink<2&&net.rtt>=100);
- if(!world&&!constrained&&!reduced.matches&&settings.get('renderer')!=='still')loadWorld();
+ if(!world&&settings.get('renderer')!=='still'&&(value==='roof'||!constrained&&!reduced.matches))loadWorld();
 }
 window.addEventListener('pavilion:room',e=>chooseRoom(e.detail));
 const gardenButton=$('#garden-enter'),gardenBar=$('#garden-bar');
@@ -169,7 +202,7 @@ $('#garden-reset').onclick=()=>{garden?.reset();planted(0);repaintGarden();vista
 const free=installExplore(vista,{
  available:()=>!!world&&!garden?.active,paused:()=>paused,
  togglePause(){paused=!paused;motionLabel();dirty=true;wake()},
- lock(value){stopTour();exploring=value;if(value&&trace){trace=false;$('.tracing').hidden=true;$('#trace').setAttribute('aria-pressed','false')}},
+ lock(value){stopTour();roomMove=null;exploring=value;if(value&&trace){trace=false;$('.tracing').hidden=true;$('#trace').setAttribute('aria-pressed','false')}},
  inside:()=>world?.inside(),step:(f,r)=>world?.step(f,r),resetWalk:()=>world?.resetWalk(),setCamera(view){world?.setExplore(view)},repaint(){dirty=true;wake()}
 });
 const enter=$('#enter-pavilion'),note=$('#load-note'),poster=$('#scene-poster');
@@ -194,7 +227,7 @@ function loadWorld(automatic=false){
  }
  const job={controller:new AbortController(),automatic,retry:false};
  pending=job;automaticTried=true;vista.toggleAttribute('data-warming',automatic);
- job.timeout=setTimeout(()=>expireLoad(job),automatic?7000:35000);
+ job.timeout=setTimeout(()=>expireLoad(job),automatic?12000:45000);
  if(!automatic){enter.disabled=true;note.textContent='Opening the pavilion…'}
  start(job.controller.signal).then(()=>{if(job.automatic&&eligible()&&!job.interacted)startTour()}).catch(()=>{
   staticMode(job.controller.signal.reason||'renderer unavailable');
@@ -209,6 +242,7 @@ window.addEventListener('scroll',claimCamera,{passive:true});
 window.addEventListener('pointerdown',claimCamera,{passive:true,capture:true});
 window.addEventListener('keydown',claimCamera,{capture:true});
 enter.hidden=false;enter.onclick=()=>loadWorld();
+if(settings.get('renderer')==='still'){enter.hidden=true;note.textContent='Still views'}
 if(vista.dataset.room)chooseRoom(vista.dataset.room);
 async function consider(){
  if(automaticTried||!eligible())return;

@@ -35,7 +35,7 @@ export function cushion(width,height,depth,seed){
  return {geo,welt:new T.TubeGeometry(new T.CatmullRomCurve3(seam,true),96,.0021,4,true)};
 }
 export function linenSofa({mesh,cylinder,cloth,oak}){
- const sx=3.42,sz=-1.32,cream=cloth.clone();cream.color.setHex(0xd0c3ae);cream.roughness=.99;cream.sheen=.38;cream.normalScale.set(.59,.59);
+ const sx=3.42,sz=-1.32,cream=cloth.clone();cream.color.setHex(0xd4c8b5);cream.roughness=.99;cream.sheen=.38;cream.normalScale.set(.59,.59);
  // Resolve the slub of the reviewed linen scan at room scale and preserve its own normal field.
  const swatch=document.createElement('canvas');swatch.width=swatch.height=384;
  const paint=swatch.getContext('2d');paint.drawImage(cloth.map.image,0,0,384,384);
@@ -44,7 +44,7 @@ export function linenSofa({mesh,cylinder,cloth,oak}){
   pixels.data[i+c]=mean[c]+(pixels.data[i+c]-mean[c])*1.78;
  }
  paint.putImageData(pixels,0,0);cream.map=new T.CanvasTexture(swatch);cream.map.colorSpace=T.SRGBColorSpace;
- cream.map.wrapS=cream.map.wrapT=T.RepeatWrapping;cream.map.repeat.set(2.8,2.8);cream.map.anisotropy=6;
+ cream.map.wrapS=cream.map.wrapT=T.RepeatWrapping;cream.map.repeat.set(1.65,1.65);cream.map.anisotropy=6;
  function rounded(x,y,z,w,h,d,r,m){return mesh(new RoundedBoxGeometry(w,h,d,4,r),m,x,y,z)}
  const welt=new T.MeshStandardMaterial({color:0xc3b9a5,roughness:.98});
  const timber=oak.clone();timber.color.setHex(0xbc9872);
@@ -52,16 +52,25 @@ export function linenSofa({mesh,cylinder,cloth,oak}){
  for(const dx of [-1.05,1.05])for(const dz of [-.31,.31]){const leg=cylinder(sx+dx,.139,sz+dz,.033,.025,.154,timber,16);leg.rotation.z=-Math.sign(dx)*.065}
  rounded(sx,.288,sz,2.36,.125,.805,.035,cream);
  rounded(sx,.595,sz-.366,2.38,.57,.123,.047,cream);
- for(const sign of [-1,1])rounded(sx+sign*1.192,.474,sz+.004,.146,.40,.84,.048,cream);
+ // A single sloping rail joins the back to each soft arm and tapers at the hand.
+ for(const sign of [-1,1]){
+  const rail=new RoundedBoxGeometry(.188,.438,.864,5,.078),rp=rail.attributes.position;
+  for(let i=0;i<rp.count;i++){
+   const t=rp.getZ(i)/.864+.5,y=rp.getY(i);
+   rp.setY(i,y+(.10-.20*t)*(y/.438+.5));rp.setX(i,rp.getX(i)+sign*.020*Math.sin(t*Math.PI));
+  }
+  rail.computeVertexNormals();mesh(rail,cream,sx+sign*1.167,.477,sz+.002);
+ }
  function pad(x,y,z,w,h,d,rot,color,seed){
   const mat=cream.clone();mat.color.setHex(color);const parts=cushion(w,h,d,seed);
   for(const [g,m] of [[parts.geo,mat],[parts.welt,welt]]){const o=mesh(g,m,x,y,z);o.rotation.set(...rot)}
  }
- for(const side of [-1,1])pad(sx+side*.55,.394,sz+.023,1.12,.80,.174,[-Math.PI/2,0,0],0xd0c4ad,side+3);
- pad(sx-.53,.678,sz-.222,1.08,.484,.216,[-.20,.021,-.016],0xcabea4,4);
- pad(sx+.53,.672,sz-.227,1.076,.465,.22,[-.238,-.018,.027],0xcec2ae,9);
- pad(sx+.84,.641,sz-.046,.437,.399,.174,[-.336,-.22,-.155],0xa48a64,15);
- pad(sx+.45,.577,sz+.026,.47,.25,.145,[-.40,.14,.065],0x7d7661,11);
+ pad(sx,.397,sz+.032,2.16,.77,.177,[-Math.PI/2,0,0],0xcfc4b4,8);
+ for(const [offset,tilt,seed] of [[-.72,-.035,3],[-.01,.012,18],[.70,.048,12]]){
+  pad(sx+offset,.683,sz-.19,.742,.526,.225,[-.196,tilt*.45,tilt],0xc9bda9,seed);
+ }
+ pad(sx+.83,.640,sz-.007,.408,.399,.172,[-.35,-.25,-.21],0x8a6751,22);
+ pad(sx-.67,.572,sz+.026,.502,.257,.145,[-.37,.17,.05],0x747d68,11);
  // A woven wool throw follows the upholstery down the seat and over its front edge.
  const canvas=document.createElement('canvas');canvas.width=canvas.height=256;
  const c=canvas.getContext('2d');c.fillStyle='#85735f';c.fillRect(0,0,256,256);
@@ -77,7 +86,7 @@ export function linenSofa({mesh,cylinder,cloth,oak}){
  for(let k=0;k<pos.count;k++){
   const u=uv.getX(k),v=1-uv.getY(k),d=profile.getPoint(v);
   const folds=Math.sin(u*16+v*2.1+.83*Math.sin(v*5))*.012+Math.sin(u*7-v)*.009,front=Math.max(0,(v-.63)/.37);
-  pos.setXYZ(k,-.77+(u-.5)*.60+v*.092+.012*Math.sin(v*8+u*4),d.y+(folds+.018)*(1-front)+.015*Math.sin(u*8)*front,d.z+folds*(.47+front*.45)+.012*(1-front));
+  pos.setXYZ(k,-.19+(u-.5)*.49+v*.092+.012*Math.sin(v*8+u*4),d.y+(folds+.018)*(1-front)+.030*Math.sin(u*7.4)*front,d.z+folds*(.47+front*.45)+.012*(1-front));
  }
  textile.computeVertexNormals();mesh(textile,throwMat,sx,0,sz);
 }

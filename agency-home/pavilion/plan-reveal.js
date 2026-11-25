@@ -92,5 +92,5 @@ export function setupPlanReveal(asset) {
  field.addEventListener('blur',hideLens);
  new IntersectionObserver(([e])=>{if(e.isIntersecting)images();else hideLens()},{rootMargin:'180px'}).observe(section);
  layout();
- return visible=>{if(!visible)hideLens();section.hidden=!visible;document.querySelector('.plate-img').hidden=visible};
+ return visible=>{if(visible)images();else hideLens();section.hidden=!visible;document.querySelector('.plate-img').hidden=visible};
 }

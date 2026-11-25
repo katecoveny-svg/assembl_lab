@@ -3,10 +3,10 @@ import {tideCard} from './tide-card.js';
 export function lab(asset){const $=s=>document.querySelector(s);
 const plates={drawing:['plan16a.webp','Floor plan','Floor plan of the two-bedroom timber home with a deck along the living area.'],model:['16a-model-to-site-poster.webp','Site model','Aerial visualisation of the two timber homes and the existing house.'],exterior:['16a-poster.webp','Evening exterior','Visualisation of the two timber homes at dusk.']};
 $('.arch-views').hidden=false;
-const activeMotion=matchMedia('(prefers-reduced-motion: reduce)'),prior=$('#prior-plate'),caseImage=$('#arch-img');let plate='exterior',manual=true,transition=0;
+const activeMotion=matchMedia('(prefers-reduced-motion: reduce)'),prior=$('#prior-plate'),caseImage=$('#arch-img');let plate='exterior',transition=0;
 const sectionVisibility=setupPlanReveal(asset);
 function showPlate(key,action){
- if(action)manual=true;sectionVisibility(key==='section');if(key===plate)return;
+ sectionVisibility(key==='section');if(key===plate)return;
  if(key==='section'){plate=key;++transition;prior.hidden=true;$('#arch-label').textContent='16C · Registered section';$('#arch-context').textContent='Selected view · Registered plan and model';
  $('#brief-16a a[href^="mailto"]').href='mailto:assembl@assembl.co.nz?subject=A%20project%20like%2016A&body=I%20was%20looking%20at%20the%20registered%2016C%20plan%20and%20model.';
  document.querySelectorAll('[data-plate]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.plate===key)));return}
@@ -18,24 +18,32 @@ function showPlate(key,action){
  if(action)window.dispatchEvent(new CustomEvent('assembl:interaction',{detail:{name:'plate_selected',value:key}}));
 }
 document.querySelectorAll('[data-plate]').forEach(b=>b.onclick=()=>showPlate(b.dataset.plate,true));
-showPlate('section',false);
-const filmWrap=$('.film-wrap'),copyBlocks=[$('.opening'),$('.film-caption'),$('.lab-intro'),filmWrap];
-let editorialFrame=0;
-function editorialScroll(){
- if(!editorialFrame)editorialFrame=requestAnimationFrame(()=>{
-  editorialFrame=0;
-  if(activeMotion.matches)return;
-  for(const block of copyBlocks){
-   const r=block.getBoundingClientRect();if(r.bottom<0||r.top>innerHeight)continue;
-   const progress=Math.max(-1,Math.min(1,(innerHeight/2-r.top-r.height/2)/(innerHeight/2+r.height/2)));
-   block.style.setProperty('--text-drift',(progress*(innerWidth<=680?8:17)).toFixed(1)+'px');
-   if(block===filmWrap)block.style.setProperty('--film-drift',(progress*1.8).toFixed(2)+'%');
-  }
- });
- if(manual||innerWidth<=680||activeMotion.matches)return;const run=$('.plate-run').getBoundingClientRect(),h=$('.plate').offsetHeight;
- if(run.top<innerHeight*.9&&run.bottom>0){const progress=Math.max(0,Math.min(1,(-run.top+innerHeight*.025)/Math.max(1,run.height-h)));showPlate(progress<.25?'drawing':progress<.66?'model':'exterior',false)}
+showPlate('exterior',false);
+const filmWrap=$('.film-wrap');
+const platesFrame=$('#architecture .plate-img');
+const groups=[...document.querySelectorAll('.intro-title,#waiheke-title,.lab-lines')].map(el=>{
+ const lines=[...el.querySelectorAll('span')];lines.forEach(line=>line.classList.add('motion-line'));return {el,lines};
+});
+const active=new Set(), watched=[filmWrap,platesFrame,...groups.map(g=>g.el)];
+const bounded=x=>Math.max(-1,Math.min(1,x));
+let tick=0;
+function paint(){
+ tick=0;
+ for(const el of active){
+  const r=el.getBoundingClientRect(),t=bounded((innerHeight/2-r.top-r.height/2)/((innerHeight+r.height)/2));
+  if(el===filmWrap){el.style.setProperty('--film-shift',(t*5.7).toFixed(2)+'%');continue}
+  if(el===platesFrame){el.style.setProperty('--plate-shift',(t*3.8).toFixed(2)+'%');continue}
+  const lines=groups.find(g=>g.el===el).lines;
+  lines.forEach((line,i)=>{
+   line.style.setProperty('--type-x',(t*(i-(lines.length-1)/2)*(innerWidth<681?15:47)).toFixed(1)+'px');
+   line.style.setProperty('--type-y',(-t*(i+1)*8).toFixed(1)+'px');
+  });
+ }
 }
-window.addEventListener('scroll',editorialScroll,{passive:true});window.addEventListener('resize',editorialScroll);editorialScroll();
+function update(){if(!activeMotion.matches&&!tick&&active.size)tick=requestAnimationFrame(paint)}
+const observer=new IntersectionObserver(entries=>{for(const e of entries){if(e.isIntersecting)active.add(e.target);else active.delete(e.target)}update()});
+watched.forEach(el=>observer.observe(el));
+window.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);activeMotion.addEventListener('change',update);
 tideCard(asset);
 let audioContext,soundOn=false;
 const soundControl=$('#sound');
