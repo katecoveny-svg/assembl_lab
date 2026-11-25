@@ -7,7 +7,7 @@ const q=s=>document.querySelector(s);
 export function createPlanting(stage,{save,onExit,showSolid}){
   const projects=new WeakMap(), canvas=stage.renderer.domElement;
   const edit=q("#plantingTools"), toggle=q("#plantingToggle"), banner=q("#plantStatus"), species=q("#plantSpecies");
-  const season=q("#plantSeason"), style=q("#plantDisplay"), schedule=q("#plantSchedule");
+  const season=q("#plantSeason"), style=q("#plantDisplay"), schedule=q("#plantSchedule"), bedExit=q("#plantClosePreview"), frameWrap=canvas.closest(".stagewrap");
   for(const [value,m] of Object.entries(PLANTS))species.add(new Option(m.label,value));
   species.add(new Option("Layered native mix",MIX));
   for(const [value,label] of MONTHS)season.add(new Option(label,value));
@@ -127,10 +127,15 @@ export function createPlanting(stage,{save,onExit,showSolid}){
     }
     if(active)syncGuides();
   }
+  function clearBedView(){frameWrap.classList.remove("is-plant-review");bedExit.hidden=true;}
+  bedExit.addEventListener("click",()=>{
+    clearBedView();stage.resize();stage.view("aerial");stage.sync();
+    toggle.focus({preventScroll:true});
+  });
   function open(P){
     if(active){dismiss();return;}
     if(!edit.hidden){dismiss();return;}
-    select(P);toggle.setAttribute("aria-expanded","true");edit.hidden=false;modelLabel();
+    clearBedView();select(P);toggle.setAttribute("aria-expanded","true");edit.hidden=false;modelLabel();
     if(!f?.calibrated)return;
     showSolid();active=true;prior={render:stage.render,enabled:stage.ctl.enabled,tabIndex:canvas.tabIndex,label:canvas.getAttribute("aria-label")};
     stage.ctl.enabled=false;stage.render=paintScene;
@@ -191,6 +196,7 @@ export function createPlanting(stage,{save,onExit,showSolid}){
     const extent=Math.max(...pts.map(p=>Math.hypot(p.x-x,p.z-z)),2), distance=6.4+extent*.84;
     dismiss();
     visible=true;q("#plantVisual").checked=true;if(plants)plants.visible=true;
+    frameWrap.classList.add("is-plant-review");bedExit.hidden=false;stage.resize();
     stage.camera.position.copy(view).addScaledVector(axis,distance).addScaledVector(new T.Vector3(-axis.z,0,axis.x),-distance*.52).setY(f.y+4.5+extent*.19);
     stage.camera.fov=45;stage.camera.updateProjectionMatrix();stage.target.copy(view);stage.sync();
     document.querySelector("#stage3d").scrollIntoView({block:"center",behavior:"instant"});
@@ -224,5 +230,5 @@ export function createPlanting(stage,{save,onExit,showSolid}){
       const safe=importPlanting(json.proposed_planting??json,f);setMode("paint",false);commit(safe,"Proposed planting loaded for this calibrated model.");
     }catch(e){tell(e.message);}
   });
-  return {open,select,update,close:dismiss,get active(){return active;},saved(P){return projects.get(P);}};
+  return {open,select,update,close(){clearBedView();dismiss();},get active(){return active;},saved(P){return projects.get(P);}};
 }

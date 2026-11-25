@@ -345,3 +345,7 @@ th { background: #1B0E1A; color: var(--on); } th, td { border-bottom-color: var(
 .plant-schedule :is(summary,a):focus-visible,.plant-display select:focus-visible {outline:2px solid #e3d0d2;outline-offset:3px}
 
 #plantMixSample[hidden] {display:none}
+/* A focused planting review leaves the picture unobscured, especially on phones. */
+.stagewrap.is-plant-review .stagebar {display:none}
+#plantClosePreview[hidden] {display:none}
+@media(max-width:650px){.stagewrap.is-plant-review{aspect-ratio:5 / 4}}
