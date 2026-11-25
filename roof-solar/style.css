@@ -52,16 +52,7 @@
 @media(max-width:600px){.rs main{padding-top:28px;gap:14px}.rs-canvas{height:58vh;min-height:360px;border-radius:22px}.rs-stats{grid-template-columns:repeat(3,minmax(0,1fr))}.rs-stats b{font-size:17px}.rs-card{padding:18px 16px 16px;border-radius:24px}.rs-readout{font-size:11px;padding:7px 10px}.rs-btn{padding:0 14px}}
 @media(prefers-reduced-motion:reduce){.rs-btn{transition:none}.rs-btn:hover{translate:none}.rs-load{animation:none}}
 
-/* 16A viewing room: rose paper, ivory panels, dark plum only as ink. */
-html{background:#f5eeef}body.rs.site-v2.lab-std{--v2-bg:#f5eeef;--v2-fg:#39282d;--v2-label:#654a4e;--v2-fg-2:#654a4e;background:linear-gradient(155deg,#f9f5f4,#f0e5e8 75%);color:#39282d}
-.rs .rs-head .v2-accent{color:#78535b}
-.rs .rs-canvas{background:#e3d0d2;border:1px solid #bda4a7;box-shadow:0 22px 62px #654a4e28}
-.rs-card{box-shadow:0 14px 48px #654a4e14;border:1px solid #e3d0d2}
-.rs .rs-ctl{border:1px solid #e3d0d2}
-.rs .rs-btn{background:#684e54;color:#fffdfb}.rs .rs-ghost{background:#eee1e2;color:#39282d;box-shadow:inset 0 0 0 1px #c3aaae}
-.rs .rs-badge,.rs .rs-readout,.rs .rs-legend{background:#fffdfbe8;color:#3b2930}
-.rs-readout:empty{display:none}.rs .rs-note,.rs .lab-way,.rs .lab-way a{color:#654a4e}
-.rs .lab-way{border-top-color:#d7c4c6}
+.rs-readout:empty{display:none}.rs .rs-note{color:#654a4e}
 .rs-twin,.rs-twin iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
 .rs-study-controls{display:flex;align-items:center;justify-content:space-between}
 .rs-study-controls{flex-wrap:wrap;justify-content:flex-start;gap:10px 20px}.rs-study-sun{flex:1;min-width:130px}
@@ -71,7 +62,7 @@ html{background:#f5eeef}body.rs.site-v2.lab-std{--v2-bg:#f5eeef;--v2-fg:#39282d;
 
 @font-face{font-family:AssemblInstrument;src:url(/lab/v3/instrument.woff) format('woff');font-weight:100 900;font-display:swap}
 @font-face{font-family:AssemblMono;src:url(/lab/v3/plex-mono.woff2) format('woff2');font-weight:400;font-display:swap}
-html:has(body.rs),body.rs.site-v2{background:#fffdfb;color:#654a4e;--v2-font:AssemblInstrument,Arial,sans-serif;--v2-mono:AssemblMono,monospace;font-family:var(--v2-font)}
+html:has(body.rs),body.rs.site-v2.lab-std{background:#fffdfb;color:#654a4e;--v2-bg:#fffdfb;--v2-fg:#654a4e;--v2-label:#654a4e;--v2-fg-2:#654a4e;--v2-font:AssemblInstrument,Arial,sans-serif;--v2-mono:AssemblMono,monospace;font-family:var(--v2-font)}
 body.rs .solar-mast{border-bottom:1px solid #e3d0d2;display:flex;justify-content:space-between;align-items:center;padding:14px clamp(18px,4.5vw,72px);min-height:66px}
 .solar-mast img{display:block;width:110px}.solar-mast a{color:#654a4e;text-decoration:none;font-weight:500}
 body.rs main{max-width:1600px;padding:clamp(24px,3vw,54px) clamp(18px,4.5vw,72px);gap:24px}
@@ -86,3 +77,5 @@ body.rs .rs-btn{background:#654a4e;color:#fffdfb;border:1px solid #654a4e;font-w
 body.rs :is(.rs-badge,.rs-readout,.rs-legend){background:#fffdfb;color:#654a4e;border:1px solid #e3d0d2}
 body.rs :is(.rs-sl input,.rs-tg input){accent-color:#654a4e}.roof-plate .solar-mast{display:none!important}
 @media(max-width:780px){body.rs .rs-head{display:block}body.rs .rs-head h1.v2-display{margin:12px 0}.solar-mast img{width:96px}}
+
+.solar-footer{display:flex;justify-content:space-between;gap:16px;padding:22px clamp(18px,4.5vw,72px);border-top:1px solid #e3d0d2;font:500 15px var(--v2-font);color:#654a4e;background:#fffdfb}.solar-footer a{color:inherit}

@@ -12,10 +12,11 @@ function paint(){
  passage.style.setProperty('--wipe',((1-blend*blend*(3-2*blend))*100)+'%');
  const index=progress<.49?0:1;
  document.querySelector('#plate-kicker').textContent=index?'16A plan study / 16D':'Waitematā Harbour';
- document.querySelector('#plate-title').textContent=index?'Across the roofline.':'Drag the boat.';
+ document.querySelector('#plate-title').textContent=index?'Across the roofline.':surfaces[0].classList.contains('ready')?'Drag the boat.':'At water level.';
  link.textContent=index?'Explore roof solar ↗':'Explore the tide ↗';link.href=index?'/roof-solar/':harbour;
  const visible=rect.top<innerHeight*.93&&rect.bottom>0&&!document.hidden;
- const next=visible&&!paused&&!navigator.connection?.saveData?index:-1;
+ const quietHarbour=media.matches&&index===0;
+ const next=visible&&(!paused||quietHarbour)&&!navigator.connection?.saveData?index:-1;
  if(active!==next){
    clearTimeout(timeout);
    frame?.remove();frame=null;surfaces.forEach(x=>x.classList.remove('ready'));active=next;shot=null;

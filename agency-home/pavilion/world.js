@@ -172,9 +172,9 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  // Purpose-made cabinetry, recessed lights, curtain folds and furniture establish scale.
  // One softly lit pendant over the breakfast table leaves the view from the new doorway clear.
  box(-2.12,2.67,.49,.01,.58,.01,metal);cylinder(-2.12,2.32,.49,.053,.178,.135,cedar);cylinder(-2.12,2.249,.49,.155,.155,.010,glow);
- const [limestoneMap,glazeNormal,basketWeave]=await Promise.all(['studio-limestone.webp','studio-glaze-normal.webp','studio-wool.webp'].map(surface));
- for(const map of [limestoneMap,glazeNormal,basketWeave]){map.wrapS=map.wrapT=T.RepeatWrapping;map.anisotropy=4}
- limestoneMap.colorSpace=basketWeave.colorSpace=T.SRGBColorSpace;
+ const [glazeNormal,basketWeave]=await Promise.all(['studio-glaze-normal.webp','studio-wool.webp'].map(surface));
+ for(const map of [glazeNormal,basketWeave]){map.wrapS=map.wrapT=T.RepeatWrapping;map.anisotropy=4}
+ basketWeave.colorSpace=T.SRGBColorSpace;
  // Allocate the correct immutable texture extents. The six room maps arrive on the approach to the lift.
  const finishLoads=[];
  function lateFinish(name,size,initial){

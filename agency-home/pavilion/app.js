@@ -17,6 +17,7 @@ lab(asset);
 const vista=$('#vista'),journey=$('.journey'),settings=new URLSearchParams(location.search),reduced=matchMedia('(prefers-reduced-motion: reduce)');
 if(settings.has('match'))document.documentElement.classList.add('match-camera');
 const cinema=document.documentElement.classList.contains('agency-landing'),filmMotion=$('#film-motion');
+let syncMedium=()=>{},handover=()=>{};
 let room=null,roomMove=null,preferWebGL=false;
 let exploring=false,detail=null;
 let intervals=[],lastPaint=0;let world,p=0,paused=reduced.matches,visible=true,time=0,prev=0,id=0,gustAt=-10,manual=null,scrolled=window.scrollY,trace=false,lx=.5,ly=.49,dirty=true;
@@ -146,7 +147,7 @@ function staticMode(reason){
  if(failed?.backend==='WebGPU')preferWebGL=true;
  free.lost();if(failed){try{failed.renderer.dispose()}catch{}}
 
- titleFrame(0,0);vista.dataset.renderer='still';delete vista.dataset.ready;
+ titleFrame(0,0);vista.dataset.renderer='still';syncMedium();delete vista.dataset.ready;
  $('#gpu').replaceChildren();journey.classList.add('still');
  $('.scene-controls').hidden=true;enter.hidden=false;enter.disabled=false;
  note.textContent=reason==='slow'?'Still view · Open 3D when you’re ready.':'Still view · You can try 3D again.';
@@ -181,7 +182,7 @@ async function start(signal){
   candidate=await firstFrame(true);
  }
  const renderer=candidate.renderer;
- world=candidate;if(drawnP!==p||drawnDetail!==detail){world.setDetail(detail);world.draw(p,0,0,liftAt(p))}
+ world=candidate;handover();if(drawnP!==p||drawnDetail!==detail){world.setDetail(detail);world.draw(p,0,0,liftAt(p))}
  const lost=()=>{if(world===candidate)staticMode('context lost')};
  renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();lost()},{once:true});
  renderer.backend.device?.lost.then(lost);
@@ -329,17 +330,40 @@ guideButton.addEventListener('click',firstGuideClick);
 
 if(cinema){
  vista.removeAttribute('tabindex');vista.removeAttribute('role');vista.setAttribute('aria-label','Animated architectural visualisation of the Waiheke Pavilion');
- const frames=['roof','living','kitchen'];let fallbackTick=0,stillStep=0;
- function fallbackFrame(){
-  if(world||paused||!visible||document.hidden||matchMedia('(prefers-reduced-data:reduce)').matches||navigator.connection?.saveData)return;
-  const shot=frames[stillStep%4];stillStep++;
-  if(!shot){still.hidden=true;return}
-  const src=asset('room-'+shot+(matchMedia('(max-width:680px)').matches?'-phone':'')+'.webp'),img=new Image();img.src=src;
-  img.decode().then(()=>{if(!world&&!paused&&visible){still.src=src;still.hidden=false}}).catch(()=>{});
+ const video=$('#journey-film');
+ let fallbackTimer=0,visitorRequested=false,videoFailed=false;
+ const source=asset(matchMedia('(max-width:680px)').matches?'waiheke-journey-mobile.mp4':'waiheke-journey.mp4');
+ const constrained=()=>navigator.connection?.saveData||matchMedia('(prefers-reduced-data:reduce)').matches||
+  ['slow-2g','2g','3g'].includes(navigator.connection?.effectiveType);
+ function status(){
+  filmMotion.hidden=false;filmMotion.textContent=paused?'Play':'Pause';
+  filmMotion.setAttribute('aria-label',paused?'Play the architectural journey':'Pause the architectural journey');
  }
- function updateMotion(){clearInterval(fallbackTick);filmMotion.hidden=false;filmMotion.textContent=paused?'Play':'Pause';filmMotion.setAttribute('aria-label',paused?'Play the architectural journey':'Pause the architectural journey');
-  if(!paused&&!document.hidden)fallbackTick=setInterval(fallbackFrame,5700);
+ function playBackup(){
+  if(world||paused||!visible||document.hidden||videoFailed||settings.get('renderer')==='still')return;
+  if(constrained()&&!visitorRequested)return;
+  if(!video.hasAttribute('src'))video.src=source;
+  video.play().catch(()=>{if(!world&&!document.hidden&&visible){paused=true;status()}});
  }
- filmMotion.onclick=()=>{paused=!paused;prev=performance.now();updateMotion();if(!paused&&!world&&!pending)loadWorld();dirty=true;wake()};
- reduced.addEventListener('change',updateMotion);document.addEventListener('visibilitychange',updateMotion);updateMotion();
+ syncMedium=()=>{
+  clearTimeout(fallbackTimer);
+  if(world||paused||!visible||document.hidden){video.pause();return}
+  // Prefer the live browser frame. A recorded pass of the very same model covers a slow or unavailable GPU.
+  fallbackTimer=setTimeout(playBackup,video.readyState>=2||visitorRequested?0:1800);
+ };
+ handover=()=>{
+  if(!video.hidden&&Number.isFinite(video.currentTime))tourTime=video.currentTime%43;
+  clearTimeout(fallbackTimer);video.pause();video.hidden=true;vista.dataset.medium='live';
+ };
+ video.addEventListener('playing',()=>{
+  if(world||paused||document.hidden||!visible){video.pause();return}
+  video.hidden=false;vista.dataset.medium='film';
+ });
+ video.addEventListener('error',()=>{videoFailed=true;video.hidden=true;vista.dataset.medium='still'});
+ filmMotion.onclick=()=>{paused=!paused;visitorRequested=!paused;prev=performance.now();status();
+  if(!paused&&!world&&!pending&&settings.get('renderer')!=='still')loadWorld();syncMedium();dirty=true;wake();
+ };
+ reduced.addEventListener('change',()=>{status();syncMedium()});
+ new IntersectionObserver(([entry])=>{visible=entry.isIntersecting;syncMedium()}).observe(vista);
+ document.addEventListener('visibilitychange',syncMedium);status();syncMedium();
 }

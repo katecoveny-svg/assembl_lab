@@ -1,16 +1,16 @@
 export function tideCard(asset){
  const byId=id=>document.getElementById(id);
  let days=JSON.parse(byId('tide-data').textContent),keys=Object.keys(days);
- const host=byId('water-host'),slider=byId('tide-event'),open=byId('water-open'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
+ const host=byId('water-host'),slider=byId('tide-event'),open=byId('water-open');
  const tool='https://assembl-waitemata-tides.pages.dev/';
  let day=1,index=0,visible=false,frame=null,renderTimer=0,explicit=false,showStill=false,selectedHeight=0;
  function destination(embed){
-  const url=new URL(tool);if(embed)url.searchParams.set('view','harbour');
+  const url=new URL(tool);if(embed){url.searchParams.set('view','harbour');url.searchParams.set('plate','1')}
   url.searchParams.set('date',keys[day]);url.searchParams.set('event',String(index));
   return url.href;
  }
  function conservative(){
-  return reduced.matches||navigator.connection?.saveData||['2g','3g','slow-2g'].includes(navigator.connection?.effectiveType)
+  return navigator.connection?.saveData||['2g','3g','slow-2g'].includes(navigator.connection?.effectiveType)
    ||!(navigator.gpu||window.WebGL2RenderingContext);
  }
  function inputMode(){
