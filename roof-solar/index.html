@@ -1,4 +1,4 @@
-<!doctype html><html lang="en-NZ"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#180B18">
+<!doctype html><html lang="en-NZ"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f5eeef">
 <title>Roof solar twin · assembl lab</title>
 <meta name="description" content="A New Zealand roof from LINZ's open LiDAR, panels laid on it, the real sun for a year, and a likely yearly generation with the method and sources stated. An estimate, not a quote.">
 <link rel="icon" href="/lab/favicon.svg" type="image/svg+xml"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="../site-v2/site-v2.css"><link rel="stylesheet" href="../site-v2/lab.css"><link rel="stylesheet" href="../site-v2/standard.css"><link rel="stylesheet" href="./style.css">
 <script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
 <script src="/lab/navigation.js" defer></script></head>
-<body class="site-v2 lab-std v2-tone-plum rs">
+<body class="site-v2 lab-std v2-tone-ivory rs">
 <a class="skip" href="#stage">Skip to the roof</a>
 <main>
   <header class="rs-head">
@@ -18,11 +18,13 @@
   <div class="rs-grid">
     <section class="rs-stage" aria-label="3D roof and sun">
       <div id="stage" class="rs-canvas" tabindex="-1"><canvas id="gl" aria-label="3D view of the roof, its neighbours and the sun. Drag to turn, scroll to zoom."></canvas>
+        <div id="twinView" class="rs-twin" hidden></div>
         <div class="rs-badge" id="badge" role="status" aria-live="polite">Starting</div>
         <div class="rs-readout" id="readout" aria-live="off"></div>
         <div class="rs-legend" id="legend" hidden><span>Yearly sun on each panel</span><i></i><span class="rs-leg-lo">less</span><span class="rs-leg-hi">best roof</span></div>
       </div>
-      <div class="rs-ctl" role="group" aria-label="Sun controls">
+      <div id="twinControls" class="rs-ctl rs-study-controls" hidden><button type="button" id="roofView" class="rs-btn rs-ghost">Reset roof view</button><label class="rs-tg"><input id="showSolar" type="checkbox" checked> Show panels</label><label class="rs-sl rs-study-sun"><span>Sun time <output id="studySunTime"></output></span><input id="studySun" type="range" min="8" max="20" step="1" value="14"></label></div>
+      <div id="measuredControls" class="rs-ctl" role="group" aria-label="Sun controls">
         <label class="rs-sl"><span>Day <output id="dayOut"></output></span><input id="day" type="range" min="1" max="365" step="1" value="1"></label>
         <label class="rs-sl"><span>Time <output id="minOut"></output></span><input id="min" type="range" min="0" max="1439" step="5" value="900"></label>
         <div class="rs-btns">

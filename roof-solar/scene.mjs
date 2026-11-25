@@ -86,7 +86,7 @@ export class RoofScene {
     this.pickables = []; this.ray = new THREE.Raycaster(); this.needs = true; this.resize();
     r.setAnimationLoop(() => { this.controls.update(); if (this.needs || this.controls._moved) { this.draw(); this.needs = false; } });
     this.controls.addEventListener("change", () => (this.needs = true));
-    new ResizeObserver(() => this.resize()).observe(canvas.parentElement);
+    this.observer = new ResizeObserver(() => this.resize()); this.observer.observe(canvas.parentElement);
   }
   draw() { if (this.composer) this.composer.render(); else this.renderer.render(this.scene, this.camera); }
   resize() { const p = this.canvas.parentElement, w = Math.max(200, p.clientWidth), h = Math.max(200, p.clientHeight); this.renderer.setSize(w, h, false); this.composer?.setPixelRatio(this.renderer.getPixelRatio()); this.composer?.setSize(w, h); this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); this.needs = true; }
@@ -97,18 +97,6 @@ export class RoofScene {
   clearSite() {
     for (const g of [this.root, this.look]) for (const o of [...g.children]) { if (o === this.look) continue; g.remove(o); o.traverse((c) => { c.geometry?.dispose?.(); c.customDepthMaterial?.dispose(); if (c.material) (Array.isArray(c.material) ? c.material : [c.material]).forEach((m) => { m.map?.dispose?.(); m.dispose(); }); }); }
     this.pickables = []; this.clay = null; this.panelMesh = this.frameMesh = this.heatMesh = this.railMesh = null;
-  }
-
-  /** Published plan geometry in survey-local coordinates; no LiDAR or yield. */
-  setDesignStudy(build, panels) {
-    this.clearSite(); this.siteData=null; this.plan=null; this.clayOn=false; this.heat=false;
-    this.site={e0:17,n0:-10,z0:49}; this.look.visible=true; this.lookPickables=[];
-    // Regional solar direction only; not a geocoded address and not an input to estimates.
-    this.latlon={lat:-36.87,lon:174.8};
-    const t=performance.now(), stats=build(this); this.buildPanels(panels);
-    this.stats={ms:Math.round(performance.now()-t),buildings:2, ...stats};
-    this.controls.target.set(1.2,.3,2.8); this.camera.position.set(-12,39,-18); this.controls.update();
-    this.setSun(this.sunDate,true); this.needs=true;
   }
 
   /** draw a site. site: from loadSite; plan: { chosen planes (fitted), usable ids, panels[] with .year } */
@@ -386,7 +374,7 @@ export class RoofScene {
     const r = this.canvas.getBoundingClientRect(); this.ray.setFromCamera(new THREE.Vector2(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1), this.camera);
     const hit = this.ray.intersectObjects(this.pickables, false)[0]; return hit ? this.fromScene(hit.point) : null;
   }
-  dispose() { this.renderer.setAnimationLoop(null); this.clearSite(); this.renderer.dispose(); }
+  dispose() { this.renderer.setAnimationLoop(null); this.observer?.disconnect(); this.controls.dispose(); clearTimeout(this._env); this.clearSite(); this.envRT?.dispose(); this.pmrem.dispose(); this.renderer.dispose(); }
   /** the measured surface (DSM) as one clay sheet, as the page drew it before: what the shade sums walk across */
   buildClay(site, plan) {
     const { dsm, dem } = site, N = dsm.n, M = (N - 1) * UP + 1, pos = new Float32Array(M * M * 3), col = new Float32Array(M * M * 3), wr = new Float32Array(M * M), wv = new Float32Array(M * M), agl = new Float32Array(M * M), aoA = new Float32Array(M * M), blur = blurGrid(dsm, 3);
