@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aotearoa Planting Studio v2 — Three.js WebGPU</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="canvas-wrap"></div>
+
+  <!-- Top-Left Brand Pill -->
+  <header class="brand-bar">
+    <a href="/" aria-label="Assembl Lab home" class="brand-dot" title="Back to Assembl Lab"></a>
+    <span class="brand-title">Aotearoa Planting Studio <span class="ver-tag">v2</span></span>
+    <span class="badge" id="backend-badge">WebGPU</span>
+    <span class="badge subtle" id="fps-badge">60 fps</span>
+  </header>
+
+  <!-- Top-Right View & Environment Controls -->
+  <div class="top-controls">
+    <div class="seg-group" role="group" aria-label="View Mode">
+      <button class="seg-btn" id="btn-plan">Plan</button>
+      <button class="seg-btn active" id="btn-3d">3D</button>
+    </div>
+
+    <div class="ctrl-pill sun-pill" title="NZ Southern Hemisphere Solar Azimuth & Elevation">
+      <span class="icon-lbl">☀</span>
+      <input type="range" id="sun-slider" min="6.5" max="20.5" step="0.1" value="14.5" />
+      <span id="sun-time-lbl">14:30</span>
+    </div>
+
+    <button class="pill-toggle active" id="btn-birds" title="Toggle Animated Native NZ Birds (Tūī, Pīwakawaka, Kererū)">
+      <span>🐦</span><span>Birds</span>
+    </button>
+    <button class="icon-btn active" id="btn-wind" title="Toggle Breeze">≈</button>
+    <button class="icon-btn active" id="btn-handles" title="Toggle Bed Vertices">◎</button>
+    <button class="icon-btn" id="btn-undo" title="Undo (Ctrl+Z)">↶</button>
+    <button class="icon-btn" id="btn-redo" title="Redo (Ctrl+Y)">↷</button>
+    <button class="icon-btn danger" id="btn-clear" title="Clear Scene">✕</button>
+    <button class="icon-btn active" id="btn-inspector" aria-controls="inspector-panel" title="Toggle Inspector">☰</button>
+  </div>
+
+  <!-- Left Vertical Tool Dock -->
+  <aside class="left-dock">
+    <button class="tool-btn active" data-tool="paint-mix" title="Paint NZ Planting Mix (1)">
+      <span class="tool-ico">✦</span>
+      <span class="tool-lbl">Mix</span>
+    </button>
+    <button class="tool-btn" data-tool="paint-plant" title="Paint Individual NZ Plant / Flower (2)">
+      <span class="tool-ico">❀</span>
+      <span class="tool-lbl">Plant</span>
+    </button>
+    <button class="tool-btn" data-tool="draw-bed" title="Draw Planting Bed with Edging (3)">
+      <span class="tool-ico">⬠</span>
+      <span class="tool-lbl">Bed</span>
+    </button>
+    <button class="tool-btn" data-tool="paint-surface" title="Paint NZ Surface / Hardscape (4)">
+      <span class="tool-ico">▤</span>
+      <span class="tool-lbl">Surface</span>
+    </button>
+    <button class="tool-btn" data-tool="place-prop" title="Place NZ Garden Feature / Prop (5)">
+      <span class="tool-ico">◈</span>
+      <span class="tool-lbl">Prop</span>
+    </button>
+    <button class="tool-btn" data-tool="erase" title="Erase Plants &amp; Props (6)">
+      <span class="tool-ico">⌫</span>
+      <span class="tool-lbl">Erase</span>
+    </button>
+    <div class="dock-sep"></div>
+    <button class="tool-btn" data-tool="orbit" title="Orbit / Inspect Camera (7)">
+      <span class="tool-ico">↻</span>
+      <span class="tool-lbl">Orbit</span>
+    </button>
+  </aside>
+
+  <!-- Floating Hint Banner (shown while drawing polygon bed) -->
+  <div id="draw-hint" class="draw-hint hidden">
+    Click terrain to place bed vertices · <strong>Double-click</strong> or press <strong>Enter</strong> to close &amp; plant · <strong>Esc</strong> to cancel
+  </div>
+
+  <!-- Right Collapsible Inspector Panel -->
+  <aside class="inspector" id="inspector-panel">
+    <!-- NZ Site Topography & LINZ Land Integration -->
+    <div class="insp-section">
+      <div class="insp-head">
+        <span>NZ Site &amp; Topography</span>
+        <span id="slope-readout" class="slope-badge">Avg 0.0°</span>
+      </div>
+      <select id="terrain-preset" class="nz-select" title="Select NZ Site Topography Preset"></select>
+
+      <div class="btn-row">
+        <button class="action-btn compact" id="btn-import-geojson" title="Import LINZ Parcel GeoJSON (WGS84 or NZTM2000)">+ LINZ Parcel</button>
+        <button class="action-btn compact" id="btn-import-glb" title="Import custom 3D .glb model onto terrain">+ Import 3D</button>
+      </div>
+      <input type="file" id="file-geojson" accept=".geojson,.json" class="hidden" />
+      <input type="file" id="file-glb" accept=".glb" class="hidden" />
+      <div id="site-status" class="site-status" aria-live="polite"></div>
+      <small>Illustrative terrain and imports, not a survey. No live address lookup.</small>
+    </div>
+
+    <div class="insp-section">
+      <div class="insp-head">Brush &amp; Planting</div>
+      <label class="slider-row">
+        <span>Brush Radius</span>
+        <span id="lbl-brush">2.2 m</span>
+      </label>
+      <input type="range" id="brush-size" min="0.6" max="5.5" step="0.1" value="2.2" />
+
+      <label class="slider-row">
+        <span>Planting Density</span>
+        <span id="lbl-density">1.0×</span>
+      </label>
+      <input type="range" id="density-mult" min="0.4" max="2.0" step="0.1" value="1.0" />
+
+      <label class="slider-row">
+        <span>Natural Drift Clumping</span>
+        <span id="lbl-clump">72%</span>
+      </label>
+      <input type="range" id="clump-slider" min="0" max="1" step="0.05" value="0.72" />
+    </div>
+
+    <div class="insp-section">
+      <div class="insp-head">NZ Bed Edging</div>
+      <select id="edging-select" class="nz-select"></select>
+      <div class="btn-row">
+        <button class="action-btn primary" id="btn-regenerate">↻ Regenerate</button>
+        <button class="action-btn" id="btn-reshuffle">⇄ Reshuffle</button>
+      </div>
+    </div>
+
+    <div class="insp-section bom-section">
+      <div class="insp-head">
+        <span>Plant schedule · indicative pricing</span>
+        <span id="bom-total" class="bom-total">$0</span>
+      </div>
+      <div id="bom-list" class="bom-list"></div>
+    </div>
+  </aside>
+
+  <!-- Bottom Floating Dock -->
+  <section class="bottom-dock">
+    <div class="dock-top-row">
+      <div class="tab-group">
+        <button class="tab-btn active" data-tab="compositions">Compositions</button>
+        <button class="tab-btn" data-tab="plants">NZ Plants</button>
+        <button class="tab-btn" data-tab="surfaces">NZ Surfaces</button>
+        <button class="tab-btn" data-tab="props">NZ Features</button>
+      </div>
+
+      <div class="stats-pill" id="stats-pill">
+        <span id="stat-area">0 m²</span>
+        <span class="dot">·</span>
+        <span id="stat-plants">0 plants</span>
+        <span class="dot">·</span>
+        <span id="stat-cost">$0 NZD</span>
+      </div>
+
+      <!-- Seasonal Timeline (Southern Hemisphere J–D) -->
+      <div class="timeline-wrap">
+        <button class="play-btn" id="btn-play-season" title="Animate NZ Seasons">▶</button>
+        <div class="season-track">
+          <div class="month-ticks">
+            <span>J</span><span>F</span><span>M</span><span>A</span><span>M</span><span>J</span>
+            <span>J</span><span>A</span><span>S</span><span>O</span><span>N</span><span>D</span>
+          </div>
+          <input type="range" id="season-slider" min="0" max="11.95" step="0.05" value="11.4" />
+        </div>
+        <span class="season-label" id="season-label">Mid-Dec · Summer</span>
+      </div>
+
+      <!-- Multi-Year Growth Projection (1 · 4 · 7 · 12 yrs) -->
+      <div class="year-group" title="Multi-year maturity projection">
+        <span class="yr-prefix">Yr</span>
+        <button class="yr-btn" data-year="1">1</button>
+        <button class="yr-btn active" data-year="4">4</button>
+        <button class="yr-btn" data-year="7">7</button>
+        <button class="yr-btn" data-year="12">12</button>
+      </div>
+    </div>
+
+    <!-- Category filter pills (only shown on NZ Plants tab) -->
+    <div class="cat-filter-row hidden" id="plant-cat-row">
+      <button class="cat-pill active" data-cat="all">All (23)</button>
+      <button class="cat-pill" data-cat="flowers">Flowers &amp; Groundcover</button>
+      <button class="cat-pill" data-cat="grasses">Native Tussocks &amp; Sedges</button>
+      <button class="cat-pill" data-cat="architectural">Flax, Ferns &amp; Lilies</button>
+      <button class="cat-pill" data-cat="shrubs">Flowering Shrubs</button>
+      <button class="cat-pill" data-cat="trees">Native Trees</button>
+    </div>
+
+    <div class="cards-rail" id="cards-rail"></div>
+  </section>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
