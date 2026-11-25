@@ -94,10 +94,12 @@
         <details class="folio-evidence"><summary>What’s measured and what’s assumed</summary><p id="buildEvidence" class="hint"></p></details>
       </div>
       </div>
+      <div class="plant-display" id="plantDisplay" hidden><label>Season look <select id="plantSeason"></select></label><span>Illustrative flowering only. Places and quantities stay fixed.</span></div>
       <section class="card planting-tools" id="plantingTools" hidden aria-labelledby="plantTitle">
         <div class="plant-head"><div><p class="mono">PROPOSED LANDSCAPE</p><h2 id="plantTitle">Plant the model</h2></div><div class="row"><button class="btn ghost sm" id="plantViewBed" type="button">View bed in 3D</button><button class="btn ghost sm" id="plantExit" type="button">Back to 3D</button></div></div>
         <p class="hint" id="plantFrame"></p>
         <div id="plantToolsPanel">
+          <button type="button" id="plantMixSample" class="btn ghost sm" hidden>Try the layered sample bed</button>
           <div class="row" role="group" aria-label="Planting tools">
             <button type="button" data-plant-mode="bed" class="btn ghost sm">Draw bed</button>
             <button type="button" data-plant-mode="exclude" class="btn ghost sm">Draw path or no-plant area</button>
@@ -109,8 +111,13 @@
             <label>Brush radius <output id="plantRadiusValue" for="plantRadius">1 m</output><input id="plantRadius" type="range" min=".35" max="3" value="1" step=".05"></label>
             <label><input id="plantVisual" type="checkbox" checked> Show proposed planting in 3D</label>
           </div>
+          <div id="plantMixInfo" class="plant-mix" hidden><span><b>Canopy</b> Tī kōuka</span><span><b>Structure</b> Harakeke</span><span><b>Ground layer</b> Coastal toetoe</span><p>Brush places plants only where there is space. Check species and sourcing for your site.</p></div>
           <div class="row"><button id="plantFocus" class="btn ghost sm" type="button">Focus plan</button><span class="hint" id="plantPosition"></span><span class="hint" id="plantCount">0 plants</span></div>
           <p class="hint">Click or tap corners, then Finish area. Drag across soil to paint or erase. With the plan focused, use arrows (½ m) and Space. Buildings, decks, the shown approach and no-plant areas are excluded.</p>
+          <details class="plant-schedule" id="plantSchedule"><summary>Plant schedule</summary><p id="plantScheduleTotal" class="hint" role="status"></p>
+            <table aria-label="Proposed whole-project placement schedule"><thead><tr><th scope="col">Species / layer</th><th scope="col">Qty</th><th scope="col">Share</th></tr></thead><tbody id="plantScheduleRows"></tbody></table>
+            <div class="row"><button id="plantCsv" class="btn ghost sm" type="button" disabled>Download CSV</button><span class="hint">Concept quantities only. No pricing or supply specification.</span></div>
+          </details>
           <details><summary>Save or load proposed planting</summary><p class="hint">The planting JSON matches this calibrated plan. The layer can also be recovered from a Project JSON. It does not change model dimensions and stays out of IFC, GLB and IFC checks.</p>
             <div class="row"><button id="plantSave" class="btn ghost sm" type="button">Download planting JSON</button><label class="hint">Load planting JSON <input type="file" id="plantLoad" accept=".json,application/json"></label></div>
           </details>

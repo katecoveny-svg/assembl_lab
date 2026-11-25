@@ -1,9 +1,10 @@
 // Original lightweight Three.js planting silhouettes. The fixtures have no
 // renderer dependency; this file is loaded only from the optional landscape tool.
 import * as T from "three";
+import {PLANTS,displayPhase} from "./catalog.js";
 const GOLDEN=2.39996323;
 const material=new T.MeshStandardMaterial({vertexColors:true,side:T.DoubleSide,roughness:.88,metalness:0});
-function source(species){
+function source(species,phase){
   const pos=[],color=[],indices=[];
   const c=(r,g,b)=>new T.Color(r,g,b);
   const leaf=(y,theta,L,width,start,slope,spread,shade)=>{
@@ -30,9 +31,23 @@ function source(species){
   };
   if(species==="harakeke"){
     for(let i=0;i<21;i++){const t=i*GOLDEN,f=(i%7)/7,y=.13+f*.23;leaf(y,t,.96+f*.23,.032+i%4*.006,.024,1.07,.42+f*.22,c(.13+f*.089,.24+f*.127,.055+f*.018));}
-  } else if(species==="toetoe"){
+    if(phase!=="leaf")for(let n=0;n<2;n++){
+      const d=n?-.16:.15, z=n?-.09:.11, H=1.39+n*.19;
+      const stem=c(.14,.083,.064);stalk([d*.14,0,z*.17],[d,H,z],.025,.014,stem);
+      for(let j=0;j<9;j++){
+        const y=H-.39+j*.047, theta=j*GOLDEN+n, x=d*(y/H), zz=z*(y/H);
+        const dx=Math.cos(theta)*(.20-j*.009),dz=Math.sin(theta)*(.20-j*.009), t=[x+dx,y+.12,zz+dz];
+        stalk([x,y,zz],t,.012,.004,stem);
+        for(let k=0;k<3;k++){
+          const p=[t[0]-dx*k*.13,t[1]-k*.029,t[2]-dz*k*.13];
+          const q=[p[0]+dx*.12,p[1]+.08,p[2]+dz*.12];
+          stalk(p,q,.014,.006,phase==="flower"?c(.62+k*.047,.15+k*.045,.039):c(.20,.152,.09));
+        }
+      }
+    }
+  } else if(species==="toetoe"||species==="coastal-toetoe"){
     for(let i=0;i<18;i++){const f=(i%7)/7;leaf(.12,i*GOLDEN,1.12+f*.41,.018,.022,.97,.65+f*.28,c(.23+f*.09,.33+f*.06,.14));}
-    for(let i=0;i<7;i++){
+    if(species==="toetoe"||phase==="flower")for(let i=0;i<7;i++){
       const a=i*GOLDEN, x=Math.cos(a)*(.20+i*.015),z=Math.sin(a)*(.23+i*.015),y=1.39+i*.09;
       stalk([x*.19,0,z*.15],[x,y,z],.013,.008,c(.33,.25,.115));
       for(let j=0;j<6;j++)stalk([x*j/24+x,y-j*.05,z],[x+.13+Math.cos(a)*j*.018,y+.32-j*.065,z+Math.sin(a)*j*.024],.045-j*.003,.016,c(.70,.59,.36));
@@ -45,14 +60,18 @@ function source(species){
   const g=new T.BufferGeometry();g.setAttribute("position",new T.Float32BufferAttribute(pos,3));g.setAttribute("color",new T.Float32BufferAttribute(color,3));g.setIndex(indices);g.computeVertexNormals();return g;
 }
 const geometry=new Map();
-function prototypes(k){if(!geometry.has(k))geometry.set(k,source(k));return geometry.get(k);}
-export function layer(y,records) {
+function prototypes(species,month){
+  const phase=displayPhase(species,month),k=species+"|"+phase;
+  if(!geometry.has(k))geometry.set(k,source(species,phase));return geometry.get(k);
+}
+export function layer(y,records,month=0) {
   const o=new T.Group();o.name="Proposed planting";
   const dot=new T.Object3D();let i=0;
-  for(const species of ["harakeke","toetoe","ti-kouka"]){
+  for(const species of Object.keys(PLANTS)){
     const rows=records.filter(p=>p.species===species);if(!rows.length)continue;
-    const m=new T.InstancedMesh(prototypes(species), material,rows.length);
+    const m=new T.InstancedMesh(prototypes(species,month), material,rows.length);
     m.castShadow=m.receiveShadow=true;
+    m.name=species;m.userData={phase:displayPhase(species,month),proposed:true};
     rows.forEach((p,j)=>{
       dot.position.set(p.x,y,p.z);dot.rotation.set(0,p.angle,0);dot.scale.setScalar(p.scale);dot.updateMatrix();m.setMatrixAt(j,dot.matrix);
       const shade=.87+Math.abs(Math.sin((++i+p.x*17+p.z*3)*13.151))*.16;m.setColorAt(j,new T.Color(shade,shade,shade));

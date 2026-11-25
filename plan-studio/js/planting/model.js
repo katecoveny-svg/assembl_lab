@@ -3,11 +3,8 @@
 import { footprint, openingSpan, isDoor, wallFacing } from "../model.js";
 import { stampSweep } from "./sweep.js";
 export const SCHEMA="assembl.planting.v1", MAX_PLANTS=420, MAX_BEDS=8, MAX_EXCLUSIONS=12, MAX_VERTICES=80;
-export const PLANTS={
-  harakeke:{label:"Harakeke · flax",spacing:1.05,clear:.27},
-  toetoe:{label:"Toetoe",spacing:1.25,clear:.32},
-  "ti-kouka":{label:"Tī kōuka · cabbage tree",spacing:2.8,clear:.45}
-};
+export {PLANTS,MIX} from "./catalog.js";
+import {PLANTS,MIX} from "./catalog.js";
 const own=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
 const norm=x=>Math.round(x*1000)/1000;
 const asPoint=p=>({x:typeof p.x==="number"?p.x:p[0],z:typeof p.z==="number"?p.z:p[1]});
@@ -46,7 +43,7 @@ export function frame(P){
   const measured=demo?"sample":scale?.status;
   // Exact local frame, excluding room names, doors or presentation finishes.
   const key=hash(JSON.stringify([P.meta?.number,P.origin||[0,0],P.walls.map(w=>[w.id,w.a,w.b,w.t]),measured,y])).toString(16);
-  return {key,box,hard,calibrated,y,basis:demo?"Known-size fictional sample":"PDF calibrated to a written dimension",
+  return {key,box,hard,calibrated,sample:Boolean(demo),y,basis:demo?"Known-size fictional sample":"PDF calibrated to a written dimension",
     bounds:rect(box[0]-32,box[1]-32,box[2]+32,box[3]+32)};
 }
 export const empty=f=>({schema:SCHEMA,frame:f?.key,beds:[],exclusions:[],plants:[]});
@@ -95,8 +92,15 @@ const cell=(i,j)=>{
   const id=i+":"+j;
   return {id,x:norm((i+.19+(ratio(id+"x")-.5)*.28)*grid),z:norm((j+.63+(ratio(id+"z")-.5)*.28)*grid)};
 };
+// Fixed trellis cells support pockets of unlike height, not hard quotas. Existing
+// accepted plants win over future strokes; this never shifts or recolours a root.
+function mixSpecies(c){
+  if(ratio("native-canopy-v1|"+c.id)<.035)return "ti-kouka";
+  const zone=Math.floor((c.x+1.1)/2.7)+":"+Math.floor((c.z+.9)/2.35);
+  return ratio("native-matrix-v1|"+zone)<.54?"harakeke":"coastal-toetoe";
+}
 export function paint(data,f,track,{species="harakeke",radius=1,erase=false}={}){
-  if(!f?.calibrated||!data.beds.length||!own(PLANTS,species)||!track.length) return data;
+  if(!f?.calibrated||!data.beds.length||!(species===MIX||own(PLANTS,species))||!track.length) return data;
   radius=Math.max(.35,Math.min(3,Number(radius)||1));
   const path=track.map(asPoint).filter(p=>Number.isFinite(p.x)&&Number.isFinite(p.z)).slice(0,640);
   const candidates=new Map(), step=.12, samplePadding=.063, r2=(radius+samplePadding)**2;
@@ -117,14 +121,21 @@ export function paint(data,f,track,{species="harakeke",radius=1,erase=false}={})
   }
   if(erase){const kept=data.plants.filter(p=>!within([p.x,p.z]));return kept.length<data.plants.length?{...data,plants:kept}:data;}
   const out=data.plants.slice(), occupied=new Set(out.map(p=>p.id));
-  const sorted=[...candidates.values()].sort((a,b)=>hash(a.id)-hash(b.id)||a.id.localeCompare(b.id));
+  const priority=c=>species===MIX&&mixSpecies(c)==="ti-kouka"?0:1;
+  const sorted=[...candidates.values()].sort((a,b)=>priority(a)-priority(b)||hash(a.id)-hash(b.id)||a.id.localeCompare(b.id));
   for(const c of sorted){
     if(out.length>=MAX_PLANTS)break;
-    if(occupied.has(c.id)||!within([c.x,c.z])||!allowed(data,f,[c.x,c.z],species))continue;
-    if(out.some(p=>Math.hypot(p.x-c.x,p.z-c.z)<Math.max(PLANTS[p.species].spacing,PLANTS[species].spacing)*.82))continue;
-    out.push({...c,species,angle:norm(ratio(c.id+"angle")*Math.PI*2),scale:norm(.82+ratio(c.id+"scale")*.38)});occupied.add(c.id);
+    const key=species===MIX?mixSpecies(c):species;
+    if(occupied.has(c.id)||!within([c.x,c.z])||!allowed(data,f,[c.x,c.z],key))continue;
+    if(out.some(p=>Math.hypot(p.x-c.x,p.z-c.z)<Math.max(PLANTS[p.species].spacing,PLANTS[key].spacing)*.82))continue;
+    out.push({...c,species:key,angle:norm(ratio(c.id+"angle")*Math.PI*2),scale:norm(.82+ratio(c.id+"scale")*.38)});occupied.add(c.id);
   }
   return out.length===data.plants.length?data:{...data,plants:out};
+}
+export function validPlacement(p,data,f){
+  if(!p||typeof p.id!=="string"||!(/^-?\d+:-?\d+$/).test(p.id)||!own(PLANTS,p.species)||!allowed(data,f,[p.x,p.z],p.species))return false;
+  const [i,j]=p.id.split(":").map(Number),c=cell(i,j);
+  return p.id===c.id&&p.x===c.x&&p.z===c.z&&p.angle===norm(ratio(c.id+"angle")*Math.PI*2)&&p.scale===norm(.82+ratio(c.id+"scale")*.38);
 }
 export function importPlanting(data,f){
   if(!f?.calibrated||data?.schema!==SCHEMA||data.frame!==f.key)throw Error("This planting layer does not match the active calibrated plan.");
@@ -132,9 +143,7 @@ export function importPlanting(data,f){
   if(!countOK(data.beds,MAX_BEDS)||!countOK(data.exclusions,MAX_EXCLUSIONS)||!countOK(data.plants,MAX_PLANTS))throw Error("Planting file exceeds its supported limits.");
   const safe={...empty(f),beds:data.beds.map(p=>ring(p,f)),exclusions:data.exclusions.map(p=>ring(p,f))}, ids=new Set();
   for(const p of data.plants){
-    if(!p||typeof p.id!=="string"||!/^[-\d]+:[-\d]+$/.test(p.id)||ids.has(p.id)||!own(PLANTS,p.species)||!allowed(safe,f,[p.x,p.z],p.species))throw Error("A plant in this file is outside an allowed bed or has an invalid identity.");
-    const [i,j]=p.id.split(":").map(Number),expected=cell(i,j);
-    if(p.x!==expected.x||p.z!==expected.z||p.angle!==norm(ratio(p.id+"angle")*Math.PI*2)||p.scale!==norm(.82+ratio(p.id+"scale")*.38))throw Error("A plant in this file is not on the expected placement grid.");
+    if(!validPlacement(p,safe,f)||ids.has(p.id))throw Error("A plant in this file is outside an allowed bed or has an invalid identity.");
     if(safe.plants.some(a=>Math.hypot(a.x-p.x,a.z-p.z)<Math.max(PLANTS[a.species].spacing,PLANTS[p.species].spacing)*.82))throw Error("Plants in this file violate the placement spacing.");
     ids.add(p.id);safe.plants.push({id:p.id,x:p.x,z:p.z,species:p.species,angle:p.angle,scale:p.scale});
   }
