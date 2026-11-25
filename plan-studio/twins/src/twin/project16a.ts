@@ -14,7 +14,6 @@ import { setInteriorLights } from './fitout';
 import { fillSlots, slot } from './library';
 import { bedPlanting, concreteTileSet, mulchBed, paintedBrickSet, palingFence, pathRibbon } from './landscape';
 import { pbr } from '../objects/tex';
-import { exportIFC, loadIFC } from './ifc';
 import type { App, Built, Key, Layer, Project } from './app';
 
 type Pt = [number, number];
@@ -500,7 +499,7 @@ export const project16a: Project = {
         model: true,
         make: async () => {
           const txt = await (await fetch(`${BASE}twin/16a-plan-to-4d-ifc.txt`)).text();
-          const res = await loadIFC(new TextEncoder().encode(txt), `${BASE}twin/web-ifc.wasm.b64.txt`, (d, t) => app.log(`Reading IFC… ${d} of ${t}`), false);
+          const res = await (await import('./ifc')).loadIFC(new TextEncoder().encode(txt), `${BASE}twin/web-ifc.wasm.b64.txt`, (d, t) => app.log(`Reading IFC… ${d} of ${t}`), false);
           const g = new THREE.Group();
           g.name = 'plan_to_4d_ifc';
           const f = frames['16C'];
@@ -560,7 +559,7 @@ export const project16a: Project = {
           const g = new THREE.Group();
           g.add(homes.clone(true), retaining.clone(true));
           g.updateMatrixWorld(true);
-          const ifc = exportIFC(g, { project: 'Two timber homes (16A)', building: 'Units 16C and 16D', author: 'assembl' });
+          const ifc = (await import('./ifc')).exportIFC(g, { project: 'Two timber homes (16A)', building: 'Units 16C and 16D', author: 'assembl' });
           const z = zipSync({ 'two-timber-homes-16a.ifc': strToU8(ifc), 'README.txt': strToU8(readme()) }, { level: 6 });
           return { name: 'two-timber-homes-16a-ifc.zip', blob: new Blob([z as BlobPart], { type: 'application/zip' }) };
         },

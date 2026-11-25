@@ -18,6 +18,7 @@ async function boot() {
     const app = new App(project, document.getElementById('c') as HTMLCanvasElement);
     (window as unknown as { __twin?: App }).__twin = app;
     await app.start();
+    if(key==='16a') (await import('./garden.js')).mountGarden(app);
   } catch (err) {
     console.error(err);
     status.textContent = `The twin could not start: ${(err as Error).message}`;
