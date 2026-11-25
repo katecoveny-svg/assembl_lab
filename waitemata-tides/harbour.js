@@ -48,6 +48,8 @@ export async function createHarbour(holder){
  ]).finally(()=>clearTimeout(timeout));
  const [city,plate,normals]=textures;
  const renderer=new T.WebGLRenderer({antialias:true,alpha:false,powerPreference:'low-power'});
+ let shaderFailed=false;
+ renderer.debug.onShaderError=()=>{shaderFailed=true};
  const canvas=renderer.domElement;canvas.setAttribute('role','img');canvas.setAttribute('aria-label','Waitematā Harbour, the Harbour Bridge and the Auckland skyline. A model sailing boat rides illustrative waves.');
  renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.outputColorSpace=T.SRGBColorSpace;
  renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.03;
@@ -79,12 +81,12 @@ export async function createHarbour(holder){
    // Long swells carry shorter wind ripples. Suppress sub-pixel frequencies towards the shore.
    vec2 wind=vec2(.85,.526),crossWind=vec2(-wind.y,wind.x);
    float along=dot(p,wind),across=dot(p,crossWind);
-   float patch=.48+.52*smoothstep(-.85,.65,sin(across*.34+sin(along*.105)-time*.34));
+   float windPatch=.48+.52*smoothstep(-.85,.65,sin(across*.34+sin(along*.105)-time*.34));
    float phase=along*8.7+sin(across*1.35+time*.34)*1.38-time*3.3;
    float filtered=1.-smoothstep(.34,2.4,fwidth(phase));
-   vec2 capillary=wind*cos(phase)*.072*patch*filtered;
+   vec2 capillary=wind*cos(phase)*.072*windPatch*filtered;
    vec2 chop=noise.xy*.27*(1.-smoothstep(35.,175.,surfaceDistance))
-      +capillary+crossWind*.044*cos(across*2.2+along*.39-time*1.75)*patch;
+      +capillary+crossWind*.044*cos(across*2.2+along*.39-time*1.75)*windPatch;
    // A rocking hull makes a short waterline disturbance, centred on the draggable boat.
    vec2 boatLocal=p-hullCentre;
    vec2 hullAxes=vec2(dot(boatLocal,vec2(.549,.836)),dot(boatLocal,vec2(-.836,.549)));
@@ -97,7 +99,7 @@ export async function createHarbour(holder){
   .replace('float rf0 = 0.3;','float rf0 = 0.0204;')
   .replace('vec3 outgoingLight = albedo;',`
    float skyward=clamp(dot(surfaceNormal,normalize(vec3(-.3,1.,-.45))),0.,1.);
-   vec3 body=mix(vec3(.008,.046,.056),vec3(.029,.112,.128),skyward*skyward*patch);
+   vec3 body=mix(vec3(.008,.046,.056),vec3(.029,.112,.128),skyward*skyward*windPatch);
    float contact=.24*exp(-2.5*abs(ring-.90));
    vec3 reflected=mix(reflectionSample,vec3(.27,.36,.40),.045);
    vec3 outgoingLight=(mix(body,reflected,.10+.84*reflectance)+specularLight*.35)*(1.-contact);
@@ -145,6 +147,7 @@ export async function createHarbour(holder){
  boat.rotation.order='YXZ';boat.rotation.x=-Math.atan(pitch);boat.rotation.z=Math.atan(roll);
  m.uniforms.hullCentre.value.set(x,z);m.uniforms.time.value=clock;renderer.render(scene,camera);
  if(!ready){
+  if(shaderFailed){renderer.dispose();throw new Error('Harbour shader did not compile')}
   const gl=renderer.getContext(), pixel=new Uint8Array(4);
   for(const y of [.18,.82]){
    gl.readPixels(Math.floor(gl.drawingBufferWidth*.26),Math.floor(gl.drawingBufferHeight*y),1,1,gl.RGBA,gl.UNSIGNED_BYTE,pixel);
