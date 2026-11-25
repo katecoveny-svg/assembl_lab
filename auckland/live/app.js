@@ -301,7 +301,7 @@ function wireUi() {
       const {x,z} = X.toWorld(stop.lat,stop.lon), y = w.heightAt(x,z);
       dest = {t:[x,y+5,z],p:[x+125,y+140,z-320]};
     }
-    w.flyCinematic(dest);
+    w.flyCinematic(dest, { fromHarbour: !!stop && X.inArea(stop.lat, stop.lon) });
   };
   document.querySelectorAll('[data-view]').forEach((b) => b.onclick = () => {
     const w = S.world, view = w?.views[b.dataset.view]; if (!view) return; w.unfollow(); w.setView(view);
@@ -327,8 +327,12 @@ function wireUi() {
   // label over the chosen vehicle
   const label = $('#label');
   if (S.world) S.world.onFrame = () => {
-    if (flyIn.dataset.flying !== String(S.world.flying)) {
-      flyIn.dataset.flying = String(S.world.flying); flyIn.textContent = S.world.flying ? 'Stop flight' : 'Fly in';
+    const cameraStop = S.sel?.kind === 'stop' ? S.index.stops.get(S.sel.id) : null;
+    const fromHarbour = cameraStop && X.inArea(cameraStop.lat, cameraStop.lon);
+    const cameraLabel = S.world.flying ? 'Stop flight' : fromHarbour ? 'Fly to stop' : 'Fly in';
+    if (flyIn.textContent !== cameraLabel) {
+      flyIn.textContent = cameraLabel;
+      flyIn.title = fromHarbour ? 'Fly from Waitematā Harbour to the selected stop or ferry terminal' : 'Fly closer to the Auckland waterfront';
     }
     if (S.sel?.kind !== 'vehicle') { label.hidden = true; return; }
     const p = S.world.screenOf(S.sel.id), v = S.positions?.vehicles.find((x) => x.id === S.sel.id);

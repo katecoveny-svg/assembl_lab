@@ -1,13 +1,15 @@
+import { cinematic, mixLog, smootherstep } from './makio-camera-easing.mjs';
+
 // Local NZTM camera motion. Log-distance avoids a dead long approach and a rush at landing.
 const clamp = (x) => Math.max(0, Math.min(1, x));
 const lerp = (a, b, t) => a + (b - a) * t;
-const ease = (t) => { t = clamp(t); return t * t * t * (t * (6 * t - 15) + 10); };
+const ease = (t) => smootherstep(clamp(t));
 const angleDelta = (a, b) => Math.atan2(Math.sin(b - a), Math.cos(b - a));
 
 export function flightPose(start, end, progress) {
   const k = clamp(progress);
   const aim = ease(k), turn = ease((k - 0.10) / .83), pitchPhase = ease((k - .24) / .76);
-  const distance = Math.exp(lerp(Math.log(start.distance), Math.log(end.distance), ease(k / .98)));
+  const distance = mixLog(start.distance, end.distance, cinematic(clamp(k / .98)));
   const bearing = start.bearing + angleDelta(start.bearing, end.bearing) * turn;
   const pitch = lerp(start.pitch, end.pitch, pitchPhase) + Math.sin(Math.PI * k) ** 2 * .07;
   const fov = lerp(start.fov, end.fov, ease(k)) - Math.sin(Math.PI * k) ** 2 * 4;

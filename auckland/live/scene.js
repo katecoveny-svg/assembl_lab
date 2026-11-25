@@ -350,9 +350,10 @@ export async function createWorld(canvas, { phone = false, capture = false, time
     if (cinematic) { camera.fov = canvas.clientWidth < canvas.clientHeight ? 55 : 42; camera.updateProjectionMatrix(); }
     cinematic = null; fly = null;
   };
-  function flyCinematic(v) {
+  function flyCinematic(v, { fromHarbour = false } = {}) {
     stopFlight(); follow = null;
     if (reducedMotion.matches) { setView(v); return; }
+    if (fromHarbour) setView(phone ? { t: [-2020, 45, -20], p: [-1430, 550, -1780] } : views.harbour);
     cinematic = {
       started: performance.now(), duration: phone ? 2150 : 2600,
       from: cameraPose(controls.target.toArray(),camera.position.toArray(),camera.fov),
