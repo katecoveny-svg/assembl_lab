@@ -1,16 +1,41 @@
 import * as T from "three";
-import { empty, frame, importPlanting, MAX_PLANTS, MAX_VERTICES, paint, PLANTS, setArea } from "./model.js";
+import { empty, frame, importPlanting, MAX_PLANTS, MAX_VERTICES, paint, PLANTS, MIX, setArea } from "./model.js";
+import { MONTHS } from "./catalog.js";
+import { plantSchedule, scheduleCsv } from "./schedule.js";
 import { cursor, layer, outlines } from "./visual.js";
 const q=s=>document.querySelector(s);
 export function createPlanting(stage,{save,onExit,showSolid}){
   const projects=new WeakMap(), canvas=stage.renderer.domElement;
   const edit=q("#plantingTools"), toggle=q("#plantingToggle"), banner=q("#plantStatus"), species=q("#plantSpecies");
+  const season=q("#plantSeason"), style=q("#plantDisplay"), schedule=q("#plantSchedule"), bedExit=q("#plantClosePreview"), frameWrap=canvas.closest(".stagewrap");
   for(const [value,m] of Object.entries(PLANTS))species.add(new Option(m.label,value));
+  species.add(new Option("Layered native mix",MIX));
+  for(const [value,label] of MONTHS)season.add(new Option(label,value));
   const camera=new T.OrthographicCamera(), plane=new T.Plane(new T.Vector3(0,1,0),0), ray=new T.Raycaster(), target=new T.Vector3();
   const circle=cursor();circle.visible=false;stage.scene.add(circle);
   let project,f,state,visible=true, plants=null, guides=null, active=false, mode="", before=[], corners=[], hover=null, drag=null, prior;
   const tell=(t)=>banner.textContent=t;
   const count=()=>state?.plants.length||0;
+  function renderSchedule(){
+    if(!schedule.open)return;
+    const {total,rows}=plantSchedule(state,f),host=q("#plantScheduleRows"), node=(tag,text)=>{
+      const e=document.createElement(tag);e.textContent=text;return e;
+    };
+    q("#plantScheduleTotal").textContent=total?total+" accepted placements across the project.":"No accepted plants yet.";
+    host.replaceChildren(...rows.map(r=>{
+      const tr=document.createElement("tr"),taxon=node("td",r.label);
+      if(r.botanical){const proof=node("a",r.botanical);proof.href=r.source;proof.rel="noopener";proof.target="_blank";taxon.append(proof);}
+      taxon.append(node("small",r.layer));tr.append(taxon,node("td",r.quantity),node("td",r.percent+"%"));return tr;
+    }));
+    q("#plantCsv").disabled=!total;
+  }
+  function renderMix(){q("#plantMixInfo").hidden=species.value!==MIX;}
+  schedule.addEventListener("toggle",renderSchedule);species.addEventListener("change",renderMix);
+  q("#plantCsv").addEventListener("click",()=>{
+    if(!plantSchedule(state,f).total)return;
+    save(new Blob([scheduleCsv(state,f)],{type:"text/csv;charset=utf-8"}),"proposed-plant-schedule.csv");
+  });
+  season.addEventListener("change",()=>{syncPlants();stage.render();});
   function paintScene(){
     const [a,b,c,d]=f.box, x=(a+c)/2,z=(b+d)/2;
     const aspect=(canvas.clientWidth||800)/(canvas.clientHeight||440), span=Math.max(d-b+15,(c-a+16)/aspect);
@@ -21,8 +46,8 @@ export function createPlanting(stage,{save,onExit,showSolid}){
   function remove(o){if(o){stage.scene.remove(o);o.userData.dispose?.();}}
   function syncPlants(){
     remove(plants);plants=null;
-    if(f && count()){plants=layer(f.y,state.plants);plants.visible=visible||active;stage.scene.add(plants);}
-    q("#plantCount").textContent=count()+ (count()===1?" plant":" plants");q("#plantViewBed").hidden=!count();
+    if(f && count()){plants=layer(f.y,state.plants,+season.value);plants.visible=visible||active;stage.scene.add(plants);}
+    q("#plantCount").textContent=count()+ (count()===1?" plant":" plants");q("#plantViewBed").hidden=!count();style.hidden=!count();renderSchedule();
   }
   function radius(){return +q("#plantRadius").value||1;}
   function syncCursor(){
@@ -50,6 +75,7 @@ export function createPlanting(stage,{save,onExit,showSolid}){
     const draw=mode==="bed"||mode==="exclude";
     q("#plantBoundaryActions").hidden=!draw;q("#plantFinishRing").disabled=corners.length<3;
     q("#plantUndo").disabled=!before.length;exportButton.disabled=!state.beds.length;
+    q("#plantMixSample").hidden=!f.sample||state.beds.length>0;
   }
   function setMode(next, message=true){
     corners=[];drag=null;mode=next;
@@ -81,7 +107,7 @@ export function createPlanting(stage,{save,onExit,showSolid}){
   }
   function select(P){
     if(project===P)return;
-    if(active)dismiss();before=[];sample(P);syncPlants();
+    if(active)dismiss();before=[];season.value="0";sample(P);syncPlants();
   }
   function update(P){
     if(project!==P){select(P);return;}
@@ -101,10 +127,15 @@ export function createPlanting(stage,{save,onExit,showSolid}){
     }
     if(active)syncGuides();
   }
+  function clearBedView(){frameWrap.classList.remove("is-plant-review");bedExit.hidden=true;}
+  bedExit.addEventListener("click",()=>{
+    clearBedView();stage.resize();stage.view("aerial");stage.sync();
+    toggle.focus({preventScroll:true});
+  });
   function open(P){
     if(active){dismiss();return;}
     if(!edit.hidden){dismiss();return;}
-    select(P);toggle.setAttribute("aria-expanded","true");edit.hidden=false;modelLabel();
+    clearBedView();select(P);toggle.setAttribute("aria-expanded","true");edit.hidden=false;modelLabel();
     if(!f?.calibrated)return;
     showSolid();active=true;prior={render:stage.render,enabled:stage.ctl.enabled,tabIndex:canvas.tabIndex,label:canvas.getAttribute("aria-label")};
     stage.ctl.enabled=false;stage.render=paintScene;
@@ -112,7 +143,7 @@ export function createPlanting(stage,{save,onExit,showSolid}){
     canvas.addEventListener("keydown",key);canvas.addEventListener("pointerdown",down);canvas.addEventListener("pointermove",move);canvas.addEventListener("pointerup",up);canvas.addEventListener("lostpointercapture",lost);
     window.addEventListener("keydown",escape);if(plants)plants.visible=true;
     hover=[f.box[0]+.5,f.box[3]+1.5];
-    setMode(state.beds.length?"paint":"bed",true);stage.resize();stage.render();
+    setMode(state.beds.length?"paint":"bed",true);renderMix();renderSchedule();stage.resize();stage.render();
     q("#plantExit").focus({preventScroll:true});
   }
   function place(p){
@@ -165,11 +196,19 @@ export function createPlanting(stage,{save,onExit,showSolid}){
     const extent=Math.max(...pts.map(p=>Math.hypot(p.x-x,p.z-z)),2), distance=6.4+extent*.84;
     dismiss();
     visible=true;q("#plantVisual").checked=true;if(plants)plants.visible=true;
+    frameWrap.classList.add("is-plant-review");bedExit.hidden=false;stage.resize();
     stage.camera.position.copy(view).addScaledVector(axis,distance).addScaledVector(new T.Vector3(-axis.z,0,axis.x),-distance*.52).setY(f.y+4.5+extent*.19);
     stage.camera.fov=45;stage.camera.updateProjectionMatrix();stage.target.copy(view);stage.sync();
     document.querySelector("#stage3d").scrollIntoView({block:"center",behavior:"instant"});
   });
   q("#plantExit").addEventListener("click",()=>{dismiss();edit.hidden=true;toggle.setAttribute("aria-expanded","false");toggle.focus();});
+  q("#plantMixSample").addEventListener("click",()=>{
+    if(!active||!f.sample||state.beds.length)return;
+    const sample=setArea(state,f,"bed",[[-6,-12],[-1,-12],[-1,2],[-6,2]]);
+    const filled=paint(sample,f,[[-4,-10],[-3.5,-5],[-3,0]],{species:MIX,radius:2.9});
+    species.value=MIX;renderMix();season.value="10";
+    setMode("paint",false);commit(filled,"Fictional layered sample loaded. Undo removes the sample bed and all its plants.");schedule.open=true;
+  });
   q("#plantFocus").addEventListener("click",()=>{canvas.focus();canvas.scrollIntoView({block:"center"});});
   q("#plantVisual").addEventListener("change",e=>{visible=e.target.checked;if(plants)plants.visible=visible||active;stage.render();});
   q("#plantRadius").addEventListener("input",()=>{q("#plantRadiusValue").textContent=radius()+" m";syncCursor();stage.render();});
@@ -191,5 +230,5 @@ export function createPlanting(stage,{save,onExit,showSolid}){
       const safe=importPlanting(json.proposed_planting??json,f);setMode("paint",false);commit(safe,"Proposed planting loaded for this calibrated model.");
     }catch(e){tell(e.message);}
   });
-  return {open,select,update,close:dismiss,get active(){return active;},saved(P){return projects.get(P);}};
+  return {open,select,update,close(){clearBedView();dismiss();},get active(){return active;},saved(P){return projects.get(P);}};
 }

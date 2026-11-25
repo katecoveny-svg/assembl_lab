@@ -1,0 +1,43 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {demoProject} from "../js/model.js";
+import {allowed,empty,frame,importPlanting,MIX,paint,setArea} from "../js/planting/model.js";
+import {displayPhase} from "../js/planting/catalog.js";
+import {plantSchedule,scheduleCsv} from "../js/planting/schedule.js";
+const R=(x,z,a,b)=>[[x,z],[a,z],[a,b],[x,b]];
+const f=frame(demoProject());
+const bed=setArea(empty(f),f,"bed",R(-6,-12,-1,2));
+const stroke=[[-4,-10],[-3.5,-5],[-3,0]];
+test("native mix is a deterministic stroke, not a saved recipe or a quota; taller, structure and ground layers all occur",()=>{
+  const opts={species:MIX,radius:2.9};
+  const a=paint(bed,f,stroke,opts);
+  assert.deepEqual(paint(bed,f,[stroke[0],stroke[2]],opts),a);
+  assert.deepEqual(a,importPlanting(a,f));
+  assert(a.plants.every(p=>allowed(a,f,[p.x,p.z],p.species)));
+  assert.deepEqual(plantSchedule(a,f).rows.map(r=>r.layer).sort(),["Canopy","Ground layer","Structure"]);
+  const again=paint(a,f,stroke,opts);
+  assert(a.plants.every((p,i)=>JSON.stringify(again.plants[i])===JSON.stringify(p)));
+  const blocked=setArea(a,f,"exclude",R(-5,-8,-2,-6)), erased=paint(blocked,f,stroke,{...opts,erase:true});
+  assert(plantSchedule(blocked,f).total<plantSchedule(a,f).total);
+  assert(plantSchedule(erased,f).total<plantSchedule(blocked,f).total);
+  assert(plantSchedule(a,f).rows.every(r=>r.key!==MIX));
+});
+test("schedule counts unique valid positions and exports precisely the displayed accepted share, with no price field",()=>{
+  const option={species:MIX,radius:2.9}, a=paint(bed,f,stroke,option);
+  const invalid=[{...a.plants[0],id:"bogus"},{...a.plants[0],x:100000},{...a.plants[0]}];
+  const {total,rows}=plantSchedule({...a,plants:[...a.plants,...invalid]},f);
+  assert.equal(total,a.plants.length);
+  assert.equal(rows.reduce((sum,row)=>sum+row.quantity,0),total);
+  assert.equal(Math.round(rows.reduce((sum,row)=>sum+Number(row.percent),0)*10),1000);
+  const csv=scheduleCsv(a,f);for(const r of rows)assert(csv.includes('"'+r.quantity+'","'+r.percent+'"'));
+  assert(!/price|cost|budget/i.test(csv));assert.deepEqual(plantSchedule({...a,frame:"wrong"},f),{total:0,rows:[]});
+});
+test("legacy toetoe remains generic and never gets a species-season assignment",()=>{
+  const a=paint(bed,f,[[-3,-9]],{species:"toetoe"});
+  const row=plantSchedule(importPlanting(a,f),f).rows[0];
+  assert.equal(row.key,"toetoe");assert.equal(row.botanical,"");assert.equal(row.source,"");
+  assert.equal(displayPhase("toetoe",10),"leaf");
+  assert.equal(displayPhase("coastal-toetoe",10),"flower");
+  assert.equal(displayPhase("coastal-toetoe",3),"leaf");
+  assert.equal(displayPhase("harakeke",10),"flower");assert.equal(displayPhase("harakeke",12),"seed");
+});

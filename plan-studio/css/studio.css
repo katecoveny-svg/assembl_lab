@@ -324,3 +324,28 @@ th { background: #1B0E1A; color: var(--on); } th, td { border-bottom-color: var(
 .planting-tools summary {cursor:pointer;font-size:13px}
 #plantLoad {max-width:100%}
 #plantingTools select:focus-visible,#plantingTools summary:focus-visible {outline:2px solid #e3d0d2;outline-offset:3px}
+
+/* Planting review is optional. Counts follow accepted plants, not the brush recipe. */
+.plant-display {display:flex;justify-content:space-between;align-items:center;gap:8px 14px;padding:8px 12px;margin:0 0 12px;border:1px solid #8b6c7b;border-radius:10px;background:#382633;color:#f4e3e7;font-size:12px;flex-wrap:wrap}
+.plant-display[hidden],#plantMixInfo[hidden] {display:none}
+.plant-display label {display:flex;align-items:center;gap:9px;font-weight:600}
+.plant-mix {display:flex;flex-wrap:wrap;gap:7px;padding:9px 0}
+.plant-mix span {display:flex;gap:5px;border:1px solid #805f72;border-radius:999px;padding:4px 7px;color:#f6e1e6;font-size:12px}
+.plant-mix b {color:var(--paper)}
+.plant-mix p {flex:1 0 100%;font-size:12px;margin:0;color:var(--on)}
+.plant-schedule {border-top:1px solid #7f6373;border-bottom:1px solid #7f6373;padding:10px 0;margin:0 0 10px}
+.plant-schedule summary {color:var(--paper);font-size:15px;font-weight:650}
+.plant-schedule table {width:100%;border-collapse:collapse;color:var(--paper);font-size:13px}
+.plant-schedule td,.plant-schedule th {padding:6px 5px;text-align:left;white-space:normal;border-bottom:1px solid #6d5061}
+.plant-schedule td:not(:first-child),.plant-schedule th:not(:first-child) {text-align:right;font-variant-numeric:tabular-nums}
+.plant-schedule td a,.plant-schedule td small {display:block;font-size:11px;color:#e3d0d2}
+.plant-schedule td a {font-style:italic;width:fit-content}
+.plant-schedule td small {color:var(--on)}
+.plant-schedule button {white-space:nowrap}
+.plant-schedule :is(summary,a):focus-visible,.plant-display select:focus-visible {outline:2px solid #e3d0d2;outline-offset:3px}
+
+#plantMixSample[hidden] {display:none}
+/* A focused planting review leaves the picture unobscured, especially on phones. */
+.stagewrap.is-plant-review .stagebar {display:none}
+#plantClosePreview[hidden] {display:none}
+@media(max-width:650px){.stagewrap.is-plant-review{aspect-ratio:5 / 4}}
