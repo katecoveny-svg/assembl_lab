@@ -41,7 +41,7 @@ function makeBoat(scene){
  const transom=stations[0];sheet([-.51,.67,-3.34,.51,.67,-3.34,.34,-.06,-3.34,-.34,-.06,-3.34],[0,1,2,0,2,3],mahogany);
  segment([0,.49,.48],[0,6.68,.48],.048,mahogany);segment([0,1.17,.47],[.35,1.28,-2.71],.045,mahogany);
  for(const [x,y,z] of [[0,.73,3.38],[0,.68,-3.28],[-1.03,.45,-.4],[1.03,.45,-.4]])segment([0,6.61,.48],[x,y,z],.010,steel);
- function sail(a,b,c,bulge,m){const p=[],ix=[],N=17,ids=[];function pos(u,v){const w=1-u-v;return [a[0]*w+b[0]*u+c[0]*v+bulge*9*u*v*w,a[1]*w+b[1]*u+c[1]*v,a[2]*w+b[2]*u+c[2]*v-(m===linen?.72:0)*u*u]};for(let i=0;i<=N;i++){ids[i]=[];for(let j=0;j<=N-i;j++){ids[i][j]=p.length/3;p.push(...pos(i/N,j/N));}}for(let i=0;i<N;i++)for(let j=0;j<N-i;j++){ix.push(ids[i][j],ids[i+1][j],ids[i][j+1]);if(j<N-i-1)ix.push(ids[i+1][j],ids[i+1][j+1],ids[i][j+1]);}sheet(p,ix,m);for(let t=1;t<=6;t++){let u=t/7;for(let i=0;i<8;i++){let q=pos(u,i/8*(1-u)),r=pos(u,(i+1)/8*(1-u));q[0]+=.005;r[0]+=.005;segment(q,r,.005,rope);}}}
+ function sail(a,b,c,bulge,m){const p=[],ix=[],N=17,ids=[];function pos(u,v){const w=1-u-v;return [a[0]*w+b[0]*u+c[0]*v+bulge*9*u*v*w,a[1]*w+b[1]*u+c[1]*v,a[2]*w+b[2]*u+c[2]*v-(m===linen?1.06:0)*u*v/Math.max(.055,1-u)]};for(let i=0;i<=N;i++){ids[i]=[];for(let j=0;j<=N-i;j++){ids[i][j]=p.length/3;p.push(...pos(i/N,j/N));}}for(let i=0;i<N;i++)for(let j=0;j<N-i;j++){ix.push(ids[i][j],ids[i+1][j],ids[i][j+1]);if(j<N-i-1)ix.push(ids[i+1][j],ids[i+1][j+1],ids[i][j+1]);}sheet(p,ix,m);for(let t=1;t<=6;t++){let u=t/7;for(let i=0;i<8;i++){let q=pos(u,i/8*(1-u)),r=pos(u,(i+1)/8*(1-u));q[0]+=.005;r[0]+=.005;segment(q,r,.005,rope);}}}
  sail([.012,1.29,.41],[.018,6.47,.44],[.35,1.38,-2.63],.66,linen);sail([.02,.9,3.24],[.013,5.94,.78],[-.31,1.15,-.11],-.61,jib);
  segment([.35,1.28,-2.62],[.27,.51,-2.2],.018,rope);boat.rotation.y=-.99;return boat;
 }
@@ -124,7 +124,7 @@ export async function createHarbour(holder){
    vec3 reflected=mix(reflectionSample,vec3(.27,.36,.40),.045);
    vec3 outgoingLight=(mix(body,reflected,.10+.84*reflectance)+specularLight*.35)*(1.-contact)+vec3(.16,.20,.19)*min(wake,.18);
   `);
- const boat=makeBoat(scene);boat.position.set(6,0,-47);
+ const boat=makeBoat(scene);boat.scale.setScalar(1.36);boat.position.set(5,0,-43);
  const grip=document.createElement('button');grip.className='boat-grip';grip.type='button';
  const hint=document.createElement('span');hint.textContent='Drag boat';grip.append(hint);grip.setAttribute('aria-label','Drag the model boat, or use the arrow keys to move it. Home resets the boat.');
  const pin=new T.Vector3(),pointer=new T.Vector2(),ray=new T.Raycaster(),plane=new T.Plane(xyz(0,1,0)),hit=new T.Vector3();
@@ -164,7 +164,7 @@ export async function createHarbour(holder){
  camera.position.set((w/h>1.25?0:4.5)+Math.sin(pan)*2,3.9+tilt,-16+dist+4.4);
  const targetX=(w/h>1.25?0:4.5)+pan*2.3;
  camera.lookAt(targetX,2.75+tilt*.70,-16);
- const bw=Math.max(336,(w/h)*271);const bh=bw*(reverse?0.5625:.47);back.scale.set(bw,bh,1);back.position.set(w/h<1.35&&!reverse?-46:0,(reverse?.75:.71)*bh-bh*.5,-400);back.material.map=reverse?plate:city;
+ const bw=Math.max(480,(w/h)*242);const bh=bw*(reverse?0.5625:.47);back.scale.set(bw,bh,1);back.position.set(w/h<1.35&&!reverse?-46:0,(reverse?.75:.71)*bh-bh*.5,-400);back.material.map=reverse?plate:city;
  water.position.y=height-1.65;const by=water.position.y+swell(boat.position.x,boat.position.z,clock);
  boat.position.y=by;const yaw=boat.rotation.y,x=boat.position.x,z=boat.position.z;
  const pitch=(swell(x+Math.sin(yaw)*1.95,z+Math.cos(yaw)*1.95,clock)-swell(x-Math.sin(yaw)*1.95,z-Math.cos(yaw)*1.95,clock))/3.9;
