@@ -135,7 +135,7 @@ $('#trace').onclick=()=>{trace=!trace;$('.tracing').hidden=!trace;$('#trace').se
 function motionLabel(){$('#pause').setAttribute('aria-pressed',String(paused));$('#pause').textContent=paused?'Resume motion':'Pause motion'}
 $('#pause').onclick=()=>{stopTour();paused=!paused;motionLabel();dirty=true;wake()};
 $('#gust').onclick=()=>{gustAt=time;dirty=true;wake();event('pavilion_gust',true)};
-function staticMode(reason){if(walkButton){walking.leave();walkButton.hidden=true}
+function staticMode(reason){closeEditor();$('.house-tools').hidden=true;if(walkButton){walking.leave();walkButton.hidden=true}
  finishGarden();garden=null;gardenButton.hidden=true;stopTour();if(roomMove){p=roomMove.to;roomMove=null}
  const failed=world;world=null;window.pavilionStatus=undefined;
  if(failed?.backend==='WebGPU')preferWebGL=true;
@@ -153,7 +153,7 @@ reduced.addEventListener('change',()=>{paused=reduced.matches;if(paused)stopTour
 document.addEventListener('click',e=>{let a=e.target.closest('a');if(a?.closest('#lab,#architecture'))event(a.target==='_blank'?'demo_launch':'brief_selected',a.href);if(a?.href.startsWith('mailto:'))event('contact_open',a.hash||'email')});
 async function start(signal){
  if(settings.get('renderer')==='still')throw new Error('Still view requested');
- const {openPavilion}=await import('./world.js?v=23d21bc570');signal.throwIfAborted();
+ const {openPavilion}=await import('./world.js?v=e717689868');signal.throwIfAborted();
  const force=preferWebGL||settings.get('renderer')==='webgl';
  let candidate,drawnP,drawnDetail;
  async function firstFrame(webgl){
@@ -176,14 +176,14 @@ async function start(signal){
   candidate=await firstFrame(true);
  }
  const renderer=candidate.renderer;
- world=candidate;if(cinema)walkButton.hidden=false;handover();if(drawnP!==p||drawnDetail!==detail){world.setDetail(detail);world.draw(p,0,0,liftAt(p))}
+ world=candidate;if(cinema){walkButton.hidden=false;$('.house-tools').hidden=false}handover();if(drawnP!==p||drawnDetail!==detail){world.setDetail(detail);world.draw(p,0,0,liftAt(p))}
  const lost=()=>{if(world===candidate)staticMode('context lost')};
  renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();lost()},{once:true});
  renderer.backend.device?.lost.then(lost);
  vista.dataset.ready='true';vista.dataset.renderer=world.backend;journey.classList.remove('still');
  document.documentElement.classList.remove('no-js');$('#backend').textContent=world.backend;
  $('.scene-controls').hidden=false;gardenButton.hidden=false;enter.hidden=true;note.textContent='';motionLabel();free.ready();sync();
- window.pavilionStatus=()=>({treesReady:world.treesReady(),windTime:time,walking:world.walker.pose,touring,finishesReady:world.finishesReady(),exploring,detail,roofLift:liftAt(p),garden:garden?{active:garden.active,planted:garden.count()}:null,backend:world.backend,draw:world.renderer.info.render,position:p,paused,visible,triangles:Math.round(world.triangleCount),pose:world.pose(),intervals});
+ window.pavilionStatus=()=>({treesReady:world.treesReady(),windTime:time,walking:world.walker.pose,touring,finishesReady:world.finishesReady(),exploring,detail,roofLift:liftAt(p),layout:layout?.positions(),garden:garden?{active:garden.active,planted:garden.count()}:null,backend:world.backend,draw:world.renderer.info.render,position:p,paused,visible,triangles:Math.round(world.triangleCount),pose:world.pose(),intervals});
  requestAnimationFrame(()=>{if(world!==candidate)return;
   candidate.refine().then(()=>{if(world===candidate){dirty=true;wake()}}).catch(()=>{});
  });
@@ -232,15 +232,56 @@ gardenButton.onclick=async()=>{
 $('#garden-done').onclick=()=>finishGarden(true);
 $('#garden-reset').onclick=()=>{garden?.reset();planted(0);repaintGarden();vista.focus({preventScroll:true})};
 
+let layout=null,editorTicket=0,editorName='';
+const editing=()=>Boolean(editorName);
+const editor=$('#house-editor'),controls=$('.house-tools'),paint=$('#paint-house'),arrange=$('#arrange-house'),surface=$('#gpu');
+function closeEditor(focus=false){
+ const previous=editorName;editorTicket++;editorName='';
+ if(!previous)return;
+ layout?.leave();finishGarden();journey.removeAttribute('data-edit');editor.hidden=true;
+ controls.hidden=!world;$('#paint-tools').hidden=$('#arrange-tools').hidden=true;
+ if(focus)(previous==='garden'?paint:arrange).focus({preventScroll:true});
+ repaintGarden();
+}
+async function openEditor(mode){
+ if(!world||editing())return;
+ const current=world,ticket=++editorTicket;editorName=mode;
+ walking.leave();stopTour();free.leave(false);free.releaseGlance();roomMove=null;detail=null;world.setDetail(null);
+ controls.hidden=true;editor.hidden=false;journey.dataset.edit=mode;$('#edit-help').textContent='Opening…';
+ const report=message=>{$('#edit-status').textContent=message};
+ try{
+  if(mode==='garden'){
+   const bed=await current.gardenBed();if(ticket!==editorTicket||current!==world)return;
+   garden=bed;
+   garden.activate({surface,vista,repaint:repaintGarden,announce:n=>report(n+' clumps planted'),close:()=>closeEditor(true)});
+   garden.brush($('#plant-brush').value);
+   $('#paint-tools').hidden=false;$('#edit-help').textContent='Paint across the soil. Arrow keys move the brush, Space plants.';
+   vista.focus({preventScroll:true});
+  }else{
+   const room=await current.furniture();if(ticket!==editorTicket||current!==world)return;
+   layout=room;p=.76;manual=p;furnishInterior();
+   layout.activate(surface,$('#piece-choice'),repaintGarden,report,()=>closeEditor(true));
+   $('#arrange-tools').hidden=false;$('#edit-help').textContent='Drag a piece across the floor, or choose one and use the arrow keys.';
+   surface.focus({preventScroll:true});
+  }
+  repaintGarden();
+ }catch{if(ticket===editorTicket){closeEditor(true);$('#pavilion-model-hint').textContent='Could not open the editor. Please try again.'}}
+}
+paint.onclick=()=>openEditor('garden');arrange.onclick=()=>openEditor('room');
+$('#edit-done').onclick=()=>closeEditor(true);
+$('#plant-brush').onchange=e=>{garden?.brush(e.target.value);vista.focus({preventScroll:true})};
+$('#bed-undo').onclick=()=>{garden?.undo();$('#edit-status').textContent=(garden?.count()??0)+' clumps planted';repaintGarden();vista.focus({preventScroll:true})};
+$('#layout-reset').onclick=()=>{layout?.reset();repaintGarden();$('#edit-status').textContent='Original layout restored';surface.focus({preventScroll:true})};
+new IntersectionObserver(([entry])=>{if(!entry.isIntersecting&&editing())closeEditor()}).observe(vista);
 const walkButton=$('#walk-house');
 const walking=walkInput({button:walkButton,surface:$('#gpu'),stage:journey,pad:$('#walk-pad'),
- start(){if(!world||!cinema)return false;stopTour();free.releaseGlance();world.walker.start();p=.76;detail=null;world.setDetail(null);setRoom(null);manual=p;roomMove=null;dirty=true;wake();return true},
+ start(){if(!world||!cinema||editing())return false;stopTour();free.releaseGlance();world.walker.start();p=.76;detail=null;world.setDetail(null);setRoom(null);manual=p;roomMove=null;dirty=true;wake();return true},
  stop(){world?.walker.stop();dirty=true;wake()},
  look(dx,dy){world?.walker.look(dx,dy);dirty=true;wake()},
  move(forward,right,dt){world?.walker.move(forward,right,dt);dirty=true;wake()}
 });
 const free=installExplore(vista,{
- available:()=>!!world&&!garden?.active&&!walking.active(),paused:()=>paused,
+ available:()=>!!world&&!editing()&&!garden?.active&&!walking.active(),paused:()=>paused,
  togglePause(){paused=!paused;motionLabel();dirty=true;wake()},
  lock(value){stopTour();roomMove=null;exploring=value;if(value&&trace){trace=false;$('.tracing').hidden=true;$('#trace').setAttribute('aria-pressed','false')}},
  inside:()=>world?.inside(),step:(f,r)=>world?.step(f,r),resetWalk:()=>world?.resetWalk(),setCamera(view){world?.setExplore(view)},repaint(){dirty=true;wake()}
@@ -348,7 +389,7 @@ if(cinema){
  filmMotion.onclick=()=>{
   if(!world){loadWorld();status();return}
   if(touring){stopTour();return}
-  walking.leave();
+  walking.leave();closeEditor();
   free.releaseGlance();setRoom(null);detail=null;world.setDetail(null);if(p>.98)p=0;paused=false;startTour();
  };
  const refresh=new MutationObserver(status);
