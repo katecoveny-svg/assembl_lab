@@ -157,7 +157,8 @@ async function select(sel, { fly = true, closeUp = false } = {}) { // a later ch
     void refreshDepartures(sel);
   } else if (sel?.kind === 'vehicle') {
     const v = S.positions?.vehicles.find((x) => x.id === sel.id);
-    if (v?.routeId) { await ensureShapes(); if (S.sel !== sel) return; const r = S.index.routes.get(v.routeId); w?.showRoute(S.shapes[v.routeId], r?.color && r.color !== '000000' ? '#' + r.color : '#ffffff'); }
+    if (closeUp) w?.showRoute(null);
+    else if (v?.routeId) { await ensureShapes(); if (S.sel !== sel) return; const r = S.index.routes.get(v.routeId); w?.showRoute(S.shapes[v.routeId], r?.color && r.color !== '000000' ? '#' + r.color : '#ffffff'); }
     w?.showStop(null); if (v && fly && X.inArea(v.lat, v.lon)) {
       const p = X.toWorld(v.lat, v.lon), ground = w?.heightAt(p.x,p.z) || 0, close = closeUp && freshMappedVehicle(v);
       w?.flyTo([p.x, ground + (close ? 2 : 0), p.z], close ? 79 : 420, close ? 0.36 : 0.42, close && v.bearing != null ? v.bearing * Math.PI / 180 : null);
@@ -274,9 +275,11 @@ function render() {
     html += `<p class="muted">${MODE_WORD[r.mode]} route</p><h2>${esc(r.short)}</h2><p>${r.heads.map((h) => esc(cleanHead(h))).join('<br>')}</p>`;
     const al = X.alertsFor(S.alerts, { routeIds: [sel.id] }, now); html += al.map(alertHtml).join('');
     const mapped = vs.filter(v=>freshMappedVehicle(v,now)).sort((a,b)=>b.ts-a.ts);
+    const demo = qs.get('demo') === 'at';
+    const downtown = demo ? mapped.find(v=>{const {x,z}=X.toWorld(v.lat,v.lon);return x>-2200 && x<-1000 && z>-650 && z<430;}) : null;
     if (mapped.length && r.mode === 'bus') {
-      const candidate=mapped[0];
-      html += `<section class="follow-feature"><div><b>${mapped.length} live ${mapped.length===1?'bus':'buses'} on the map</b><small>Latest fix ${ago(candidate.ts)} from Auckland Transport</small></div>${S.world ? `<button data-track="${esc(candidate.id)}">Follow a bus</button>` : `<a href="${esc(followHref(candidate.id))}">Follow a bus</a>`}</section>`;
+      const candidate=downtown || mapped[0];
+      html += `<section class="follow-feature"><div><b>${mapped.length} live ${mapped.length===1?'bus':'buses'} on the map</b><small>AT fix ${ago(candidate.ts)}${downtown ? ' · downtown demo' : ''}</small></div>${S.world ? `<button data-track="${esc(candidate.id)}">Follow a bus</button>` : `<a href="${esc(followHref(candidate.id))}">Follow a bus</a>`}</section>`;
     }
     html += `<h3>Vehicles reported on this route · ${vs.length}</h3>`;
     html += vs.length ? `<ul class="rows">${vs.map((v) => { const { st } = vehicleInfo(v); return `<li><button type="button" class="row" data-vehicle="${esc(v.id)}"><span class="r"><i style="--c:${statusColour(st)}"></i></span><span class="h">${esc(S.atLive.state === 'on' ? st.label : v.speedKmh ? 'Moving, about ' + v.speedKmh + ' km/h' : v.speedKmh === 0 ? 'Stopped' : 'Speed not reported')}<small>${S.atLive.state === 'on' && v.speedKmh != null ? 'about ' + v.speedKmh + ' km/h · ' : ''}reported ${ago(v.ts)}${X.inArea(v.lat, v.lon) ? '' : ' · outside the 3D area'}</small></span><span class="w">›</span></button></li>`; }).join('')}</ul>` : `<p class="muted">No vehicle on this route is in the live feed right now.</p>`;
