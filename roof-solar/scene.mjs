@@ -96,20 +96,51 @@ export class RoofScene {
 
   clearSite() {
     for (const g of [this.root, this.look]) for (const o of [...g.children]) { if (o === this.look) continue; g.remove(o); o.traverse((c) => { c.geometry?.dispose?.(); c.customDepthMaterial?.dispose(); if (c.material) (Array.isArray(c.material) ? c.material : [c.material]).forEach((m) => { m.map?.dispose?.(); m.dispose(); }); }); }
-    this.pickables = []; this.clay = null; this.panelMesh = this.frameMesh = this.heatMesh = this.railMesh = null;
+    this.pickables = []; this.propertyLines=null; this.clay = null; this.panelMesh = this.frameMesh = this.heatMesh = this.railMesh = null;
   }
 
   /** draw a site. site: from loadSite; plan: { chosen planes (fitted), usable ids, panels[] with .year } */
   setSite(site, plan) {
     this.clearSite(); this.latlon = { lat: site.point.lat, lon: site.point.lon }; this.siteData = site; this.site = { e0: site.point.e, n0: site.point.n, z0: heightAt(site.dem, site.point.e, site.point.n) || site.dem.data.find((v) => v === v) || 0, dsm: site.dsm }; this.plan = plan;
     const t0 = performance.now();
-    this.buildGround(site); this.buildBuildings(site, plan); this.buildTrees(site); this.buildPanels(plan.panels); this.buildPaths(site);
+    this.buildGround(site); this.buildBuildings(site, plan); this.buildTrees(site); this.buildPanels(plan.panels); this.buildPaths(site); this.buildProperty(site.property);
     this.stats = { ms: Math.round(performance.now() - t0), trees: this.trees?.length ?? 0, buildings: this.drawnBuildings ?? 0 };
     if (this.clayOn) this.setClay(true);
     const b = plan.bounds || { cx: 0, cz: 0, r: 14, top: 8 }, c = this.toScene(b.e, b.n, b.z);
     const dist = Math.max(30, b.r * 3.3), best = plan.planes.filter((p) => p.usable).sort((a, b2) => b2.panels.length - a.panels.length)[0], az = ((best ? best.azimuth : 0) + 22) * Math.PI / 180, dx = Math.sin(az), dz = -Math.cos(az); // the plane faces `az`; the camera stands out in front of it
     this.controls.target.copy(c); this.camera.position.set(c.x + dx * dist, c.y + dist * 0.55, c.z + dz * dist); this.controls.update();
     this.setSun(this.sunDate, true); this.needs = true;
+  }
+
+  buildProperty(property) {
+    if(this.propertyLines){
+      this.root.remove(this.propertyLines);this.propertyLines.geometry.dispose();this.propertyLines.material.dispose();
+    }
+    this.propertyLines=null; this.needs=true;
+    if(!this.site||!property?.outlines?.length)return;
+    const {e0,n0}=this.site,dem=this.siteData.dem, points=[];
+    for(const g of property.outlines) {
+      const rings=g.type==="Polygon"?g.coordinates:g.type==="MultiPolygon"?g.coordinates.flat():[];
+      for(const ring of rings) for(let i=1;i<ring.length;i++) {
+        const [e1,n1]=ring[i-1],[e2,n2]=ring[i],steps=Math.min(2000,Math.max(1,Math.ceil(Math.hypot(e1-e2,n1-n2))));
+        // Large rural rings need not be sampled where the terrain isn't drawn.
+        if(Math.max(e1,e2)<e0-R_DRAW||Math.min(e1,e2)>e0+R_DRAW||Math.max(n1,n2)<n0-R_DRAW||Math.min(n1,n2)>n0+R_DRAW)continue;
+        let prev=null;
+        for(let j=0;j<=steps;j++){
+          const t=j/steps,e=e1+(e2-e1)*t,n=n1+(n2-n1)*t,z=heightAt(dem,e,n),visible=Math.hypot(e-e0,n-n0)<R_DRAW-4;
+          const v=visible&&Number.isFinite(z)?this.toScene(e,n,z+.22):null;
+          if(prev&&v)points.push(prev,v);
+          prev=v;
+        }
+      }
+    }
+    if(!points.length)return;
+    this.propertyLines=new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineBasicMaterial({color:0xae4263}));
+    this.propertyLines.name="LINZ Property Boundaries 122657"; this.root.add(this.propertyLines);
+  }
+  setPropertyVisible(on){
+    if(this.propertyLines)this.propertyLines.visible=on;
+    this.needs=true;
   }
 
   /** the measured surface, as the sums see it; built the first time it is asked for */

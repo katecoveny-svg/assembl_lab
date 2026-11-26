@@ -317,6 +317,12 @@ export function buildBrief(g, { now = new Date(), by = 'site agent' } = {}) {
       add({ id: 'linz.parcel', group: 'linz', name: 'Parcel outline', value: num(g.parcel.area_m2) != null ? Math.round(g.parcel.area_m2) : 'outline', unit: num(g.parcel.area_m2) != null ? 'm² (LINZ calculated)' : '', source: 'LINZ NZ Primary Parcels', date: g.parcel.asOf ?? today, licence: LINZ_CC, label: 'measured', note: 'Cadastral outline for orientation: not a boundary survey.' });
       scene.boundary.push({ kind: 'parcel', label: 'Boundary · LINZ parcel', ring: g.parcel.ring, source: 'LINZ NZ Primary Parcels (CC BY 4.0)', tag: 'measured' });
     } else gaps.push(gap('LINZ parcel', g.parcel?.error ? `LINZ did not answer (${str(g.parcel.error, 80)})` : g.parcel?.none ? 'no parcel at the point' : 'not read', 'linz'));
+    if (g.property?.rings) {
+      add({id:'linz.property',group:'linz',name:'Property boundary',value:g.property.count || 'nothing mapped at this point',
+        source:'LINZ NZ Property Boundaries (122657)',date:today,licence:LINZ_CC,label:'read',
+        note:'Rose dashes on the site map. Property units and cadastral parcels are separate layers; neither is a boundary survey.'});
+      for(const ring of g.property.rings)scene.boundary.push({kind:'property',label:'Property boundary · LINZ layer 122657',ring,source:'LINZ NZ Property Boundaries (CC BY 4.0)',tag:'read'});
+    } else if(g.property?.error) gaps.push(gap('LINZ property boundary','lookup unavailable','linz'));
     if (Array.isArray(g.outlines)) {
       const named = nameOutlines(g.outlines, scene.existing.map((x) => ({ label: x.label, sheet: x.sheet, en: x.en })), point);
       const fromPlan = named.filter((o) => o.name_from.startsWith('site plan')).length;

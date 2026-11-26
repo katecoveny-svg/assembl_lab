@@ -8,6 +8,7 @@ const ARC = "https://services.arcgis.com/xdsHIIxuCWByZiCB/arcgis/rest/services";
 const TYPES = {
   parcel: ["50772", "LINZ_NZ_Primary_Parcels", "id,parcel_intent,calc_area"],
   buildings: ["101290", "LINZ_NZ_Building_Outlines", "building_id"],
+  property: ["122657", "LINZ_NZ_Property_Boundaries", "OBJECTID"],
 };
 function reply(body, status=200) {
   return Response.json(body, { status, headers: { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
@@ -34,14 +35,15 @@ function contains(e,n,g) {
 }
 async function layer(kind, point, key) {
   const [id, name, fields]=TYPES[kind], {e,n,lat,lon}=point;
-  const radius=kind==="parcel" ? .75 : 27;
+  const atPoint=kind!=="buildings";
+  const radius=atPoint ? .75 : 27;
   if (key?.trim()) {
     try {
       // LDS WFS uses native NZGD2000 lat/long order in CQL filters; ask for NZTM metres on output.
       const dy=radius/111320,dx=dy/Math.cos(lat*Math.PI/180);
       const extent=[lat-dy,lon-dx,lat+dy,lon+dx].map(x=>x.toFixed(7)).join(",");
       const search = new URLSearchParams({service:"WFS",version:"2.0.0",request:"GetFeature",typeNames:"layer-"+id,
-        outputFormat:"json",srsName:"EPSG:2193",cql_filter:"bbox(shape,"+extent+")",count:"40"});
+        outputFormat:"json",srsName:"EPSG:2193",cql_filter:"bbox("+(kind==="property"?"geom":"shape")+","+extent+")",count:"40"});
       const features=await read("https://data.linz.govt.nz/services;key="+encodeURIComponent(key.trim())+"/wfs?"+search);
       // Guard registration if provider order or CRS varies; do not trust a remote label alone.
       function convert(c){
@@ -55,9 +57,25 @@ async function layer(kind, point, key) {
         const polygon=p=>p.map(r=>r.map(convert));
         g.coordinates=g.type==="Polygon"?polygon(g.coordinates):g.coordinates.map(polygon);
       }
-      if(kind!=="parcel"||features.some(f=>contains(e,n,f.geometry))) return {features,via:"lds-wfs"};
+      if(!atPoint||features.some(f=>contains(e,n,f.geometry))) return {features,via:"lds-wfs"};
       console.warn("LINZ garden WFS fallback",kind,"no-containing-feature");
     } catch(err) {
+      // Property Boundaries also supports a small keyed point lookup. Send the secret only to LDS.
+      if(kind==="property"){
+        try {
+          const q=new URLSearchParams({layer:id,x:lon,y:lat,radius:"2",max_results:"8",geometry:"true"});
+          const response=await fetch("https://data.linz.govt.nz/services/query/v1/vector.json?"+q,{
+            redirect:"error",signal:AbortSignal.timeout(4000),headers:{Authorization:"key "+key.trim(),Accept:"application/json"}
+          });
+          if(response.ok){
+            const data=await response.json(), rows=data["vectorQuery"]?.layers?.[id]?.features??data[id]?.features??data.layers?.[id]?.features;
+            if(Array.isArray(rows)){
+              const features=projectFeatures(rows);
+              if(features.some(f=>contains(e,n,f.geometry)))return {features,via:"lds-query"};
+            }
+          }
+        } catch { /* public mirror remains available when query is not authorized */ }
+      }
       // Log only fixed categories, never URLs, request text, coordinates, or the credential.
       const code=/^(http-\d{3}|not-json|unexpected-shape|unexpected-crs)$/.test(err?.message)?err.message:"request-failed";
       console.warn("LINZ garden WFS fallback",kind,code);
@@ -66,12 +84,14 @@ async function layer(kind, point, key) {
   // Use the same WGS84 ArcGIS request as the production Site feed, then register in NZTM.
   const geo=await getJSON(arcQueryUrl(ARC,name,{lat,lon,distance:kind==="buildings"?38:undefined,outFields:fields,geometry:true}));
   if(!Array.isArray(geo.features)||geo.error) throw Error("Unexpected LINZ public response");
+  return {features:projectFeatures(geo.features),via:"linz-public"};
+}
+function projectFeatures(features) {
   const ring=r=>r.map(([lng,la])=>{const q=toNZTM(la,lng);return [q.e,q.n]});
-  const features=geo.features.filter(f=>["Polygon","MultiPolygon"].includes(f.geometry?.type)).map(f=>{
+  return features.filter(f=>["Polygon","MultiPolygon"].includes(f.geometry?.type)).map(f=>{
     const {type,coordinates}=f.geometry;
     return {geometry:{type,coordinates:type==="Polygon"?coordinates.map(ring):coordinates.map(p=>p.map(ring))},properties:f.properties};
   });
-  return {features,via:"linz-public"};
 }
 const postcode = /^[1-9]\d{3}$/;
 export async function onRequest({request,env}) {
@@ -104,6 +124,13 @@ export async function onRequest({request,env}) {
   const {lat,lon}=body||{};
   if(!Number.isFinite(lat)||!Number.isFinite(lon)||lat< -47.6||lat> -33.8||lon<166||lon>179.99) return reply({error:"Choose a New Zealand address within the available map coverage."},400);
   const point={lat,lon,...toNZTM(lat,lon)};
+  const useProperty=body.mode==="property"||body.includeProperty===true;
+  const property=useProperty?layer("property",point,env?.LINZ_API_KEY).then(r=>({
+    status:"available", via:r.via,
+    outlines:r.features.filter(f=>contains(point.e,point.n,f.geometry)).slice(0,8).map(f=>f.geometry),
+    layer:122657,
+  })).catch(()=>({status:"unavailable",via:null,outlines:[],layer:122657})):null;
+  if(body.mode==="property") return reply({property:await property,crs:"EPSG:2193"});
   const [p,b]=await Promise.allSettled([layer("parcel",point,env?.LINZ_API_KEY),layer("buildings",point,env?.LINZ_API_KEY)]);
   if(p.status!=="fulfilled") return reply({error:"LINZ parcel data didn’t load. Try again in a moment."},502);
   const parcel=p.value.features.filter(f=>contains(point.e,point.n,f.geometry)).sort((a,b)=>{
@@ -112,6 +139,7 @@ export async function onRequest({request,env}) {
   })[0];
   return reply({
     parcel:parcel?.geometry??null,
+    ...(useProperty?{property:await property}:{}),
     buildings:b.status==="fulfilled"?b.value.features.slice(0,40).map(f=>f.geometry):null,
     via:{parcel:p.value.via,buildings:b.status==="fulfilled"?b.value.via:null},
     crs:"EPSG:2193"

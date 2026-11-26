@@ -29,7 +29,8 @@ function clip(a,b,h) {
   }
   return [lo,hi].map(t=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t]);
 }
-function drawMap(projected,windowSize) {
+function drawMap(parcel,property,windowSize) {
+  const projected=[...parcel,...property];
   map.replaceChildren();
   const extent=projected.reduce((max,ring)=>ring.reduce((m,[x,z])=>Math.max(m,Math.abs(x),Math.abs(z)),max),windowSize/2);
   const h=extent*1.1;
@@ -39,7 +40,9 @@ function drawMap(projected,windowSize) {
     for(const [k,v] of Object.entries(attrs)) e.setAttribute(k,v);
     map.appendChild(e);
   };
-  make('path',{d:projected.map(r=>'M'+r.map(p=>p.join(' ')).join('L')+'Z').join(' '),fill:'#e3d0d2','fill-rule':'evenodd',stroke:'#654a4e','vector-effect':'non-scaling-stroke'});
+  const path=rs=>rs.map(r=>'M'+r.map(p=>p.join(' ')).join('L')+'Z').join(' ');
+  make('path',{d:path(property),fill:'#e3d0d2','fill-rule':'evenodd',stroke:'#813d52','stroke-width':'1.6','vector-effect':'non-scaling-stroke'});
+  make('path',{d:path(parcel),fill:'none',stroke:'#6e655f','stroke-dasharray':'2 2','vector-effect':'non-scaling-stroke'});
   make('rect',{x:-windowSize/2,y:-windowSize/2,width:windowSize,height:windowSize,fill:'none',stroke:'#36594b','stroke-dasharray':'4 2','vector-effect':'non-scaling-stroke'});
   map.toggleAttribute('hidden',!projected.length);
 }
@@ -52,7 +55,7 @@ async function load(r) {
   const center=toNZTM(r.lat,r.lon), size=studio.terrainEngine.terrainSize, half=size/2;
   const li=readLayer('ground',{lat:r.lat,lon:r.lon,radius:Math.ceil(half)+4,signal:AbortSignal.any([signal,AbortSignal.timeout(12000)])}).catch(()=>null);
   try {
-    const [site,dem]=await Promise.all([request({lat:r.lat,lon:r.lon},signal),li]);
+    const [site,dem]=await Promise.all([request({lat:r.lat,lon:r.lon,includeProperty:true},signal),li]);
     if(signal.aborted)return;
     const local=rs=>rs.map(ring=>ring.map(([e,n])=>[e-center.e,center.n-n]));
     const parcel=local(rings(site.parcel)), buildings=local((site.buildings||[]).flatMap(rings));
@@ -66,13 +69,21 @@ async function load(r) {
     const terrain=!!heights&&heights.every(Number.isFinite);
     const edges=rs=>rs.flatMap(ring=>ring.slice(1).map((b,i)=>clip(ring[i],b,half)).filter(Boolean));
     studio.setLiveSite({address:r.address,lat:r.lat,lon:r.lon,heights:terrain?heights:null,parcel:edges(parcel),buildings:edges(buildings)});
-    drawMap(parcel,size);
+    const property=local((site.property?.outlines||[]).flatMap(rings));
+    const t=studio.terrainEngine;
+    if(property.length)t._drawLiveEdges(t.parcelGroup,edges(property),0x963950,false);
+    drawMap(parcel,property,size);
+    map.setAttribute('aria-label','LINZ property boundary in rose, primary parcel in dotted grey, and the 3D garden area in a dashed box');
     const ground=terrain?'LINZ 1 m LiDAR ground':'Flat preview · LINZ LiDAR not available for this view';
-    const boundary=parcel.length?'LINZ parcel':'No LINZ parcel at the address point';
+    const propertyStatus=site.property?.status!=="available"?"Property boundary lookup unavailable":property.length?"LINZ property boundary (122657)":"No mapped property boundary at this point";
+    const boundary=parcel.length?'LINZ primary parcel':'No primary parcel at this point';
     const attribution=byId('garden-elevation-credit');attribution.hidden=!terrain;
     attribution.textContent=terrain?dem.licence.attribution:'';
-    status.textContent=r.address;
-    note.textContent=`${boundary} · ${ground}. ${site.buildings===null?'Building outlines unavailable. ':'Dashed grey lines show mapped roof footprints, not building heights. '}The 3D view covers ${size} m around the address point. Not a boundary survey.`;
+    const credit=document.createElement('a');
+    credit.href='https://data.linz.govt.nz/layer/122657-nz-property-boundaries/';
+    credit.target='_blank';credit.rel='noopener noreferrer';credit.textContent='LINZ NZ Property Boundaries';
+    status.replaceChildren(document.createTextNode(r.address+' · '),credit);
+    note.textContent=`${propertyStatus} · ${boundary} · ${ground}. ${site.buildings===null?'Building outlines unavailable. ':'Dashed grey lines show mapped roof footprints, not building heights. '}The 3D view covers ${size} m around the address point. Not a boundary survey.`;
   } catch(e) {
     if(!signal.aborted) status.textContent=e.message||'Site data did not load.';
   }

@@ -38,6 +38,26 @@ for (const id of ["day", "min"]) $("#" + id).addEventListener("input", sunChange
 for (const b of document.querySelectorAll("[data-doy]")) b.addEventListener("click", () => { $("#day").value = b.dataset.doy; $("#min").value = 12 * 60 + 40 + (+b.dataset.doy > 300 || +b.dataset.doy < 40 ? 60 : 0); sunChanged(); });
 $("#heat").addEventListener("change", (e) => { S.sc?.setHeat(e.target.checked); $("#legend").hidden = !e.target.checked || !S.plan?.panels.length; });
 $("#paths").addEventListener("change", (e) => S.sc?.setPaths(e.target.checked));
+$("#propertyLayer").addEventListener("change",(e)=>S.sc?.setPropertyVisible(e.target.checked));
+function clearProperty(){
+  $("#propertyControl").hidden=true; $("#propertyInfo").hidden=true;
+}
+function showProperty(property){
+  const n=property?.outlines?.length||0;
+  $("#propertyControl").hidden=!n; const info=$("#propertyInfo"); info.hidden=false;
+  info.replaceChildren();
+  const link=document.createElement("a");link.href="https://data.linz.govt.nz/layer/122657-nz-property-boundaries/";link.target="_blank";link.rel="noopener";link.textContent="LINZ NZ Property Boundaries";
+  const message=n?"Rose lines show mapped property boundaries at the selected point. Visual context only, not a survey or an input to the solar estimate.":property?.status==="available"?"No mapped property boundary at this point.":"Property boundary lookup unavailable.";
+  info.append(document.createTextNode(message+" "),link,document.createTextNode(" · CC BY 4.0"));
+}
+async function getProperty(lat,lon,signal){
+  try{
+    const response=await fetch("/api/garden-site",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({mode:"property",lat,lon}),signal,cache:"no-store"});
+    if(response.ok)return (await response.json()).property;
+  }catch{}
+  return null;
+}
 $("#clay").addEventListener("change", (e) => S.sc?.setClay(e.target.checked));
 $("#play").addEventListener("click", () => {
   S.playing = !S.playing; $("#play").textContent = S.playing ? "Pause" : "Play the day"; if (!S.playing) return cancelAnimationFrame(S.raf);
@@ -47,14 +67,19 @@ $("#play").addEventListener("click", () => {
 // ---- loading a place --------------------------------------------------------------------------------------------------------------------
 const badge = (t, load) => { $("#badge").innerHTML = (load ? '<i class="rs-load"></i>' : "") + esc(t); };
 export async function choose(lat, lon, label) {
-  S.study = false; S.twin = null; $("#twinView").replaceChildren(); $("#twinView").hidden = $("#twinControls").hidden = true; $("#gl").hidden = $("#measuredControls").hidden = false;
+  clearProperty(); S.study = false; S.twin = null; $("#twinView").replaceChildren(); $("#twinView").hidden = $("#twinControls").hidden = true; $("#gl").hidden = $("#measuredControls").hidden = false;
   S.playing=false; cancelAnimationFrame(S.raf); $("#play").textContent="Play the day"; $("#clay").disabled = $("#heat").disabled = false; $("#sampleStudy").setAttribute("aria-pressed","false");
   S.abort?.abort(); const ctl = (S.abort = new AbortController()), run = ++S.run; badge("Reading LINZ's LiDAR", true);
   $("#result").innerHTML = `<h2>Likely generation</h2><p class="rs-msg"><i class="rs-load"></i>Reading the roof and the sun for this place. About 2 MB from LINZ.</p>`; $("#roofs").hidden = true;
+  const propertyRead=getProperty(lat,lon,ctl.signal);
   try {
     const site = await loadSite(lat, lon, { signal: ctl.signal, onStage: (t) => run === S.run && badge(t, true) }); if (run !== S.run) return;
     if (!site.chosen) throw new Error("LINZ has no building outline within 40 m of that point. Pick a point on or beside a building.");
     S.site = site; site.label = label || null; await work(site, site.chosen, run);
+    propertyRead.then((property)=>{
+      if(S.site!==site||S.study||ctl.signal.aborted)return;
+      site.property=property;showProperty(property);S.sc?.buildProperty(property);S.sc?.setPropertyVisible($("#propertyLayer").checked);
+    });
   } catch (e) { if (run !== S.run || e?.name === "AbortError") return; badge("Could not read this place"); $("#result").innerHTML = `<h2>Likely generation</h2><p class="rs-msg" role="alert">${esc(e.message || e)}</p><p class="rs-msg">Nothing is estimated in its place.</p>`; }
 }
 async function work(site, building, run) {
@@ -62,12 +87,12 @@ async function work(site, building, run) {
   site.chosen = building; const plan = await analyse({ dsm: site.dsm, point: site.point, climate: site.climate, rings: building.rings }, { onProgress: (t) => run === S.run && badge(t, true) }); if (run !== S.run) return;
   S.plan = plan;
   if (!S.sc) { S.sc = new RoofScene($("#gl"), { tier: matchMedia("(max-width:700px)").matches ? "low" : "high" }); S.sc.canvas.addEventListener("pointerdown", pd); S.sc.canvas.addEventListener("pointerup", pu); }
-  S.sc.setSite(site, plan); S.sc.setHeat($("#heat").checked); S.sc.setPaths($("#paths").checked); S.sc.setClay($("#clay").checked); $("#legend").hidden = !$("#heat").checked || !plan.panels.length;
+  S.sc.setSite(site, plan); S.sc.setPropertyVisible($("#propertyLayer").checked); S.sc.setHeat($("#heat").checked); S.sc.setPaths($("#paths").checked); S.sc.setClay($("#clay").checked); $("#legend").hidden = !$("#heat").checked || !plan.panels.length;
   badge(site.label || "Chosen roof"); sunChanged(); render(site, plan); $("#roofs").hidden = false; S.ready = true; document.documentElement.dataset.ready = "1";
 }
 /** Default for the bare entry route: a plan study; address and map still use measured LiDAR. */
 async function show16a(){
- S.abort?.abort(); const run=++S.run;
+ clearProperty(); S.abort?.abort(); const run=++S.run;
  S.study=true; S.site=null; S.plan=null; S.ready=false; S.twin=null;
  if(S.sc){ S.sc.canvas.removeEventListener("pointerdown",pd); S.sc.canvas.removeEventListener("pointerup",pu); S.sc.dispose(); S.sc=null; }
  delete document.documentElement.dataset.ready;

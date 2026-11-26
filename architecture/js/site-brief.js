@@ -115,14 +115,23 @@ async function run(ctx, p, { paid = false } = {}) {
       run: async ({ log }) => {
         const { lat, lng } = g.point;
         const [pm, gm] = await Promise.all([import(`${LINZ_DIR}parcel.js`), import(`${LINZ_DIR}ground.js`)]);
-        const [parcel, outlines, dem, dsm] = await Promise.all([
+        const [parcel, outlines, dem, dsm, property] = await Promise.all([
           settle(async () => { const r = await pm.parcelAt(lat, lng); if (r.none) return { none: true }; const ring = (r.rings[0] ?? []).map(([x, y]) => [+y.toFixed(7), +x.toFixed(7)]); return { ring, area_m2: r.calcAreaM2, asOf: r.asOf }; }),
           settle(async () => parseOutlines(await getJSON(outlinesQuery(lat, lng)))),
           settle(async () => { const r = await gm.readLayer('ground', { lat, lon: lng, radius: 20 }); return r.status === 'live' ? { survey: r.values.survey?.title ?? r.truthLabel, captured: r.asOf, licence: r.licence?.name, height: r.value } : { none: true }; }),
           settle(async () => { const r = await gm.readLayer('surface', { lat, lon: lng, radius: 20 }); return r.status === 'live' ? { survey: r.values.survey?.title ?? r.truthLabel, captured: r.asOf, licence: r.licence?.name } : { none: true }; }),
+          settle(async () => {
+            const r=await fetch('/api/garden-site',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:'property',lat,lon:lng}),signal:AbortSignal.timeout(12000)});
+            if(!r.ok)throw Error('Property boundary lookup unavailable');
+            const {property}=await r.json();
+            if(property?.status!=='available')throw Error('Property boundary lookup unavailable');
+            const {fromNZTM}=await import('/roof-solar/linz/nztm.js');
+            const rings=property.outlines.flatMap(x=>x.type==='Polygon'?x.coordinates:x.coordinates.flat());
+            return {rings:rings.filter(ring=>ring.length<=10000).map(ring=>ring.map(([e,n])=>{const p=fromNZTM(e,n);return [+p.lat.toFixed(7),+p.lon.toFixed(7)];})),count:property.outlines.length};
+          }),
         ]);
-        g.parcel = parcel; g.outlines = outlines; g.lidar = { dem, dsm };
-        const said = [parcel.ring ? 'parcel' : null, Array.isArray(outlines) ? plural(outlines.length, 'outline') : null, dem.survey ? 'LiDAR' : null].filter(Boolean);
+        g.parcel = parcel; g.property = property; g.outlines = outlines; g.lidar = { dem, dsm };
+        const said = [parcel.ring ? 'parcel' : null, property.count ? 'property boundary' : null, Array.isArray(outlines) ? plural(outlines.length, 'outline') : null, dem.survey ? 'LiDAR' : null].filter(Boolean);
         log(said.length ? `From LINZ: ${said.join(', ')}.` : 'LINZ gave nothing back.');
         return { note: said.join(' · ') || 'nothing' };
       },
@@ -241,9 +250,9 @@ export function siteMap(brief) {
   const inView = (en) => en.some(([e, n]) => Math.abs(e - cx) < span / 2 && Math.abs(n - cy) < span / 2);
   const bar = [10, 20, 50, 100].find((m) => m * k > 50) ?? 100;
   const named = sc.existing.filter((b) => b.tag === 'read');
-  const poly = rings.filter((r) => inView(r.en)).map((r) => `<polygon points="${r.en.map(P).join(' ')}" class="sbx-${r.kind}"><title>${r.label ?? ''}</title></polygon>`).join('');
+  const poly = rings.filter((r) => inView(r.en)).map((r) => `<polygon points="${r.en.map(P).join(' ')}" class="sbx-${r.kind}"${r.kind==='property'?' fill="none" stroke="#99445f" stroke-width="2" stroke-dasharray="5 3"':''}><title>${esc(r.label ?? '')}</title></polygon>`).join('');
   const labels = sc.existing.filter((b) => inView(b.ring.map(([la, ln]) => toEN(o, la, ln)))).map((b) => { const [x, y] = P(toEN(o, b.centre.lat, b.centre.lng)).split(','); return b.tag === 'read' ? `<text x="${x}" y="${y}" class="sbx-lab">${esc(b.label)}</text>` : ''; }).join('');
-  return `<svg class="sbx-map" viewBox="0 0 ${W} ${W}" role="img" aria-label="The site: the LINZ parcel, ${sc.existing.length} building outlines${named.length ? `, ${named.length} named from the site plan` : ''}">
+  return `<svg class="sbx-map" viewBox="0 0 ${W} ${W}" role="img" aria-label="The site: LINZ parcel and property context, ${sc.existing.length} building outlines${named.length ? `, ${named.length} named from the site plan` : ''}">
     <rect width="${W}" height="${W}" class="sbx-mapbg"/>${poly}${labels}
     <g class="sbx-north" transform="translate(${W - 22} 26)"><path d="M0 -14 L6 6 L0 2 L-6 6 Z"/><text y="18" text-anchor="middle">N</text></g>
     <g class="sbx-bar" transform="translate(14 ${W - 16})"><path d="M0 0h${(bar * k).toFixed(1)}"/><text y="-5">${bar} m</text></g>

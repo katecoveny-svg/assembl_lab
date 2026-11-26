@@ -43,3 +43,26 @@ test("keyed upstream failure falls back; a missing parcel is not fabricated",asy
  assert.equal(r.status,200);assert(!raw.includes(fakeKey));assert.equal(j.parcel,null);
  assert.deepEqual(j.via,{parcel:"linz-public",buildings:"linz-public"});
 });
+
+test("property-only mode requests the exact dataset and does not expose title, owner or valuation fields",async t=>{
+ const calls=[];
+ t.mock.method(globalThis,"fetch",async raw=>{
+  const u=new URL(raw); calls.push(u);
+  assert.equal(u.searchParams.get("typeNames"),"layer-122657");
+  assert.match(u.searchParams.get("cql_filter"),/^bbox\(geom,/);
+  return collection([feature(30),feature(2,"Fee Simple",16)]);
+ });
+ const r=await request({...location,mode:"property"},{env:{LINZ_API_KEY:fakeKey}}),raw=await r.text(), j=JSON.parse(raw);
+ assert.equal(calls.length,1);assert(!raw.includes(fakeKey));assert(!raw.includes("unneeded"));
+ assert.deepEqual(j,{property:{status:"available",via:"lds-wfs",outlines:[feature(30).geometry],layer:122657},crs:"EPSG:2193"});
+});
+test("property-only lookup falls back to the same public LINZ layer, never to parcel geometry",async t=>{
+ t.mock.method(globalThis,"fetch",async raw=>{
+  const u=new URL(raw);
+  assert.match(u.pathname,/LINZ_NZ_Property_Boundaries\/FeatureServer\/0\/query$/);
+  assert.equal(u.searchParams.get("outFields"),"OBJECTID");
+  return collection([]);
+ });
+ const r=await request({...location,mode:"property"});
+ assert.deepEqual((await r.json()).property,{status:"available",via:"linz-public",outlines:[],layer:122657});
+});

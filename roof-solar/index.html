@@ -33,6 +33,7 @@
           <button type="button" data-doy="172" class="rs-btn rs-ghost">Shortest day</button>
           <label class="rs-tg"><input id="heat" type="checkbox"> Yearly sun on each panel</label>
           <label class="rs-tg"><input id="paths" type="checkbox" checked> Sun paths</label>
+          <label class="rs-tg" id="propertyControl" hidden><input id="propertyLayer" type="checkbox" checked> Property boundary</label>
           <label class="rs-tg"><input id="clay" type="checkbox"> Measured LiDAR surface</label>
         </div>
       </div>
@@ -46,6 +47,7 @@
           <p id="addrMsg" class="rs-msg" role="status" aria-live="polite"></p></div>
         <div class="rs-row"><button type="button" class="rs-btn rs-ghost" id="sampleStudy" aria-pressed="false">16A design study</button><button type="button" class="rs-btn" id="mapBtn" aria-expanded="false" aria-controls="mapWrap">Pick on the map</button><button type="button" class="rs-btn rs-ghost" id="landmark">Public landmark</button></div>
         <div id="mapWrap" hidden><div id="map" class="rs-map" aria-label="Map. Click a place to choose it."></div><p class="rs-msg">Click a building. Drag to move, + and − to zoom.</p></div>
+        <p class="rs-msg" id="propertyInfo" hidden></p>
         <p class="rs-priv">Where your choice goes: LINZ gets the point, to read heights and outlines. NASA gets it rounded to half a degree. An address you type goes to the lab's address search and is not kept. Nothing is saved.</p>
       </section>
       <section class="rs-card" id="result" aria-live="polite"><h2>Likely generation</h2><p class="rs-msg">Loading.</p></section>
