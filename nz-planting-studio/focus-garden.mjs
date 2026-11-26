@@ -15,14 +15,18 @@ export async function initialise(){
  const nx=bed.points.reduce((x,v)=>x+v.x,0)/bed.points.length,nzPos=bed.points.reduce((z,v)=>z+v.z,0)/bed.points.length;
  const y=s.terrainEngine.getHeight(nx,nzPos);
  const aim=()=>{const small=innerWidth<610;return [nx+(small?4.2:4.5),y+(small?3.95:4.35),nzPos+(small?6.5:6.55),nx,y+.27,nzPos];};
- const frame=()=>s.setCamera(...aim());
+ const snap=(values)=>{
+  const damping=s.controls.enableDamping;s.controls.enableDamping=false;
+  try{s.controls.update();s.setCamera(...values);}finally{s.controls.enableDamping=damping;}
+ };
+ const frame=()=>snap(aim());
  let views={};
  try{views=JSON.parse(localStorage.getItem(key)||'{}')||{};}catch{}
  document.head.append(Object.assign(document.createElement('link'),{rel:'stylesheet',href:new URL('./focus-garden.css',import.meta.url).href}));
  const h=document.createElement('section');
  h.className='bed-toolbar';h.setAttribute('aria-label','Plant a native bed');
  h.innerHTML=`<div class="bed-top"><small class="bed-label">Aotearoa · bed study</small><div class="bed-actions">
- <button id="bed-undo" type="button">Undo</button><button id="bed-compare" aria-expanded="false" type="button">Compare</button>
+ <button id="bed-paint" aria-pressed="false" type="button">Paint</button><button id="bed-reset" type="button" aria-label="Reset garden view">Reset</button><button id="bed-undo" type="button">Undo</button><button id="bed-compare" aria-expanded="false" type="button">Compare</button>
  <a href="${base}" target="_blank" rel="noopener noreferrer">Full site ↗</a></div></div>
  <p id="bed-hint" aria-live="polite"></p>
  <div class="bed-dock"><div class="bed-group" aria-label="Planting mix">
@@ -45,10 +49,29 @@ export async function initialise(){
  $('bed-season').oninput=e=>setMonth(e.target.value);
  $('bed-new').onclick=()=>year(1);$('bed-five').onclick=()=>year(5);
  $('bed-undo').onclick=()=>$('btn-undo').click();
+ let painting=false;
+ const canvas=document.querySelector('#canvas-wrap canvas');
+ function mode(next){
+  painting=next;s.setTool(next?'paint-mix':'orbit');document.documentElement.toggleAttribute('data-bed-paint',next);
+  $('bed-paint').setAttribute('aria-pressed',String(next));$('bed-hint').textContent=next?'Brush across the soil to plant':'Drag to look around · Pinch or scroll to zoom';
+ }
+ $('bed-paint').onclick=()=>mode(!painting);$('bed-reset').onclick=frame;
+ if(canvas){
+  canvas.tabIndex=0;canvas.setAttribute('aria-label','Interactive garden view. Use arrow keys to turn and plus or minus to zoom.');
+  canvas.addEventListener('keydown',e=>{
+   if(painting||e.altKey||e.metaKey||e.ctrlKey)return;
+   const deltas={ArrowLeft:[-.13,0,1],ArrowRight:[.13,0,1],ArrowUp:[0,-.11,1],ArrowDown:[0,.11,1],'+':[0,0,.89],'=':[0,0,.89],'-':[0,0,1.12]};
+   if(!Object.hasOwn(deltas,e.key))return;
+   e.preventDefault();e.stopPropagation();
+   const [da,dp,zf]=deltas[e.key], t=s.controls.target, v=s.camera.position;
+   const dx=v.x-t.x,dy=v.y-t.y,dz=v.z-t.z,r=Math.max(.3,Math.hypot(dx,dy,dz));
+   const az=Math.atan2(dx,dz)+da,polar=Math.max(.12,Math.min(1.5,Math.acos(Math.max(-1,Math.min(1,dy/r)))+dp)),dist=Math.max(2,Math.min(30,r*zf));
+   s.setCamera(t.x+dist*Math.sin(polar)*Math.sin(az),t.y+dist*Math.cos(polar),t.z+dist*Math.sin(polar)*Math.cos(az),t.x,t.y,t.z);
+  });
+ }
  function mix(index){
-  document.querySelectorAll('#cards-rail .card')[index]?.click();s.setTool('paint-mix');
+  document.querySelectorAll('#cards-rail .card')[index]?.click();mode(painting);
   $('mix-coast').setAttribute('aria-pressed',String(index===0));$('mix-fern').setAttribute('aria-pressed',String(index===1));
-  $('bed-hint').textContent='Brush across the soil to plant';
  }
  $('mix-coast').onclick=()=>mix(0);$('mix-fern').onclick=()=>mix(1);
  const signed=(n,fmt)=>Math.abs(n)<.049?'No change':(n>0?'+':'−')+fmt(Math.abs(n));
@@ -68,6 +91,7 @@ export async function initialise(){
  async function capture(slot){
   const status=$('bed-save-status');status.textContent='Capturing the same view…';
   const buttons=['bed-save-a','bed-save-b'].map($);buttons.forEach(el=>el.disabled=true);
+  const previous=[...s.camera.position.toArray(),...s.controls.target.toArray()];
   try{
    frame();
    const raw=await s.captureBedFrame();
@@ -77,7 +101,7 @@ export async function initialise(){
    try{localStorage.setItem(key,JSON.stringify(views));status.textContent=`Option ${slot.toUpperCase()} saved in this browser.`;}catch{status.textContent=`Option ${slot.toUpperCase()} saved for this session.`;}
    redraw();
   }catch{status.textContent='This browser could not capture the view. The scene is unchanged.';}
-  finally{buttons.forEach(el=>el.disabled=false);}
+  finally{snap(previous);buttons.forEach(el=>el.disabled=false);}
  }
  function show(on){compare.hidden=!on;$('bed-compare').setAttribute('aria-expanded',String(on));if(on){redraw();$('bed-close').focus();}else $('bed-compare').focus();}
  $('bed-compare').onclick=()=>show(compare.hidden);$('bed-close').onclick=()=>show(false);
@@ -100,8 +124,6 @@ export async function initialise(){
   }catch{$('bed-save-status').textContent='The comparison could not download.';}
  };
  if(reduced&&$('btn-wind').getAttribute('aria-pressed')==='true')$('btn-wind').click();
- s.study.base.visible=false;document.documentElement.setAttribute('data-garden-bed','');frame();year(5);setMonth(11.4);s.setTool('paint-mix');
- requestAnimationFrame(()=>frame());
- window.addEventListener('resize',()=>frame(),{passive:true});
+ s.study.base.visible=false;document.documentElement.setAttribute('data-garden-bed','');frame();year(5);setMonth(11.4);mode(false);
 }
 initialise().catch(e=>console.warn('Close-up garden view unavailable.',e));

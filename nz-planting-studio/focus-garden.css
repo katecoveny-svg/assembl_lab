@@ -37,3 +37,14 @@ html[data-garden-bed] .bed-toolbar, html[data-garden-bed] .bed-compare {font:500
  .bed-dock .bed-group:last-child{justify-self:end}.bed-toolbar #bed-hint{bottom:96px}
 }
 @media(prefers-reduced-motion:reduce){.bed-toolbar *, .bed-compare * {scroll-behavior:auto!important;transition:none!important}}
+
+html[data-garden-bed] #canvas-wrap canvas{touch-action:none;cursor:grab}
+html[data-garden-bed] #canvas-wrap canvas:active{cursor:grabbing}
+html[data-garden-bed][data-bed-paint] #canvas-wrap canvas{cursor:crosshair}
+html[data-garden-bed] #canvas-wrap canvas:focus-visible{outline:3px solid #a32f3d;outline-offset:-4px}
+.bed-top #bed-paint:not([aria-pressed="true"]){border-color:#654a4ea9}
+@media(max-width:480px){
+ .bed-top{justify-content:flex-end}
+ .bed-top .bed-label{display:none}
+ .bed-top .bed-actions{flex-wrap:wrap;justify-content:flex-end}
+}
