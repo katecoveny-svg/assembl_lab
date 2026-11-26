@@ -2,18 +2,21 @@ import {linenSofa} from './upholstery.js';
 import * as T from './vendor/three.webgpu.min.js';
 import {RoundedBoxGeometry} from './vendor/RoundedBoxGeometry.js';
 
-export function furnishRoom({scene,mesh,box,cylinder,chair,cloth,oak,plaster,metal,limestone,print,linenBump,evalFloor,slabStone,basketWeave}){
+export function placeLoungeChair(scene,chair){
+ // A single low chair leaves a clear line from the entrance to the corner glazing.
+ const o=chair.scene.clone(true);const bb=new T.Box3().setFromObject(o),sz3=bb.getSize(new T.Vector3()),factor=.83/sz3.y;
+ o.traverse(n=>{if(!n.isMesh)return;n.material=n.material.clone();const m=n.material;
+ if(m.metalness>.38){m.roughness=.32}else{m.roughness=.49;m.envMapIntensity=.89}n.castShadow=n.receiveShadow=true});
+ o.scale.setScalar(factor);o.rotation.y=-1.84;o.position.set(5.88,.070-bb.min.y*factor,.26);scene.add(o);
+}
+
+export function furnishRoom({scene,mesh,box,cylinder,cloth,oak,plaster,metal,limestone,print,linenBump,evalFloor,slabStone,basketWeave}){
  const neutral=new T.MeshStandardMaterial({color:0x88857b,roughness:.94});
  const v=(x,y,z)=>new T.Vector3(x,y,z);
  function rounded(x,y,z,w,h,d,r,m){return mesh(new RoundedBoxGeometry(w,h,d,4,r),m,x,y,z)}
  const sx=3.42,sz=-1.32;
  linenSofa({mesh,cylinder,cloth,oak});
 
- // A single low chair leaves a clear line from the entrance to the corner glazing.
- const o=chair.scene.clone(true);const bb=new T.Box3().setFromObject(o),sz3=bb.getSize(v()),factor=.83/sz3.y;
- o.traverse(n=>{if(!n.isMesh)return;n.material=n.material.clone();const m=n.material;
- if(m.metalness>.38){m.roughness=.32}else{m.roughness=.49;m.envMapIntensity=.89}n.castShadow=n.receiveShadow=true});
- o.scale.setScalar(factor);o.rotation.y=-1.84;o.position.set(5.88,.070-bb.min.y*factor,.26);scene.add(o);
  const rugMaterial=new T.MeshStandardNodeMaterial({roughness:.98,normalMap:cloth.normalMap,normalScale:new T.Vector2(.51,.51)});
  const uv=T.TSL.uv(), metres=T.TSL.positionWorld.xz;
  const border=uv.x.min(T.TSL.float(1).sub(uv.x)).mul(4.24).min(uv.y.min(T.TSL.float(1).sub(uv.y)).mul(2.36));

@@ -8,7 +8,7 @@ import {GLTFLoader} from './vendor/GLTFLoader.js';
 import {HDRLoader} from './vendor/HDRLoader.js';
 import {RoundedBoxGeometry} from './vendor/RoundedBoxGeometry.js';
 import {finePanicles} from './panicles.js';
-import {furnishRoom} from './interior.js';
+import {furnishRoom,placeLoungeChair} from './interior.js';
 import {buildCoast,addSedges,grade,plantable,pathX} from './landscape.js';
 import {buildBoards} from './metric.js';
 import {houseParts} from './house-parts.js';
@@ -29,6 +29,9 @@ export async function openPavilion(host,asset,forceGL=false,signal){
  let seed=92731;const rand=()=>((seed=Math.imul(seed,1664525)+1013904223>>>0)/4294967296),range=(a,b)=>a+(b-a)*rand();
  const texLoader=new T.TextureLoader(manager),glLoader=new GLTFLoader(manager);
  const refinements=[];
+ const furnishings=[];
+ const loadHeadland=place=>furnishings.push(async()=>place(await glLoader.loadAsync(asset('gulf-terrain.glb'))));
+ furnishings.push(async()=>placeLoungeChair(scene,await glLoader.loadAsync(asset('mid_century_lounge_chair.glb'))));
  const flatNormals=new Map();
  function surface(name){
   if(name==='studio-glaze-normal.webp'||!/(?:-normal|-n)\.webp$/.test(name))return texLoader.loadAsync(asset(name));
@@ -56,24 +59,25 @@ export async function openPavilion(host,asset,forceGL=false,signal){
  }
  let refined=false;
  async function refine(){if(refined)return;refined=true;
+   void Promise.allSettled(furnishings.map(load=>load()));
    if(!compactGL)await refineApertures().catch(()=>{});
    await refineContact().catch(()=>{});
    while(refinements.length){await Promise.allSettled(refinements.splice(0,2).map(load=>load()))}
  }
- const [sky,wood,blackwood,grit,chair,terrain]=await Promise.all([
+ const [sky,wood,blackwood,grit]=await Promise.all([
    new HDRLoader(manager).loadAsync(asset('pavilion-daylight-512.hdr')),
    ...['cedar','charred','sandy_gravel'].map(n=>surface(n+'.webp')),
-   ...['mid_century_lounge_chair','gulf-terrain'].map(n=>glLoader.loadAsync(asset(n+'.glb')))
+
  ]);
  signal?.throwIfAborted();
  sky.mapping=T.EquirectangularReflectionMapping;scene.environment=sky;scene.background=sky;scene.backgroundRotation.y=scene.environmentRotation.y=0;
  scene.backgroundIntensity=1.22;scene.environmentIntensity=1.15;
  for(const t of [wood,blackwood,grit]){t.colorSpace=T.SRGBColorSpace;t.wrapS=t.wrapT=T.RepeatWrapping;t.anisotropy=6}
  const mat=(c,r=.8,map=null,extra={})=>new T.MeshStandardMaterial({color:c,roughness:r,map,...extra});
- const [brick,brickN,rockTex,rockN,deckMap]=await Promise.all(['dark_brick_wall','dark_brick_wall-normal','rock_face_03','rock_face_03-normal','deck'].map(n=>surface(n+'.webp')));
+ const [brick,brickN,rockTex,rockN]=await Promise.all(['dark_brick_wall','dark_brick_wall-normal','rock_face_03','rock_face_03-normal'].map(n=>surface(n+'.webp')));
  signal?.throwIfAborted();
- for(const tex of [brick,brickN,rockTex,rockN,deckMap]){tex.wrapS=tex.wrapT=T.RepeatWrapping;tex.anisotropy=6}
- for(const tex of [brick,rockTex,deckMap])tex.colorSpace=T.SRGBColorSpace;
+ for(const tex of [brick,brickN,rockTex,rockN]){tex.wrapS=tex.wrapT=T.RepeatWrapping;tex.anisotropy=6}
+ for(const tex of [brick,rockTex])tex.colorSpace=T.SRGBColorSpace;
  const newNames=['rough_linen','rough_linen-n','brown_planks_08','brown_planks_08-n','plastered_wall_04','plastered_wall_04-n','aerial_grass_rock','aerial_grass_rock-n','concrete_wall_006','concrete_wall_006-n','plan16a'];
  const [fabric,fabricN,oakMap,oakN,plaster,plasterN,pasture,pastureN,concrete,concreteN,print]=await Promise.all(newNames.map(n=>surface(n+'.webp')));
  for(const [i,t] of [fabric,fabricN,oakMap,oakN,plaster,plasterN,pasture,pastureN,concrete,concreteN,print].entries()){
@@ -218,7 +222,7 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  const weave=new T.MeshPhysicalMaterial({map:yarn,normalMap:yarnNormal,normalScale:new T.Vector2(.70,.70),roughness:.96,roughnessMap:yarnRough,sheen:.37,sheenRoughness:.79,sheenColor:0xd5bf9c});
  const slabStone=new T.MeshPhysicalMaterial({color:0xf4eee4,map:chipColor,normalMap:chipNormal,normalScale:new T.Vector2(.51,.51),roughnessMap:chipRough,roughness:.83,clearcoat:.14,clearcoatRoughness:.43});
  const limestone=mat(0xc6c4b6,.74,plaster,{normalMap:concreteN,normalScale:new T.Vector2(.11,.11)});
- furnishRoom({scene,mesh,box,cylinder,chair,cloth:weave,oak,plaster:lime,metal,limestone,print,linenBump:fabricN,evalFloor,slabStone,basketWeave});
+ furnishRoom({scene,mesh,box,cylinder,cloth:weave,oak,plaster:lime,metal,limestone,print,linenBump:fabricN,evalFloor,slabStone,basketWeave});
  bedroom({mesh,box,cylinder,oak,cloth,metal,limestone,glow,basketWeave});
  fitKitchen(scene,oak,slabStone,glazeNormal);
  {
@@ -255,7 +259,7 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  for(const [x,z,w,d,yy] of [[3.42,-1.34,2.65,1.02,.069],[3.64,.19,1.83,.99,.094],[5.88,.26,1.09,1.04,.092]]){
  const sh=mesh(new T.PlaneGeometry(w,d),new T.MeshBasicMaterial({map:contactMap,transparent:true,depthWrite:false}),x,yy,z);sh.rotation.x=-Math.PI/2;sh.castShadow=false}
  const ground=grade;
- buildCoast({scene,mesh,mat,map:pasture,normal:pastureN,grit,rockTex,rockN,rand,range,terrain,ripple,landcover,seaPhoto});
+ buildCoast({scene,mesh,mat,map:pasture,normal:pastureN,grit,rockTex,rockN,rand,range,loadHeadland,ripple,landcover,seaPhoto});
  const windTime=T.TSL.uniform(0),gustStrength=T.TSL.uniform(0);
  addSedges({scene,range,rand,timeNode:windTime,gustNode:gustStrength});finePanicles(scene,windTime,gustStrength);
  const hemi=new T.HemisphereLight(0xe5edf2,0x99968b,.24);scene.add(hemi);
