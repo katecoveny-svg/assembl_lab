@@ -327,10 +327,13 @@ if(cinema){
  const hint=$('#pavilion-model-hint');
  vista.setAttribute('aria-label','Waiheke Pavilion model. Drag or use the arrow keys to look around.');
  function status(){
-  filmMotion.hidden=!world&&(!automaticTried||!!pending)||settings.get('renderer')==='still';
+  const supported = settings.get('renderer') !== 'still' && !!(navigator.gpu || window.WebGL2RenderingContext);
+  const conserve = navigator.connection?.saveData || matchMedia('(prefers-reduced-data: reduce)').matches;
+  const loading = supported && (!!pending || (!automaticTried && !conserve));
+  filmMotion.hidden = !supported || (!world && loading);
   filmMotion.disabled=!!pending&&!world;
-  filmMotion.textContent=world?(touring?'Pause walk':p>.98?'Walk again':'Continue walk'):'Retry 3D';
-  hint.textContent=world?'Drag to look around':!automaticTried&&settings.get('renderer')!=='still'&&!navigator.connection?.saveData||pending?'Loading the house…':'Still view';
+  filmMotion.textContent=world?(touring?'Pause walk':p>.98?'Walk again':'Continue walk'):conserve&&!automaticTried?'Load interactive model':'Retry 3D';
+  hint.textContent=world?'Drag to look around':loading?'Loading the house…':'Still view';
  }
  syncMedium=status;
  handover=status;
