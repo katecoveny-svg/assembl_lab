@@ -95,7 +95,7 @@ function drawLinzScene(root2, c, transform, yAt, square, showParcel = false) {
     if (!data2.length) return;
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.Float32BufferAttribute(data2, 3));
-    const ob = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.9 }));
+    const ob = new THREE.LineSegments(g, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.9, fog: false, toneMapped: false }));
     ob.name = label;
     root2.add(ob);
   };
@@ -127,7 +127,7 @@ function drawLinzScene(root2, c, transform, yAt, square, showParcel = false) {
     x2.fillText(name, 256, 41, 480);
     const tex = new THREE.CanvasTexture(canvas);
     tex.colorSpace = THREE.SRGBColorSpace;
-    const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, toneMapped: false }));
+    const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, toneMapped: false, fog: false }));
     const [x, z] = m.centre, y = yAt(x, z);
     if (!Number.isFinite(y)) {
       tex.dispose();

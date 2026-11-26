@@ -76,7 +76,7 @@ export function drawLinzScene(root: THREE.Group,c: SiteContext | null | undefine
   const show=(label:string, data:number[], color:number) => {
     if(!data.length)return;
     const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(data,3));
-    const ob=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color,transparent:true,opacity:.9}));ob.name=label;root.add(ob);
+    const ob=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color,transparent:true,opacity:.9,fog:false,toneMapped:false}));ob.name=label;root.add(ob);
   };
   if(showParcel)show('Primary parcels · LINZ 50772',collected(c.parcel,.16).out,0xffc184);
   show('Existing roof outlines · LINZ 101290',collected(c.roofs,.18).out,0xffe2a2);
@@ -95,7 +95,7 @@ export function drawLinzScene(root: THREE.Group,c: SiteContext | null | undefine
     x2.fillStyle='#221b21ed';x2.beginPath();x2.roundRect((512-w)/2,14,w,52,9);x2.fill();
     x2.fillStyle='#e5f8ff';x2.textAlign='center';x2.textBaseline='middle';x2.fillText(name,256,41,480);
     const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;
-    const label=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false,toneMapped:false}));
+    const label=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false,toneMapped:false,fog:false}));
     const [x,z]=m.centre,y=yAt(x,z);if(!Number.isFinite(y)){tex.dispose();label.material.dispose();continue;}
     label.name=name;label.position.set(x,y+2.1,z);label.scale.set(13,2.03,1);root.add(label);
   }
