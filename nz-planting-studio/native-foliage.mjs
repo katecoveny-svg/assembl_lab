@@ -2,6 +2,7 @@
 // Coordinates are in metres; the renderer supplies Three.js constructors and instancing.
 const PI=Math.PI, TAU=2*PI;
 const palette={
+  hydrangea:['#233c23','#45683a','#6e8b53'],
   harakeke:['#244326','#567047','#a2a16d'], platts_black:['#332323','#693f42','#ae7266'],
   silver_spear:['#476158','#7f9a84','#bcc7a1'], rengarenga:['#306132','#5c884a','#c3cc98'],
   libertia:['#546329','#929345','#d7a75a'],
@@ -13,6 +14,7 @@ const palette={
   koromiko:['#314330','#58764d','#9cab7b'], kakabeak:['#2a482e','#5f8043','#a4a06b'], panakenake:['#395b28','#5a7835','#a3a46b'],
 };
 const clans={
+  hydrangea:'mophead',
   harakeke:'fan',platts_black:'fan',silver_spear:'fan',rengarenga:'straps',libertia:'straps',
   toetoe:'grass',red_tussock:'grass',carex_testacea:'grass',poa_cita:'grass',
   ponga:'fern',tikouka:'cabbage',nikau:'palm',pohutukawa:'canopy',manuka:'canopy',kowhai:'canopy',koromiko:'shrub',kakabeak:'shrub',panakenake:'mat',
@@ -153,6 +155,46 @@ export function makeNativeFoliage(species, three,{compact=false}={}){
    const az=j*2.39996+random(-.12,.12), p=add(crown,point(az,random(.01,.11),h*random(-.020,.023)));
    if(clan==='cabbage')blade(az,p,spread*random(.16,.55),h*random(-.086,.21),random(.014,.026),h*random(.07,.18),j%3===0);
    else frond(az,p,spread*random(.37,.61),h*random(.15,.29),clan==='palm'?20:15,spread*(clan==='palm'?.161:.151),clan);
+  }
+ }else if(clan==='mophead'){
+  // Separate woody canes and individual florets; no crossing atlas cards.
+  const tones=['#344c8c','#4b69af','#6886cf','#8397d8','#a7adde','#9c88c1'].map(color);
+  const count=compact?8:11, flecks=compact?18:27;
+  for(let i=0;i<count;i++){
+   const az=i*2.399963+random(-.18,.18), inner=i%4===0;
+   const radius=spread*(inner?random(.064,.15):random(.21,.36));
+   const crown=point(az,radius,h*(inner?random(.78,.91):random(.57,.79)));
+   const root=point(az,spread*random(.008,.056),0);
+   const control=point(az,radius*.70,crown[1]*.48);
+   const stem=t=>quad(root,control,crown,t);
+   tube(Array.from({length:5},(_,j)=>stem(j/4)),spread*.009,spread*.0024,bark,6,.32,0);
+   for(let j=0;j<(compact?3:4);j++)for(const sign of [-1,1]){
+    const t=.28+j*.165+random(-.047,.045), head=stem(t), a=az+sign*random(.62,1.58)+j*.91;
+    const len=spread*random(.105,.202)*(1.04-.13*t), rad=point(a,1,0), across=point(a+PI/2,1,0);
+    const start=add(head,mul(rad,len*.17));
+    tube([head,start],len*.035,len*.021,middle,4,.34,1);
+    const fn=v=>add(start,add(mul(rad,len*v),[0,len*(.28*Math.sin(PI*v)-.23*v),0]));
+    ribbon(fn,()=>across,v=>len*.43*Math.pow(Math.max(0,Math.sin(PI*v)),.76)*(1-.10*Math.cos(v*PI*12)),
+      10,mul(dark,random(.86,1.15)),lerp(middle,light,random(.11,.49)),v=>.26+.28*v,1,.25);
+   }
+   const radiusHead=spread*random(.066,.106);
+   for(let k=0;k<flecks;k++){
+    const az2=k*2.399963+random(-.16,.16), u=(k+.43)/flecks, lift=.12+.86*u;
+    const c=add(crown,point(az2,radiusHead*Math.sqrt(1-lift*lift),radiusHead*lift*.89));
+    const normal=unit(point(az2,Math.sqrt(1-lift*lift),lift));
+    const x=point(az2+PI/2,1,0), z=unit(cross(normal,x));
+    const scale=radiusHead*random(compact?.29:.23,compact?.40:.32);
+    const base=tones[(i+Math.floor(random(0,tones.length)))%tones.length];
+    for(let j=0;j<4;j++){
+     const a=j*PI/2+i*.38+k*.63, out=add(mul(x,Math.cos(a)),mul(z,Math.sin(a))), side=unit(cross(normal,out));
+     const get=(u,v,up)=>add(c,add(mul(out,u*scale),add(mul(side,v*scale),mul(normal,up*scale))));
+     const n=d.length/3, flex=.33+(i%4)*.035;
+     for(const [u,v,z,tint] of [[.05,0,0,.74],[.42,-.31,.075,.87],[.95,-.24,.10,1.01],[1.18,0,.19,1.16],[.95,.26,.11,1.00],[.42,.31,.068,.91],[.64,0,.21,1.07]]){
+      vertex(get(u,v,z),mul(base,tint),u,.5+v,flex,2);
+     }
+     idx.push(n,n+1,n+6,n+1,n+2,n+6,n+2,n+3,n+6,n+3,n+4,n+6,n+4,n+5,n+6,n+5,n,n+6);
+    }
+   }
   }
  }else if(clan==='shrub'||clan==='mat'){
   const mat=clan==='mat', beak=id==='kakabeak', stems=mat?9:beak?12:14;

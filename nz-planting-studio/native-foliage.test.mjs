@@ -42,3 +42,16 @@ test('native pollen, fern, trunk and leaf references keep geometry choices and c
   }
   assert.equal(makeNativeFoliage(taxon('lavender'),three),null);
 });
+
+test('mophead clusters are actual geometry and flower heads keep gentle wind weights',()=>{
+  for(const compact of [true,false]){
+    const geo=makeNativeFoliage({id:'hydrangea',matureHeight:1.15,matureSpread:1.2, flowerColor:'#4c82f2'},three,{compact});
+    const {position,aPartType,aTipness}=geo.sets;
+    const fl=aPartType.buf.reduce((all,m,i)=>{if(m===2)all.push(i);return all},[]);
+    assert(fl.length>=4000);
+    assert(fl.every(i=>aTipness.buf[i]<.5));
+    assert(position.buf.every(Number.isFinite));
+    assert(geo.index.length/3<(compact?6200:12500));
+    assert(aTipness.buf.some(x=>x===0));
+  }
+});

@@ -28,6 +28,7 @@ export async function initialise(){
  h.className='bed-toolbar';h.setAttribute('aria-label','Plant a native bed');
  h.innerHTML=`<div class="bed-top"><small class="bed-label">Aotearoa · bed study</small><div class="bed-actions">
  <button id="bed-paint" aria-pressed="false" type="button">Paint</button><button id="bed-reset" type="button" aria-label="Reset garden view">Focus</button><button id="bed-model" type="button" aria-pressed="false">Model</button><button id="bed-undo" type="button">Undo</button><button id="bed-compare" aria-expanded="false" type="button">Compare</button>
+ <a href="${base}photo.html" target="_blank" rel="noopener noreferrer" aria-label="Paint on a photo">Photo ↗</a>
  <a href="${base}" target="_blank" rel="noopener noreferrer">Full site ↗</a></div></div>
  <p id="bed-hint" aria-live="polite"></p>
  <div class="bed-dock"><div class="bed-group" aria-label="Planting mix">

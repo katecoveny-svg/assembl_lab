@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Try a planting idea on your own garden photo and estimate the plant cost.">
+<title>Plant on a photo · assembl. Garden Studio</title>
+<style>
+:root{color-scheme:light;--ink:#412d32;--plum:#654a4e;--rose:#e3d0d2;--paper:#fffdfb;--line:#dbcdd0;--muted:#67545a;--moss:#687258}
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;background:#f6efed;color:var(--ink);font-family:"Instrument Sans",system-ui,-apple-system,sans-serif;line-height:1.45}
+header{max-width:1370px;margin:auto;padding:20px clamp(16px,4vw,54px);display:flex;gap:14px;align-items:center;justify-content:space-between}
+a{color:var(--plum);text-underline-offset:.22em}header a{font-size:.9rem}.mark{font-size:1.52rem;letter-spacing:-.075em;font-weight:600;color:var(--plum)}
+main{max-width:1370px;margin:auto;padding:10px clamp(16px,4vw,54px) 40px}
+.intro{margin-bottom:20px}.intro p{margin:0;color:var(--muted)}.eyebrow{font-size:.69rem;letter-spacing:.16em;text-transform:uppercase;font-weight:750}h1{font-size:clamp(2.15rem,6vw,4rem);letter-spacing:-.075em;font-weight:580;line-height:1.05;margin:.21em 0 .18em}h2{font-size:1.05rem;margin:0}
+.workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,315px);gap:14px;align-items:start}.viewer,.estimate{background:var(--paper);border:1px solid var(--line);border-radius:17px;overflow:hidden}.viewer{padding:10px}.viewer-top{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}.viewer-top .primary{margin-right:auto}
+button{font:inherit;font-size:.86rem;font-weight:650;min-height:44px;border:1px solid var(--line);border-radius:9px;background:var(--paper);padding:8px 12px;color:var(--ink);cursor:pointer}
+button:focus-visible,input:focus-visible,canvas:focus-visible,a:focus-visible{outline:3px solid #805960;outline-offset:2px}button:disabled{opacity:.43;cursor:not-allowed}.primary,button[aria-pressed=true]{background:var(--plum);border-color:var(--plum);color:var(--paper)}
+.stage{position:relative;background:#ede4df;border-radius:11px;overflow:hidden;display:grid;place-items:center;min-height:260px}.empty{width:100%;padding:clamp(27px,8vw,75px) 18px;text-align:center;background:radial-gradient(ellipse at 55% 15%,#fffaf2 0,#e6d5d3 55%,#dcc7cc 100%)}
+.empty svg{height:70px;width:115px;margin-bottom:8px;color:var(--plum)}.empty strong{font-size:1.17rem;display:block}.empty p{font-size:.83rem;margin:5px auto 14px;color:var(--muted);max-width:31ch}
+canvas{display:block;width:100%;max-height:65vh;object-fit:contain;touch-action:none;cursor:crosshair;background:#30252a}canvas:focus-visible{outline-offset:-4px}
+#status{color:var(--muted);font-size:.81rem;margin:9px 3px 3px;min-height:1.25em}
+.plants{display:flex;gap:6px;flex-wrap:wrap;margin:9px 0}.plant span{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;background:var(--plant);outline:1px solid #a19183}
+.scale{display:flex;align-items:center;gap:8px;padding:0 3px 7px;color:var(--muted);font-size:.8rem}.scale input{accent-color:var(--plum);max-width:135px}.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+estimate{padding:15px}.amount{font-size:clamp(1.85rem,3vw,2.6rem);font-weight:590;letter-spacing:-.065em;line-height:1.1;margin:6px 0}.note{font-size:.78rem;color:var(--muted);margin:6px 0 13px}.estimate hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+.rate{display:grid;grid-template-columns:minmax(0,1fr) 40px 75px;gap:6px;align-items:center;margin:7px 0;font-size:.83rem}.count{text-align:center;font-variant-numeric:tabular-nums}.rate input{width:100%;min-height:34px;border:1px solid var(--line);border-radius:7px;padding:4px 6px;font:inherit;color:var(--ink);background:#fffbfa}.rate.head{color:var(--muted);font-size:.69rem}.rate.head span:last-child{text-align:right}
+#export{width:100%}.caption{margin:13px 0 0;color:var(--muted);font-size:.76rem}footer{max-width:1370px;margin:auto;padding:0 clamp(16px,4vw,54px) 20px;color:var(--muted);font-size:.77rem}
+@media(max-width:790px){.workspace{grid-template-columns:1fr}.estimate{padding:14px}.viewer-top .primary{margin-right:0}.viewer-top{justify-content:flex-start}.stage{min-height:170px}canvas{max-height:58vh}}
+@media(max-width:400px){header{padding-top:12px}.viewer-top button{padding:7px 9px}.plant{min-height:44px;padding:7px 9px}.plants{gap:4px}}
+</style>
+</head>
+<body>
+<header><span class="mark">assembl.</span><a href="./">Back to 3D Garden Studio</a></header>
+<main>
+<div class="intro"><p class="eyebrow">Aotearoa Garden Studio · Photo sketch</p><h1>Plant on a photo.</h1><p>Place plants in a garden photo and see what the planting could cost.</p></div>
+<div class="workspace">
+<section class="viewer" aria-label="Photo editor">
+<div class="viewer-top">
+<input id="file" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+<button id="file-button" class="primary" type="button">Choose photo</button>
+<button id="undo" type="button" disabled>Undo</button>
+<button id="before" type="button" aria-pressed="false" disabled>Show original</button>
+<button id="tool" type="button" aria-pressed="false" disabled>Erase</button>
+</div>
+<div class="stage">
+<div class="empty" id="empty"><svg viewBox="0 0 120 76" fill="none" aria-hidden="true"><rect x="2" y="2" width="116" height="71" rx="10" stroke="currentColor" stroke-width="2"/><path d="M8 59 31 36 47 50 67 31 111 65M75 62c-1-11 2-20 11-29M76 58c-1-10-7-15-14-15 0 7 4 14 14 15ZM79 52c2-9 8-12 15-11-2 7-7 12-15 11Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="95" cy="20" r="7" stroke="currentColor" stroke-width="1.7"/></svg><strong>Start with a photo of your garden</strong><p>Choose a JPG, PNG or WebP. The photo stays in this tab and is not uploaded.</p><button class="primary" id="start" type="button">Open photo</button></div>
+<canvas id="canvas" width="800" height="450" tabindex="0" aria-label="Garden photo planting surface. Use arrow keys to move and Enter to place or erase." aria-describedby="status" hidden></canvas>
+</div>
+<div id="photo-controls" hidden>
+<div class="plants" id="plants" role="group" aria-label="Choose a plant"></div>
+<div class="scale"><label for="size">Display size</label><input type="range" id="size" min="50" max="165" value="100" step="5"><output id="size-out" for="size">100%</output></div>
+</div>
+<p id="status" role="status" aria-live="polite">Choose a photo to start.</p>
+</section>
+<aside class="estimate" aria-label="Plant cost estimate">
+<p class="eyebrow">Live estimate</p><h2>Plant materials</h2>
+<div id="total" class="amount" aria-live="polite">$0.00</div>
+<p class="note"><span id="quantity">0 plants</span> · NZD · Illustrative rates you can edit</p>
+<div class="rate head" aria-hidden="true"><span>Plant</span><span>Qty</span><span>NZD each</span></div>
+<div id="rates"></div>
+<hr>
+<button type="button" id="export" disabled>Download sketch PNG</button>
+<p class="caption">Count × unit price only. Excludes planting labour, freight, and site works. Photo positions and display sizes are visual only, not measured from the site.</p>
+</aside>
+</div>
+</main>
+<footer>Browser-only sketch. Download it before closing the tab. For a measured parcel, use the separate <a href="./">LINZ address workflow</a>.</footer>
+<script>
+'use strict';
+const el=id=>document.getElementById(id), money=new Intl.NumberFormat('en-NZ',{style:'currency',currency:'NZD'});
+const species=[
+ {id:'harakeke',name:'Harakeke',rate:26,colour:'#577349'},
+ {id:'toetoe',name:'Toetoe',rate:32,colour:'#a99761'},
+ {id:'tussock',name:'Red tussock',rate:22,colour:'#a77e4c'},
+ {id:'nikau',name:'Nīkau',rate:69,colour:'#546d3a'},
+ {id:'hydrangea',name:'Hydrangea',rate:33,colour:'#9e91b6'}
+];
+const cash=cents=>money.format(cents/100), state={img:null,base:null,selected:species[0],plants:[],history:[],erase:false,before:false,cross:null,pointer:null,ticket:0};
+const c=el('canvas'), display=c.getContext('2d'), spr=new Map();
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function rand(seed){return()=>((seed=Math.imul(1664525,seed)+1013904223|0)>>>0)/4294967296;}
+function sprite(kind,variant){
+ const key=kind+':'+variant;if(spr.has(key))return spr.get(key);
+ const out=document.createElement('canvas');out.width=260;out.height=250;
+ const g=out.getContext('2d'),r=rand(7541+variant*109);g.translate(130,229);
+ const alpha=g.createRadialGradient(0,0,1,0,0,68);alpha.addColorStop(0,'#20130d55');alpha.addColorStop(1,'#20130d00');g.save();g.scale(1,.17);g.fillStyle=alpha;g.fillRect(-68,-68,136,136);g.restore();
+ const stroke=(x,y,z,colour,w)=>{g.strokeStyle=colour;g.lineWidth=w;g.lineCap='round';g.beginPath();g.moveTo(x,y);g.quadraticCurveTo(x*.18,-Math.abs(z)*.58,z,-Math.abs(y));g.stroke();};
+ const blade=(x,cy,fx,fy,w,a,b)=>{
+   const grad=g.createLinearGradient(0,0,fx,fy);grad.addColorStop(0,a);grad.addColorStop(.69,b);grad.addColorStop(1,a);
+   g.fillStyle=grad;g.beginPath();g.moveTo(x-w*.25,0);g.quadraticCurveTo(cy-w,fy*.75,fx,fy);g.quadraticCurveTo(cy+w,fy*.62,x+w*.2,0);g.fill();g.strokeStyle='#e3d0994a';g.lineWidth=.65;g.beginPath();g.moveTo(x,-1);g.quadraticCurveTo(cy,fy*.72,fx,fy);g.stroke();
+ };
+ if(kind==='harakeke'||kind==='toetoe'||kind==='tussock'){
+  const count=kind==='tussock'?57:kind==='toetoe'?36:23;
+  for(let i=0;i<count;i++){const x=(r()-.5)*21,fx=(r()-.5)*(kind==='harakeke'?219:194),h=59+r()*104,width=kind==='harakeke'?5+r()*8:kind==='toetoe'?1.6+r()*3:1+r()*2.6;
+   blade(x,fx*.24,-fx,-h+Math.abs(fx)*.26,width,kind==='tussock'?'#60503a':'#273b29',kind==='tussock'?['#ad7b48','#d1a46d','#907349'][i%3]:['#788957','#afab72','#446442'][i%3]);
+  }
+  if(kind==='toetoe')for(let i=0;i<6;i++){const x=(r()-.5)*95,top=-167-r()*50;g.strokeStyle='#877649';g.lineWidth=1.5;g.beginPath();g.moveTo(i-3,0);g.quadraticCurveTo(x*.5,top*.4,x,top);g.stroke();
+   for(let j=0;j<32;j++){const dy=r()*44,dx=r()*19, v=.45+(1-dy/56)*.45;g.strokeStyle='rgba(214,195,146,'+v+')';g.lineWidth=1;g.beginPath();g.moveTo(x+dy*.20,top+dy);g.lineTo(x+(j%2?dx:-dx)+dy*.20,top+dy-4-r()*9);g.stroke();}
+  }
+ }else if(kind==='nikau'){
+  const trunk=g.createLinearGradient(-11,0,11,0);trunk.addColorStop(0,'#494234');trunk.addColorStop(.57,'#9d8c72');trunk.addColorStop(1,'#584f3d');g.fillStyle=trunk;g.beginPath();g.moveTo(-9,0);g.quadraticCurveTo(-3,-65,-6,-127);g.lineTo(6,-127);g.quadraticCurveTo(5,-65,9,0);g.fill();
+  for(let j=6;j<115;j+=8){g.strokeStyle='#443d345c';g.beginPath();g.ellipse(0,-j,7,1.9,0,0,Math.PI);g.stroke();}
+  g.fillStyle='#677f47';g.beginPath();g.ellipse(0,-132,11,24,0,0,6.29);g.fill();
+  for(let i=0;i<12;i++){const x=(i/11-.5)*208,top=Math.abs(x)*.39-211+r()*20;g.strokeStyle='#7d9354';g.lineWidth=2;g.beginPath();g.moveTo(0,-145);g.quadraticCurveTo(x*.65,top-17,x,top);g.stroke();
+   for(let j=0;j<19;j++){const t=j/19,cx=x*(1.3*t-.3*t*t),cy=(1-t)*(1-t)*-145+2*(1-t)*t*(top-17)+t*t*top, l=(18+12*r())*Math.sin(Math.PI*(.11+t*.83));g.strokeStyle=['#455f31','#728949','#93a260'][j%3];g.lineWidth=2.1;g.beginPath();g.moveTo(cx,cy);g.quadraticCurveTo(cx+x*.09,cy+l*.45,cx+x*.16,cy+l);g.stroke();}
+  }
+ }else{
+  const blooms=[];
+  for(let i=0;i<24;i++){
+   const x=(r()-.5)*180,y=-38-r()*117+Math.abs(x)*.26;
+   g.strokeStyle='#41513a';g.lineWidth=1.15;g.beginPath();g.moveTo((r()-.5)*23,0);g.quadraticCurveTo(x*.38,y*.60,x,y);g.stroke();
+   for(let j=0;j<5;j++){const t=.44+r()*.54,cx=x*t+(r()-.5)*21,cy=y*t+r()*8;
+    g.save();g.translate(cx,cy);g.rotate((r()-.5)*5);g.fillStyle=['#304934','#4c6443','#678557'][j%3];g.beginPath();g.ellipse(0,0,5+r()*4,9+r()*9,0,0,6.29);g.fill();g.strokeStyle='#b1b98555';g.lineWidth=.5;g.beginPath();g.moveTo(0,-8);g.lineTo(0,8);g.stroke();g.restore();
+   }
+   if(i%2===0)blooms.push([x,y,10+r()*9]);
+  }
+  blooms.forEach(([x,y,b])=>{for(let j=0;j<49;j++){const a=r()*Math.PI*2,d=Math.sqrt(r())*b,h=1.6+r()*2.6;g.fillStyle=['#887ba5','#b6a4cc','#dac7df','#a99dc1','#e0d5dc','#765a84'][j%6];g.beginPath();g.ellipse(x+Math.cos(a)*d,y+Math.sin(a)*d*.77,h,h*.84,0,0,6.29);g.fill();}});
+ }
+ spr.set(key,out);return out;
+}
+function rect(){
+ const b=c.getBoundingClientRect(),ratio=Math.min(b.width/c.width,b.height/c.height),width=c.width*ratio,height=c.height*ratio;
+ return {x:b.left+(b.width-width)*.5,y:b.top+(b.height-height)*.5,width,height};
+}
+function point(evt){
+ const b=rect(),x=(evt.clientX-b.x)/b.width,y=(evt.clientY-b.y)/b.height;
+ return x>=0&&x<=1&&y>=0&&y<=1?{x,y}:null;
+}
+function render(g=display,cross=true,forcePlanting=false){
+ if(!state.base)return;
+ const w=c.width,h=c.height;g.clearRect(0,0,w,h);g.drawImage(state.base,0,0);
+ if(forcePlanting||!state.before){
+  [...state.plants].sort((a,b)=>a.y-b.y).forEach(p=>{
+    const x=p.x*w,y=p.y*h,l=p.scale*Math.min(w,h)*.22,im=sprite(p.id,p.variant);
+    g.drawImage(im,x-l*.5,y-l*.92,l,l*.962);
+  });
+  if(state.cross&&cross&&document.activeElement===c){const {x,y}=state.cross;g.save();g.strokeStyle='#fffdfb';g.lineWidth=Math.max(2,w/480);g.shadowColor='#241b19';g.shadowBlur=5;g.beginPath();g.arc(x*w,y*h,Math.max(6,w/85),0,6.29);g.stroke();g.restore();}
+ }
+}
+const rates=new Map(species.map(p=>[p.id,Math.round(p.rate*100)])),counts=new Map();
+const priceInputs=new Map(), countNodes=new Map();
+for(const p of species){
+ const t=document.createElement('button');t.type='button';t.className='plant';t.style.setProperty('--plant',p.colour);t.innerHTML='<span aria-hidden="true"></span>';t.append(p.name);t.setAttribute('aria-pressed',String(p===state.selected));
+ t.addEventListener('click',()=>{state.selected=p;state.erase=false;el('tool').setAttribute('aria-pressed','false');Array.from(el('plants').children).forEach(x=>x.setAttribute('aria-pressed',String(x===t)));el('status').textContent=p.name+' selected. Tap to place or drag to plant a group.';});el('plants').append(t);
+ const line=document.createElement('label');line.className='rate';line.append(p.name);
+ const count=document.createElement('span');count.className='count';count.textContent='0';countNodes.set(p.id,count);line.append(count);
+ const price=document.createElement('input');price.type='number';price.inputMode='decimal';price.min='0';price.max='9999';price.step='0.01';price.value=p.rate.toFixed(2);price.setAttribute('aria-label',p.name+' price per plant in NZD');priceInputs.set(p.id,price);
+ price.addEventListener('input',()=>{rates.set(p.id,Math.round(clamp(Number(price.value)||0,0,9999)*100));estimate();});
+ price.addEventListener('change',()=>{price.value=(rates.get(p.id)/100).toFixed(2);});line.append(price);el('rates').append(line);
+}
+function estimate(){
+ counts.clear();for(const p of state.plants)counts.set(p.id,(counts.get(p.id)||0)+1);
+ let sum=0;for(const p of species){const n=counts.get(p.id)||0;countNodes.get(p.id).textContent=String(n);sum+=n*rates.get(p.id);}
+ el('total').textContent=cash(sum);el('quantity').textContent=state.plants.length+(state.plants.length===1?' plant':' plants');el('undo').disabled=!state.history.length;return sum;
+}
+function snapshot(){state.history.push(state.plants.slice());if(state.history.length>32)state.history.shift();}
+function apply(p){
+ if(state.erase){const old=state.plants.reduce((a,z,i)=>Math.hypot(z.x-p.x,z.y-p.y)<a.d?{i,d:Math.hypot(z.x-p.x,z.y-p.y)}:a,{i:-1,d:.07});if(old.i>=0)state.plants.splice(old.i,1);else return false;}
+ else {if(state.plants.length>=300){el('status').textContent='This sketch allows up to 300 plants.';return false;}const variant=state.plants.length%8,scale=Number(el('size').value)/100;state.plants.push({...p,id:state.selected.id,variant,scale});}
+ return true;
+}
+function strokeAt(p){if(!p||!state.pointer)return;const q=state.pointer.last;if(q&&Math.hypot(q.x-p.x,q.y-p.y)<.058)return;
+  if(!state.pointer.changed){snapshot();if(!apply(p)){state.history.pop();return;}state.pointer.changed=true;}else if(!apply(p))return;
+  state.pointer.last=p;render();estimate();
+}
+function activatePreview(on){state.before=on;const b=el('before');b.setAttribute('aria-pressed',String(on));b.textContent=on?'Show planting':'Show original';render();}
+el('before').addEventListener('click',()=>activatePreview(!state.before));
+el('tool').addEventListener('click',()=>{state.erase=!state.erase;el('tool').setAttribute('aria-pressed',String(state.erase));el('status').textContent=state.erase?'Tap or drag across a plant’s base to remove it.':'Tap or drag in the photo to plant.';});
+el('undo').addEventListener('click',()=>{if(!state.history.length)return;state.plants=state.history.pop();render();estimate();el('status').textContent='Last stroke undone.';});
+el('size').addEventListener('input',()=>{el('size-out').value=el('size').value+'%';});
+c.addEventListener('pointerdown',e=>{if(!e.isPrimary||(e.pointerType==='mouse'&&e.button!==0)||!state.img)return;const p=point(e);if(!p)return;e.preventDefault();if(state.before)activatePreview(false);
+ state.cross=null;state.pointer={id:e.pointerId,last:null,changed:false};c.setPointerCapture(e.pointerId);strokeAt(p);
+});
+c.addEventListener('pointermove',e=>{if(state.pointer?.id===e.pointerId)strokeAt(point(e));});
+for(const k of ['pointerup','pointercancel','lostpointercapture'])c.addEventListener(k,e=>{if(state.pointer?.id===e.pointerId)state.pointer=null;});
+c.addEventListener('focus',()=>{state.cross??={x:.5,y:.63};render();});
+c.addEventListener('blur',()=>{state.cross=null;render();});
+c.addEventListener('keydown',e=>{
+ const delta={ArrowLeft:[-.025,0],ArrowRight:[.025,0],ArrowUp:[0,-.025],ArrowDown:[0,.025]}[e.key];
+ if(!delta&&e.key!=='Enter'&&e.key!==' ' )return;e.preventDefault();
+ if(state.before)activatePreview(false);
+ state.cross??={x:.5,y:.63};
+ if(delta){state.cross.x=clamp(state.cross.x+delta[0],.02,.98);state.cross.y=clamp(state.cross.y+delta[1],.02,.98);}
+ else{snapshot();if(!apply(state.cross))state.history.pop();estimate();}
+ render();
+});
+el('start').addEventListener('click',()=>el('file').click());
+el('file-button').addEventListener('click',()=>el('file').click());
+el('file').addEventListener('change',async()=>{
+ const file=el('file').files[0];el('file').value='';if(!file)return;
+ if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>20*1024*1024){el('status').textContent='Choose a JPG, PNG or WebP under 20 MB.';return;}
+ if(state.plants.length&&!window.confirm('Replace the photo and clear its current planting? Download the sketch first if you want to keep it.'))return;
+ const ticket=++state.ticket,url=URL.createObjectURL(file);el('status').textContent='Opening the photo on this device…';
+ try{
+  const img=new Image();img.src=url;await img.decode();if(ticket!==state.ticket)return;
+  const w=img.naturalWidth,h=img.naturalHeight;if(!w||!h||w*h>60000000)throw Error('Invalid size');
+  const f=Math.min(1,2048/Math.max(w,h));c.width=Math.max(1,Math.round(w*f));c.height=Math.max(1,Math.round(h*f));
+  state.base=document.createElement('canvas');state.base.width=c.width;state.base.height=c.height;state.base.getContext('2d').drawImage(img,0,0,c.width,c.height);
+  state.img=true;state.plants=[];state.history=[];state.cross=null;state.erase=false;el('tool').setAttribute('aria-pressed','false');activatePreview(false);estimate();
+  el('empty').hidden=true;c.hidden=false;el('photo-controls').hidden=false;
+  for(const id of ['before','tool','export'])el(id).disabled=false;
+  el('file-button').textContent='Replace photo';el('status').textContent='Tap to place or drag to plant a group.';
+ }catch{if(ticket===state.ticket)el('status').textContent='The photo could not be opened. Try a smaller JPG, PNG or WebP.';}
+ finally{URL.revokeObjectURL(url);}
+});
+el('export').addEventListener('click',()=>{
+ if(!state.base)return;const out=document.createElement('canvas');out.width=c.width;out.height=c.height+Math.max(50,Math.round(c.width*.085));
+ const g=out.getContext('2d');render(g,false,true);g.fillStyle='#fffdfb';g.fillRect(0,c.height,out.width,out.height-c.height);
+ g.fillStyle='#654a4e';g.font='600 '+Math.min(25,Math.max(10,c.width*.022))+'px system-ui';g.fillText('assembl.   •   '+state.plants.length+' plants   •   '+cash(estimate())+' NZD estimate',Math.max(3,c.width*.025),c.height+(out.height-c.height)*.49,out.width*.95);
+ g.font='12px system-ui';g.fillText('Visual sketch only. Positions and sizes are not measured.',Math.max(3,c.width*.025),c.height+(out.height-c.height)*.81,out.width*.95);
+ out.toBlob(blob=>{if(!blob){el('status').textContent='Couldn’t make the PNG on this device.';return;}const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download='assembl-garden-photo-sketch.png';a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);},'image/png');
+});
+estimate();
+</script>
+</body>
+</html>
