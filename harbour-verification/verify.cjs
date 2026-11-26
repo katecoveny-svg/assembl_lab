@@ -1,0 +1,95 @@
+const { chromium } = require(process.env.PLAYWRIGHT_PATH || 'playwright');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const base = process.env.SITE_URL || 'http://127.0.0.1:43918/';
+const evidence = process.env.EVIDENCE_DIR || 'output/playwright';
+fs.mkdirSync(evidence,{recursive:true});
+(async()=>{
+  const browser = await chromium.launch({channel:'chrome', headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+  try {
+    const page=await browser.newPage({viewport:{width:1360,height:1000}, timezoneId:'America/New_York',reducedMotion:'reduce'});
+    const errors=[],vendorRequests=[];
+    page.on('pageerror', error=>errors.push(error.message));
+    page.on('console', message=>{if(message.type()==='error' && /Shader Error/.test(message.text()))errors.push(message.text());});
+    page.on('request', req=>{if(req.url().includes('three.module'))vendorRequests.push(req.url());});
+    // Only the clock is controlled. Browser fetch, parsing, layout and GPU APIs stay real.
+    await page.clock.install({time:new Date('2026-11-23T23:00Z')});
+    await page.goto(base);
+    await page.waitForSelector('#rows tr');
+    assert.equal(await page.locator('#day').inputValue(),'2026-11-24');
+    assert.match(await page.locator('.high').innerText(),/19:50/);
+    assert.match(await page.locator('.low').innerText(),/13:32/);
+    await page.waitForSelector('canvas');
+    await page.screenshot({path:evidence+'/tides-desktop.png',fullPage:true});
+    async function date(day){
+      await page.locator('#day').fill(day);
+      await page.locator('#day').dispatchEvent('change');
+      assert.equal(await page.locator('#day').inputValue(),day);
+    }
+    await date('2026-01-01');
+    assert.equal(await page.locator('#rows tr').count(),3);
+    await date('2026-12-31');
+    await page.locator('#next').click();
+    assert.match(await page.locator('#rows tr').first().innerText(),/02:42 NZDT/);
+    await page.locator('#prev').click();
+    assert.equal(await page.locator('#day').inputValue(),'2026-12-31');
+    await date('2026-09-27');
+    const spring=await page.locator('#rows').innerText();
+    assert.match(spring,/01:09 NZST/); assert.match(spring,/08:32 NZDT/);
+    await date('2025-04-06');
+    assert.match(await page.locator('#rows').innerText(),/02:33 NZDT/);
+    await date('2029-04-01');
+    assert.match(await page.locator('#rows').innerText(),/02:27 NZST/);
+    await page.clock.setSystemTime(new Date('2029-03-31T13:35Z'));
+    await page.reload();await page.waitForSelector('#rows tr');
+    assert.match(await page.locator('.low').innerText(),/02:27/);
+    await page.clock.setSystemTime(new Date('2029-03-31T14:30Z'));
+    await page.reload(); await page.waitForSelector('#rows tr');
+    assert.match(await page.locator('.low').innerText(),/14:56/);
+    await page.clock.setSystemTime(new Date('2029-12-31T09:36:00Z'));
+    await page.goto(base);await page.waitForSelector('#rows tr');
+    assert.match(await page.locator('#nextcards').innerText(),/22:37/);
+    assert.match(await page.locator('#nextcards').innerText(),/No further published event/);
+    await page.clock.setSystemTime(new Date('2029-12-31T09:37:00Z'));
+    await page.goto(base);await page.waitForSelector('#rows tr');
+    assert.match(await page.locator('#nextcards').innerText(),/No upcoming predictions/);
+    assert.ok(await page.locator('#next').isDisabled());
+    assert.ok(await page.locator('#today').isEnabled());
+    await page.clock.setSystemTime(new Date('2030-01-01T01:00Z'));
+    await page.goto(base);await page.waitForSelector('#rows tr');
+    assert.ok(await page.locator('#today').isDisabled());
+    await date('2025-01-01'); assert.ok(await page.locator('#prev').isDisabled());
+    await page.clock.setSystemTime(new Date('2026-11-23T23:00Z'));
+    await page.goto(base);await page.waitForSelector('#rows tr');
+    await page.waitForSelector('canvas');
+    await page.locator('#eventChoice').selectOption('1');
+    await page.waitForFunction(()=>document.querySelector('#sceneNote').textContent.includes('3.2 m'));
+    await page.locator('#canvasHolder').screenshot({path:evidence+'/harbour-high.png'});
+    await page.locator('#eventChoice').selectOption('0');
+    await page.locator('#canvasHolder').screenshot({path:evidence+'/harbour-low.png'});
+    assert.notDeepEqual(fs.readFileSync(evidence+'/harbour-high.png'),fs.readFileSync(evidence+'/harbour-low.png'));
+    await page.setViewportSize({width:390,height:844});await page.locator('#toggle').click();
+    await page.evaluate(()=>window.scrollTo(0,0));
+    await page.screenshot({path:evidence+'/tides-phone.png',fullPage:true});
+    for (const width of [320,390,768,1360]) {
+      await page.setViewportSize({width,height:844});
+      assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'overflow at '+width);
+    }
+    const archive=await browser.newPage({javaScriptEnabled:false,viewport:{width:390,height:844}});
+    await archive.goto(base);await archive.getByRole('link',{name:'Auckland tide tables',exact:true}).click();
+    await archive.locator('a[href="2026-11.html"]').click();
+    assert.match(await archive.locator('#d24').innerText(),/07:33 NZDT/);
+    assert.match(await archive.locator('#d24').innerText(),/3.2 m/);
+    const fallback=await browser.newPage({viewport:{width:390,height:844}});
+    await fallback.route('**/vendor/three.module.min.js',r=>r.abort());
+    await fallback.goto(base);await fallback.waitForSelector('#rows tr');
+    await fallback.waitForFunction(()=>document.querySelector('#sceneNote').textContent.includes('unavailable'));
+    assert.ok(await fallback.locator('#rows tr').count()>=3);
+    const network=await browser.newPage();
+    await network.route('**/data/events.json',r=>r.abort());
+    await network.goto(base);await network.getByRole('link',{name:'Open the monthly tide tables'}).click();
+    assert.ok(await network.locator('a[href="2026-11.html"]').isVisible());
+    assert.deepEqual(errors,[]);
+    console.log('Passed desktop, phone widths, automatic Three.js harbour, both tide heights, reduced-motion setting, Auckland dates from overseas, 3-event day, year boundary, DST folds, expiry and no-JS archive.');
+  } finally {await browser.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});
