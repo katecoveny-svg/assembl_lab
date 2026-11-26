@@ -3,7 +3,15 @@ const surfaces=[...passage.querySelectorAll('.surface')];
 const media=matchMedia('(prefers-reduced-motion:reduce)');
 const harbour='https://assembl-waitemata-tides.pages.dev/';
 const toggle=document.querySelector('#still-plate'),link=document.querySelector('#open-plate');
-let paused=media.matches,handle=0,active=-1,frame,shot,timeout;
+let paused=media.matches,handle=0,active=-1,frame,waihekeApi=null,timeout;
+
+function teardown(){
+ clearTimeout(timeout);
+ frame?.remove();frame=null;
+ if(waihekeApi){try{waihekeApi.dispose()}catch(_){} waihekeApi=null;}
+ surfaces.forEach(x=>x.classList.remove('ready'));
+}
+
 function paint(){
  handle=0;
  const rect=passage.getBoundingClientRect(),extent=rect.height-passage.firstElementChild.offsetHeight;
@@ -11,26 +19,28 @@ function paint(){
  const blend=media.matches?Number(progress>=.5):Math.max(0,Math.min(1,(progress-.29)/.36));
  passage.style.setProperty('--wipe',((1-blend*blend*(3-2*blend))*100)+'%');
  const index=progress<.49?0:1;
- document.querySelector('#plate-kicker').textContent=index?'16A plan study / 16D':'Waitematā Harbour';
- document.querySelector('#plate-title').textContent=index?'Across the roofline.':surfaces[0].classList.contains('ready')?'Drag the boat.':'At water level.';
- link.textContent=index?'Explore roof solar ↗':'Explore the tide ↗';link.href=index?'/roof-solar/':harbour;
+ document.querySelector('#plate-kicker').textContent=index?'Architectural film / Waiheke':'Waitematā Harbour';
+ document.querySelector('#plate-title').textContent=index?'Catch the light.':surfaces[0].classList.contains('ready')?'Drag the boat.':'At water level.';
+ link.textContent=index?'Open Planting & Architecture Studio ↗':'Explore the tide ↗';
+ link.href=index?'/nz-planting-studio/':harbour;
  const visible=rect.top<innerHeight*.93&&rect.bottom>0&&!document.hidden;
  const quietHarbour=media.matches&&index===0;
  const next=visible&&(!paused||quietHarbour)&&!navigator.connection?.saveData?index:-1;
  if(active!==next){
-   clearTimeout(timeout);
-   frame?.remove();frame=null;surfaces.forEach(x=>x.classList.remove('ready'));active=next;shot=null;
-   if(next>=0){
+   teardown();active=next;
+   if(next===0){
     const item=document.createElement('iframe');frame=item;
-    item.inert=!!next;item.tabIndex=next?-1:0;item.setAttribute('aria-hidden',String(!!next));item.title=next?'Modelled solar roof':'Waitematā Harbour. Drag the boat, or focus it and use the arrow keys.';
-    item.src=next?'/roof-solar/?view=plate':harbour+'?view=harbour&plate=1';
-    surfaces[next].append(item);
-    timeout=setTimeout(()=>{if(frame===item&&!surfaces[next].classList.contains('ready')){item.remove();frame=null}},35000);
+    item.tabIndex=0;item.title='Waitematā Harbour. Drag the boat, or focus it and use the arrow keys.';
+    item.src=harbour+'?view=harbour&plate=1';
+    surfaces[0].append(item);
+    timeout=setTimeout(()=>{if(frame===item&&!surfaces[0].classList.contains('ready')){item.remove();frame=null}},35000);
+   }else if(next===1){
+    import('/waiheke-hero/waiheke-hero.js').then(({mountWaihekeHero})=>{
+     if(active!==1)return;
+     waihekeApi=mountWaihekeHero(surfaces[1]);
+     if(waihekeApi)surfaces[1].classList.add('ready');
+    }).catch(err=>console.warn('Waiheke 3D hero load:',err));
    }
- }
- if(active===1&&frame&&surfaces[1].classList.contains('ready')){
-  const view=progress>.83?'home':'detail';
-  if(view!==shot){frame.contentWindow.postMessage({type:'assembl:roof-shot',view},location.origin);shot=view}
  }
 }
 function request(){if(!handle)handle=requestAnimationFrame(paint)}
