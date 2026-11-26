@@ -3,6 +3,7 @@
 import * as T from 'three';
 import { cameraPose, flightPose } from './camera-flight.mjs';
 import { createFerryBuilding } from './ferry-building.js';
+import { createBusSightlines, busCameraPose } from './bus-sightline.mjs';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { Sky } from 'three/addons/objects/Sky.js';
@@ -156,15 +157,24 @@ export async function createWorld(canvas, { phone = false, capture = false, time
   };
   // Auckland Council open orthophoto is a visual overlay only, not a height/shore/transit source.
   const aerial = { value: null }, hasAerial = { value: 0 };
-  new T.TextureLoader().load(DATA + 'waterfront-aerial.webp', (t) => {
-    t.colorSpace = T.SRGBColorSpace; t.anisotropy = Math.min(phone ? 4 : 8, renderer.capabilities.getMaxAnisotropy());
-    aerial.value = t; hasAerial.value = 1;
-  }, undefined, () => {});
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  let aerialDetailRequested = false;
+  let aerialDetailReady = false;
+  function loadAerial(file, isDetail = false) {
+    new T.TextureLoader().load(DATA + file, (t) => {
+      if (aerialDetailReady) { t.dispose(); return; }
+      t.colorSpace = T.SRGBColorSpace; t.anisotropy = Math.min(phone ? 4 : 12, renderer.capabilities.getMaxAnisotropy());
+      const former = aerial.value;
+      aerial.value = t; hasAerial.value = 1; aerialDetailReady = isDetail;
+      former?.dispose();
+    }, undefined, () => {});
+  }
+  loadAerial('waterfront-aerial.webp');
   const ground = new T.Mesh(gGeo, gMat); ground.receiveShadow = true; ground.name = 'ground_LINZ_heights_OSM_landcover'; scene.add(ground);
 
   // ---------------------------------------------------------------- the sea
-  const wn = waterNormals(128); wn.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-  const wMat = new T.MeshStandardMaterial({ color: '#244848', roughness: 0.23, metalness: 0.0, normalMap: wn, normalScale: new T.Vector2(0.19, 0.19), envMapIntensity: 1.0 });
+  const wn = waterNormals(phone ? 128 : 192); wn.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  const wMat = new T.MeshStandardMaterial({ color: '#305958', roughness: 0.25, metalness: 0.0, normalMap: wn, normalScale: new T.Vector2(0.19, 0.19), envMapIntensity: 1.0 });
   wMat.userData.t = { value: 0 };
   // One quarter-resolution, throttled planar sampling pass; no extra pass on phones.
   const reflection = (phone || !renderer.extensions.has('EXT_color_buffer_float')) ? null : new Reflector(new T.PlaneGeometry(1, 1), { textureWidth: 480, textureHeight: 270, multisample: 0, clipBias: 0.002 });
@@ -175,32 +185,57 @@ export async function createWorld(canvas, { phone = false, capture = false, time
 
   wMat.onBeforeCompile = (s) => {
     s.uniforms.uT = wMat.userData.t;
+    s.uniforms.uShore = { value: tex };
     if (reflection) {
       s.uniforms.uMirror = { value: reflection.getRenderTarget().texture };
       s.uniforms.uReflect = reflected; s.uniforms.uMirrorMatrix = { value: reflectionMatrix };
     }
     s.vertexShader = s.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;');
-    s.fragmentShader = s.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nuniform float uT;' + (reflection ? '\nuniform sampler2D uMirror; uniform float uReflect; uniform mat4 uMirrorMatrix;' : ''))
+    s.fragmentShader = s.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nuniform float uT;\nuniform sampler2D uShore;' + (reflection ? '\nuniform sampler2D uMirror; uniform float uReflect; uniform mat4 uMirrorMatrix;' : ''))
       .replace('#include <normal_fragment_maps>', `
         vec2 drift = vec2(sin(vWPos.z * 0.019 + vWPos.x * 0.004), cos(vWPos.x * 0.017 - vWPos.z * 0.003));
         vec2 wa = vWPos.xz / 32.7 + drift * 0.12 + vec2(uT * 0.013, uT * 0.003),
           wb = mat2(0.97, -0.24, 0.24, 0.97) * vWPos.xz / 11.6 + drift.yx * 0.17 + vec2(-uT * 0.012, uT * 0.016),
           wc = mat2(0.56, 0.83, -0.83, 0.56) * vWPos.xz / 181.1 + vec2(uT*0.002, -uT*0.003);
         vec3 n1 = texture2D(normalMap, wa).xyz * 2.0 - 1.0, n2 = texture2D(normalMap, wb).xyz * 2.0 - 1.0, n3 = texture2D(normalMap, wc).xyz * 2.0 - 1.0;
-        vec3 mapN = normalize(vec3((n1.xy + n2.xy * 0.6 + n3.xy * 0.8) * normalScale, 1.0));
-        float fadeN = 1.0 - smoothstep(720.0, 3500.0, length(vViewPosition));
+        // The broad, directional swell reads separately from wind-driven capillary detail.
+        vec2 p = vWPos.xz;
+        const vec2 ds = vec2(.88,.475), dc = vec2(-.31,.951), dr = vec2(.49,.872);
+        float shoreView = 1.0-smoothstep(330.0, 1900.0, length(vViewPosition));
+        float breakup = .75+.25*sin(dot(p,vec2(.0038,.0075))-uT*.071);
+        vec2 swell = ds * cos(dot(ds,p)*.16-uT*.89)*.028
+                   + dc * cos(dot(dc,p)*.31-uT*1.31)*.018
+                   + dr * cos(dot(dr,p)*.61-uT*1.94)*.011*breakup;
+        vec3 mapN = normalize(vec3((n1.xy*.72 + n2.xy*(.34+.23*shoreView) + n3.xy*.52) * normalScale + swell, 1.0));
+        float fadeN = 1.0 - smoothstep(570.0, 3900.0, length(vViewPosition));
         mapN = normalize(mix(vec3(0.0, 0.0, 1.0), mapN, 0.08 + 0.92 * fadeN)); // far water calms to a mirror instead of shimmering stripes
         normal = normalize(tbn * mapN);`)
-      .replace('#include <color_fragment>', '#include <color_fragment>\n diffuseColor.rgb *= 0.91 + 0.17 * smoothstep(-0.5, 0.5, sin(vWPos.x * 0.0017 + vWPos.z * 0.0011) * sin(vWPos.z * 0.0008));');
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        // Tint water alongside mapped wharves, not a claim about depth or tides.
+        vec2 uvLand = (vWPos.xz - vec2(${X0.toFixed(1)}, ${Z0.toFixed(1)})) / vec2(${WM.toFixed(1)},${HM.toFixed(1)});
+        float coast = 0.0;
+        if (all(greaterThan(uvLand, vec2(.004))) && all(lessThan(uvLand, vec2(.996))) && length(vViewPosition) < 3100.0) {
+          uvLand.y = 1.0 - uvLand.y;
+          vec2 d = vec2(19.0/${WM.toFixed(1)},19.0/${HM.toFixed(1)});
+          coast = max(max(texture2D(uShore,uvLand+vec2(d.x,0.)).a,texture2D(uShore,uvLand-vec2(d.x,0.)).a),
+                     max(texture2D(uShore,uvLand+vec2(0.,d.y)).a,texture2D(uShore,uvLand-vec2(0.,d.y)).a));
+        }
+        float currentBand = sin(vWPos.x*.021 + vWPos.z*.014 + sin(vWPos.z*.008 + uT*.06)*1.2);
+        diffuseColor.rgb = mix(diffuseColor.rgb*(.95+.06*currentBand), diffuseColor.rgb*vec3(1.13,1.23,1.12), coast*.54);
+      `);
+    s.fragmentShader = s.fragmentShader.replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+      float waterVariability = .5+.5*sin(dot(vWPos.xz,vec2(.032,.016)) + sin(vWPos.z*.018)-uT*.29);
+      roughnessFactor = mix(.19,.31,waterVariability) + .05*smoothstep(650.,3200.,length(vViewPosition));
+    `);
     if (reflection) s.fragmentShader = s.fragmentShader.replace('#include <opaque_fragment>', `
       vec4 mc = uMirrorMatrix * vec4(vWPos,1.0);
-      vec2 reflUV = mc.xy / max(0.00001, mc.w) + mapN.xy * vec2(0.16, 0.11);
+      vec2 reflUV = mc.xy / max(0.00001, mc.w) + mapN.xy * vec2(0.24, 0.14);
       float viewNormal = clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0);
       float fresnel = 0.020 + 0.98 * pow(1.0 - viewNormal, 5.0);
       float edge = smoothstep(0.0,0.035,reflUV.x) * (1.0-smoothstep(0.965,1.0,reflUV.x)) * smoothstep(0.0,0.035,reflUV.y) * (1.0-smoothstep(0.965,1.0,reflUV.y));
       if (uReflect > 0.0 && edge > 0.0) {
         vec3 localReflection = texture2D(uMirror, clamp(reflUV,vec2(0.003),vec2(0.997))).rgb;
-        outgoingLight = mix(outgoingLight, localReflection * vec3(.62,.72,.70), min(.42,fresnel*.72) * uReflect * edge);
+        outgoingLight = mix(outgoingLight, localReflection * vec3(.62,.72,.70), min(.52,fresnel*.82) * uReflect * edge);
       }
       #include <opaque_fragment>`);
   };
@@ -219,16 +254,23 @@ export async function createWorld(canvas, { phone = false, capture = false, time
   const WALLS = ['#a29989', '#a78e6b', '#865c4a', '#c2bbb1', '#858e91', '#8f8674', '#afa497', '#697176'].map((c) => new T.Color(c));
   const TOWERS = ['#556775', '#6d8792', '#a49b8b', '#414f59', '#808d87', '#ada799'].map((c) => new T.Color(c));
   const ROOF = ['#7d7b77', '#8f8b84', '#5f6163', '#9a968e', '#6c625a'].map((c) => new T.Color(c));
-  const P = [], N = [], C = [], F = [], I = []; let vtx = 0, nb = 0;
+  const sight = createBusSightlines();
+  const P = [], N = [], C = [], F = [], I = []; let vtx = 0, nb = 0, sourceIndex = 0;
   function pushV(x, y, z, nx, ny, nz, c, fu, fv, seed) { P.push(x, y, z); N.push(nx, ny, nz); C.push(c.r, c.g, c.b); F.push(fu, fv, seed); return vtx++; }
   for (let k = 0; k < words.length;) {
     const tier = words[k], h = words[k + 1] / 10, mh = words[k + 2] / 10, g = words[k + 3] / 10, n = words[k + 4]; k += 5;
     const pts = []; for (let i = 0; i < n; i++) pts.push([words[k + i * 2] / 2, words[k + i * 2 + 1] / 2]); k += n * 2;
-    if (tier === 1 && !allowTier1) continue;
-    nb++; const seed = (nb * 0.61803) % 1, wall = (h > 40 ? TOWERS : WALLS)[Math.floor(seed * 997) % (h > 40 ? TOWERS.length : WALLS.length)], roof = ROOF[Math.floor(seed * 7919) % ROOF.length];
+
+    // Keep low waterfront buildings on phones while leaving out the wider suburban tier.
+    // Seed from source order so materials cannot change between breakpoints or culling choices.
+    const sourceSeed = (++sourceIndex * 0.61803) % 1;
+    const nearWharf = pts.some(([x,z]) => x > -2540 && x < -1180 && z > -550 && z < 210);
+    if (tier === 1 && !allowTier1 && !nearWharf) continue;
+    nb++; const seed = sourceSeed, wall = (h > 40 ? TOWERS : WALLS)[Math.floor(seed * 997) % (h > 40 ? TOWERS.length : WALLS.length)], roof = ROOF[Math.floor(seed * 7919) % ROOF.length];
     // Ferry Building: OSM's footprint and tower are each mapped here (cross-checked in the orthophoto).
     const bx = pts.reduce((a,q) => a+q[0],0)/n, bz = pts.reduce((a,q) => a+q[1],0)/n;
     const ferry = Math.abs(bx+1756) < 2 && Math.abs(bz+382) < 3 && (h === 19 || h === 26);
+    sight.add(pts,g+mh-2,g+h+(ferry && detailedFerry ? 22 : 0));
     if (ferry && detailedFerry) continue; // replace only the mapped shell and tower
     const facadeWall = ferry ? new T.Color('#b9935d') : wall;
     const facadeRoof = ferry ? new T.Color('#434039') : roof;
@@ -281,8 +323,23 @@ export async function createWorld(canvas, { phone = false, capture = false, time
         float glassTower = smoothstep(22.0,58.0,bH);
         vec3 streetGlass = mix(vec3(0.045,0.065,0.075),vec3(0.15,0.19,0.20),glassTower);
         vec3 tint = mix(vec3(0.67,0.83,0.96),vec3(0.92,0.94,0.86),bSeed);
-        vec3 paneColor = streetGlass * tint * (1.0 + (pane-0.5)*0.20*aa);
+        // Different planes catch the sky differently; floors are not a repeated black sticker.
+        float pier = smoothstep(margin,margin+.065,min(f.x,1.0-f.x)) * smoothstep(.27,.36,f.y);
+        float cap = smoothstep(.75,.86,f.y) * wx;
+        float facing = pow(1.0-abs(dot(normalize(vNormal),normalize(vViewPosition))),2.0);
+        vec3 glassFalloff = mix(vec3(.64,.70,.74),vec3(1.07,1.13,1.19),smoothstep(.32,.84,f.y));
+        float skyView = abs(normalize(vViewPosition).y);
+        vec3 reflectedSky = mix(vec3(.115,.135,.14),vec3(.205,.25,.30),smoothstep(.12,.64,skyView+facing*.35));
+        vec3 paneColor = mix(streetGlass * tint * mix(vec3(1.0),glassFalloff,aa*.86),reflectedSky,(.15+.48*facing)*glassTower);
+        paneColor *= 1.0+(pane-.5)*.23*aa;
+        paneColor *= 1.0 - .23*(1.0-pier)*aa;
+        vec3 sillColor = diffuseColor.rgb * (1.22 + .10*bSeed);
+        float skirt = isWall * (1.0-smoothstep(1.5,4.4,vFac.y));
+        diffuseColor.rgb *= mix(1.0,.78,skirt);
+        diffuseColor.rgb = mix(diffuseColor.rgb,sillColor,cap*aa*isWall*.14);
         float grime = fbm(vec2(vFac.x * 0.4, vFac.y * 0.25) + bSeed * 31.0);
+        float joint = (1.-smoothstep(.016,.033,abs(fract(vFac.y*.5)-.5)))*aa*(1.-glassTower);
+        diffuseColor.rgb *= mix(1.,.87,joint*isWall);
         diffuseColor.rgb *= mix(0.88 + 0.2 * grime, 0.9 + 0.18 * fbm(vFac.xy * 0.15), 1.0 - isWall);
         diffuseColor.rgb *= mix(1.0, 0.55 + 0.45 * smoothstep(0.0, 4.0, vFac.y), isWall); // contact shade at the foot of walls
         diffuseColor.rgb = mix(diffuseColor.rgb, paneColor + diffuseColor.rgb * 0.08, win * 0.92);
@@ -308,7 +365,7 @@ export async function createWorld(canvas, { phone = false, capture = false, time
         float tallB = smoothstep(8.0, 30.0, bH);
         float pLit = mix(0.04, 0.42, tallB);
         float lit = mix(pLit * 0.6, step(1.0 - pLit, hash12(cell + bSeed * 113.0)), aa) * win;`)
-      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.18, win);')
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, mix(0.12,0.27,pane), win);')
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += mix(vec3(1.0, 0.76, 0.48), vec3(0.85, 0.92, 1.0), step(0.7, hash12(cell * 1.7))) * lit * uNight * 1.1;');
   };
   const buildings = new T.Mesh(bGeo, bMat); buildings.castShadow = true; buildings.receiveShadow = true; buildings.name = 'buildings_OSM_render_height'; scene.add(buildings);
@@ -358,8 +415,7 @@ export async function createWorld(canvas, { phone = false, capture = false, time
     city: { t: [-2150, 45, 315], p: [-1450, 420, -690] },
     overview: { t: [-900, 0, 1500], p: [5200, 9000, -9500] },
   };
-  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-  let fly = null, follow = null, cinematic = null;
+  let fly = null, follow = null, cinematic = null, busFollow = false, nextSightCheck = 0;
   const stopFlight = () => {
     if (cinematic) { camera.fov = canvas.clientWidth < canvas.clientHeight ? 55 : 42; camera.updateProjectionMatrix(); }
     cinematic = null; fly = null;
@@ -374,15 +430,22 @@ export async function createWorld(canvas, { phone = false, capture = false, time
       to: cameraPose(v.t,v.p,canvas.clientWidth < canvas.clientHeight ? 55 : 42),
     };
   }
-  controls.addEventListener('start',stopFlight);
+  controls.addEventListener('start',()=>{ stopFlight(); busFollow = false; });
   reducedMotion.addEventListener('change', () => { if (reducedMotion.matches) stopFlight(); });
   function setView(v) { stopFlight(); controls.target.set(...v.t); camera.position.set(...v.p); controls.update(); }
-  function flyTo(t, dist = 900, pitch = 0.5) {
+  function flyTo(t, dist = 900, pitch = 0.5, bearing = null, bus = false) {
     stopFlight();
     const to = new T.Vector3(t[0], t[1] ?? 0, t[2]), off = camera.position.clone().sub(controls.target); off.y = 0; if (off.lengthSq() < 1) off.set(0.6, 0, -1);
+    if (Number.isFinite(bearing)) {
+      // Rear three-quarter view along the actual reported heading, not broadside through the city block.
+      const angle = bearing + .25;
+      off.set(-Math.sin(angle),0,Math.cos(angle));
+    }
     off.normalize().multiplyScalar(Math.cos(pitch) * dist); off.y = Math.sin(pitch) * dist;
-    if (reducedMotion.matches) { fly = null; controls.target.copy(to); camera.position.copy(to).add(off); controls.update(); return; }
-    fly = { t0: performance.now(), dur: 1400, fromT: controls.target.clone(), fromP: camera.position.clone(), toT: to, toP: to.clone().add(off) };
+    busFollow = bus; nextSightCheck = performance.now()+1700;
+    const toP = bus ? new T.Vector3(...busCameraPose(to.toArray(),Math.atan2(-off.x,off.z),dist,pitch,sight)) : to.clone().add(off);
+    if (reducedMotion.matches) { fly = null; controls.target.copy(to); camera.position.copy(toP); controls.update(); return; }
+    fly = { t0: performance.now(), dur: 1400, fromT: controls.target.clone(), fromP: camera.position.clone(), toT: to, toP };
   }
   let inset = 0;
   function resize() { const w = canvas.clientWidth, h = canvas.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h; if (inset) camera.setViewOffset(w, h, 0, inset / 2, w, h); else camera.clearViewOffset(); camera.fov = w < h ? 55 : 42; camera.updateProjectionMatrix(); lineMat.resolution.set(w, h); beacons.material.uniforms.uPR.value = renderer.getPixelRatio(); }
@@ -408,9 +471,9 @@ export async function createWorld(canvas, { phone = false, capture = false, time
     for (const s of state.values()) {
       const k = Math.min(1, (now - s.t0) / 2000), e = k * k * (3 - 2 * k);
       s.x = s.fx + (s.tx - s.fx) * e; s.z = s.fz + (s.tz - s.fz) * e; s.y = s.fy + (s.ty - s.fy) * e;
-      list.push({ id: s.id, mode: s.mode, x: s.x, y: s.y, z: s.z, heading: s.h, colour: s.colour });
+      list.push({ id: s.id, mode: s.mode, x: s.x, y: s.y, z: s.z, heading: s.h, colour: s.colour, route: s.route });
     }
-    fleet.update(list); beacons.update(list, selectedId);
+    fleet.update(list, selectedId, camera.position.distanceTo(controls.target)); beacons.update(list, selectedId, camera.position.distanceTo(controls.target) < 150);
   }
   // nearest vehicle to a screen point (pixels), for taps
   const v3 = new T.Vector3();
@@ -419,11 +482,12 @@ export async function createWorld(canvas, { phone = false, capture = false, time
     for (const v of list) { v3.set(v.x, v.y + 12, v.z).project(camera); if (v3.z > 1) continue; const d = Math.hypot((v3.x * 0.5 + 0.5) * w - px, (-v3.y * 0.5 + 0.5) * h - py); if (d < bd) { bd = d; best = v.id; } }
     return best;
   }
-  function screenOf(id) { const s = state.get(id); if (!s) return null; v3.set(s.x, s.y + 20, s.z).project(camera); if (v3.z > 1) return null; return [(v3.x * 0.5 + 0.5) * canvas.clientWidth, (-v3.y * 0.5 + 0.5) * canvas.clientHeight]; }
+  function screenOf(id, lift = 20) { const s = state.get(id); if (!s) return null; v3.set(s.x, s.y + lift, s.z).project(camera); if (v3.z > 1) return null; return [(v3.x * 0.5 + 0.5) * canvas.clientWidth, (-v3.y * 0.5 + 0.5) * canvas.clientHeight]; }
 
   // ---------------------------------------------------------------- loop
   let running = true, last = 0, frames = 0, onFrame = null;
   let lastReflect = -Infinity;
+  const reflectedAt = new T.Vector3(Infinity, 0, 0), reflectedTarget = new T.Vector3(Infinity, 0, 0);
   const loop = (t) => {
     if (!running) return; requestAnimationFrame(loop);
     if (phone && t - last < 30) return; last = t; frames++;
@@ -436,21 +500,52 @@ export async function createWorld(canvas, { phone = false, capture = false, time
       if (k >= 1) cinematic = null;
     }
     stepVehicles(t);
-    if (follow && !fly && !cinematic) { const s = state.get(follow); if (s) { const d = new T.Vector3(s.x, s.y, s.z).sub(controls.target); controls.target.add(d.multiplyScalar(0.08)); camera.position.add(d); } }
+    if (follow && !fly && !cinematic) {
+      const s = state.get(follow);
+      if (s) {
+        const point=[s.x,s.y+(busFollow?1.8:0),s.z];
+        const d = new T.Vector3(...point).sub(controls.target);
+        controls.target.add(d.multiplyScalar(reducedMotion.matches ? 1 : 0.08)); camera.position.add(d);
+        if(busFollow && t>=nextSightCheck) {
+          nextSightCheck=t+600;
+          if(!sight.clear(camera.position.toArray(),point)) {
+            const pose=busCameraPose(point,s.h+.34,phone?64:66,.47,sight);
+            const p=new T.Vector3(...pose);
+            if(camera.position.distanceTo(p)>2) {
+              // Cut away from an occluding façade rather than tweening through solid geometry.
+              camera.position.copy(p); controls.target.set(...point);
+            }
+          }
+        }
+      }
+    }
     controls.update();
     // the sun's shadow box follows what the camera is looking at
     const dir = sun.userData.dir || new T.Vector3(0, 1, 0); sun.target.position.copy(controls.target); sun.position.copy(controls.target).addScaledVector(dir, 6000);
     const dist = camera.position.distanceTo(controls.target), nearWanted = T.MathUtils.clamp(dist * 0.01, 1, 300);
     if (Math.abs(camera.near - nearWanted) > nearWanted * 0.2) { camera.near = nearWanted; camera.updateProjectionMatrix(); }
     scene.fog.density = 0.000055 * T.MathUtils.clamp(2600 / dist, 0.12, 1); // haze for street views, a clear map when zoomed right out
-    const span = T.MathUtils.clamp(dist * 1.2, 400, 4000);
-    if (Math.abs(sc.right - span) > 50) { sc.left = sc.bottom = -span; sc.right = sc.top = span; sc.updateProjectionMatrix(); }
-    wMat.userData.t.value = t / 1000; haze.position.x = camera.position.x; haze.position.z = camera.position.z; nightSky.position.copy(camera.position);
+    if (!phone && !navigator.connection?.saveData && !/^(slow-2g|2g|3g)$/.test(navigator.connection?.effectiveType || '') &&
+      !aerialDetailRequested && frames > 15 && dist < 620 && Math.abs(controls.target.x + 1600) < 825 && Math.abs(controls.target.z + 100) < 800) {
+      aerialDetailRequested = true; loadAerial('waterfront-aerial-detail.webp', true);
+    }
+    // Close-up shadows need centimetre-scale contact, not the city-wide metre bias.
+    // Keep the light centred at 6 km; narrow only the depth window around its target.
+    const span = T.MathUtils.clamp(dist * 1.12, 155, 4000), depthRange = T.MathUtils.clamp(span * 2.8, 950, 5500);
+    if (Math.abs(sc.right - span) > Math.max(12, span * .10)) {
+      sc.left = sc.bottom = -span; sc.right = sc.top = span;
+      sc.near = 6000 - depthRange; sc.far = 6000 + depthRange; sc.updateProjectionMatrix();
+      sun.shadow.normalBias = T.MathUtils.clamp(span * .0013, .20, 1.2);
+      sun.shadow.bias = -T.MathUtils.lerp(.000075, .00032, T.MathUtils.smoothstep(span, 190, 1300));
+    }
+    sun.castShadow = dir.y > .055;
+    wMat.userData.t.value = reducedMotion.matches ? 0 : t / 1000; haze.position.x = camera.position.x; haze.position.z = camera.position.z; nightSky.position.copy(camera.position);
     if (reflection) {
       const enabled = dist < 3200 && Math.abs(controls.target.x + 2020) < 1800 && Math.abs(controls.target.z + 250) < 1600;
       reflected.value = enabled ? 1 - T.MathUtils.smoothstep(dist, 2450, 3200) : 0;
-      if (enabled && t - lastReflect >= 120) {
-        lastReflect = t;
+      const moved = reflectedAt.distanceToSquared(camera.position) > 12 || reflectedTarget.distanceToSquared(controls.target) > 10;
+      if (enabled && (t - lastReflect >= 140 || (moved && t - lastReflect >= 47))) {
+        lastReflect = t; reflectedAt.copy(camera.position); reflectedTarget.copy(controls.target);
         sea.visible = false; camera.updateMatrixWorld();
         try {
           reflection.onBeforeRender(renderer, scene, camera);
@@ -468,9 +563,9 @@ export async function createWorld(canvas, { phone = false, capture = false, time
     renderer, scene, camera, controls, heightAt, isLand, setTime, setVehicles, pick, screenOf, showRoute, showStop, flyTo, flyCinematic, stopFlight, views, setView,
     get flying() { return !!cinematic; },
     get sun() { return sunState; }, get frames() { return frames; }, set onFrame(f) { onFrame = f; },
-    select(id) { selectedId = id; follow = id; },
+    select(id) { selectedId = id; follow = id; busFollow = false; },
     unfollow() { follow = null; },
     setInset(px) { inset = Math.max(0, Math.round(px)); resize(); }, // keep the middle of the view above a bottom sheet
-    stats: () => ({ landmarkTris: detailedFerry?.userData.triangles || 0, landmarkBatches: detailedFerry?.children.length || 0, aerial: !!hasAerial.value, reflecting: reflected.value > 0, buildings: nb, groundVerts: gGeo.attributes.position.count, buildingTris: I.length / 3, drawCalls: renderer.info.render.calls, sun: sunNow }),
+    stats: () => ({ landmarkTris: detailedFerry?.userData.triangles || 0, landmarkBatches: detailedFerry?.children.length || 0, aerial: !!hasAerial.value, aerialDetail: aerialDetailReady, reflecting: reflected.value > 0, buildings: nb, groundVerts: gGeo.attributes.position.count, buildingTris: I.length / 3, drawCalls: renderer.info.render.calls, sun: sunNow }),
   };
 }
