@@ -1,8 +1,9 @@
+import {houseWalk} from './house-walk.js?v=29559704e7';
 import {bedroom} from './bedroom.js';
 import {deckGarden} from './deck-garden.js';
 import {dressedDeck,deckFixings} from './coastal-finish.js';
-import {fitKitchen} from './kitchen.js';
-import {plantPohutukawa} from './pohutukawa.js?v=1c2f5c0915';
+import {fitKitchen} from './kitchen.js?v=99920e4182';
+import {plantPohutukawa} from './pohutukawa.js?v=b772133fb9';
 import * as T from './vendor/three.webgpu.min.js';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
 import {HDRLoader} from './vendor/HDRLoader.js';
@@ -22,8 +23,8 @@ export async function openPavilion(host,asset,forceGL=false,signal){
  signal?.throwIfAborted();
  await renderer.init();initialized=true;signal?.throwIfAborted();
  const compactGL=host.clientWidth<=680&&!renderer.backend.isWebGPUBackend;
- renderer.setPixelRatio(Math.min(devicePixelRatio,compactGL?1:host.clientWidth<=680?1.15:1.55));renderer.shadowMap.enabled=true;
- renderer.shadowMap.type=T.PCFShadowMap;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.22;
+ renderer.setPixelRatio(Math.min(devicePixelRatio,compactGL?1.25:host.clientWidth<=680?1.6:2));renderer.shadowMap.enabled=true;
+ renderer.shadowMap.type=T.PCFShadowMap;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;
  const scene=new T.Scene(), camera=new T.PerspectiveCamera(45,1,.065,1000),cube=new T.BoxGeometry(),matrix=new T.Matrix4(),q=new T.Quaternion();
  const v=(x=0,y=0,z=0)=>new T.Vector3(x,y,z);
  let seed=92731;const rand=()=>((seed=Math.imul(seed,1664525)+1013904223>>>0)/4294967296),range=(a,b)=>a+(b-a)*rand();
@@ -45,23 +46,11 @@ export async function openPavilion(host,asset,forceGL=false,signal){
   refinements.push(async()=>{const detail=await texLoader.loadAsync(asset(name));texture.image=detail.image;texture.needsUpdate=true});
   return Promise.resolve(texture);
  }
- let contactPass=null;
- async function refineContact(){
-   if(host.clientWidth<900||!renderer.backend.isWebGPUBackend)return;
-   const {ao}=await import('./vendor/GTAONode.js');
-   const pass=T.TSL.pass(scene,camera);
-   const color=pass.getTextureNode('output');
-   const contact=ao(pass.getTextureNode('depth'),null,camera);
-   contact.resolutionScale=.5;contact.radius.value=.42;contact.thickness.value=.16;contact.samples.value=9;
-   const pipeline=new T.PostProcessing(renderer);
-   pipeline.outputNode=T.TSL.vec4(color.rgb.mul(contact.getTextureNode().r.mul(.33).add(.67)),color.a);
-   contactPass=pipeline;
- }
  let refined=false;
  async function refine(){if(refined)return;refined=true;
    void Promise.allSettled(furnishings.map(load=>load()));
    if(!compactGL)await refineApertures().catch(()=>{});
-   await refineContact().catch(()=>{});
+
    while(refinements.length){await Promise.allSettled(refinements.splice(0,2).map(load=>load()))}
  }
  const [sky,wood,blackwood,grit]=await Promise.all([
@@ -74,10 +63,10 @@ export async function openPavilion(host,asset,forceGL=false,signal){
  scene.backgroundIntensity=1.22;scene.environmentIntensity=1.15;
  for(const t of [wood,blackwood,grit]){t.colorSpace=T.SRGBColorSpace;t.wrapS=t.wrapT=T.RepeatWrapping;t.anisotropy=6}
  const mat=(c,r=.8,map=null,extra={})=>new T.MeshStandardMaterial({color:c,roughness:r,map,...extra});
- const [brick,brickN,rockTex,rockN]=await Promise.all(['dark_brick_wall','dark_brick_wall-normal','rock_face_03','rock_face_03-normal'].map(n=>surface(n+'.webp')));
+ const [hearthFace,rockTex,rockN]=await Promise.all(['studio-limestone','rock_face_03','rock_face_03-normal'].map(n=>surface(n+'.webp')));
  signal?.throwIfAborted();
- for(const tex of [brick,brickN,rockTex,rockN]){tex.wrapS=tex.wrapT=T.RepeatWrapping;tex.anisotropy=6}
- for(const tex of [brick,rockTex])tex.colorSpace=T.SRGBColorSpace;
+ for(const tex of [hearthFace,rockTex,rockN]){tex.wrapS=tex.wrapT=T.RepeatWrapping;tex.anisotropy=6}
+ for(const tex of [hearthFace,rockTex])tex.colorSpace=T.SRGBColorSpace;
  const newNames=['rough_linen','rough_linen-n','brown_planks_08','brown_planks_08-n','plastered_wall_04','plastered_wall_04-n','aerial_grass_rock','aerial_grass_rock-n','concrete_wall_006','concrete_wall_006-n','plan16a'];
  const [fabric,fabricN,oakMap,oakN,plaster,plasterN,pasture,pastureN,concrete,concreteN,print]=await Promise.all(newNames.map(n=>surface(n+'.webp')));
  for(const [i,t] of [fabric,fabricN,oakMap,oakN,plaster,plasterN,pasture,pastureN,concrete,concreteN,print].entries()){
@@ -98,7 +87,7 @@ export async function openPavilion(host,asset,forceGL=false,signal){
  const nearRear=T.TSL.positionWorld.z.add(2.04).abs().lessThan(.16);
  lime.colorNode=T.TSL.texture(plaster).rgb.mul(nearRear.select(rearFactor.pow(1.12),T.TSL.float(1)));
  const stoneCast=mat(0xd0d0c4,.91,concrete,{normalMap:concreteN,normalScale:new T.Vector2(.22,.22)});stoneCast.userData.repeatMetres=2.7;
- const pine=mat(0x817a74,.79,dressedDeck()),cedar=mat(0xf2e1c4,.7,wood),dark=mat(0x98978d,.79,blackwood),edge=mat(0x252522,.43),metal=mat(0x252828,.3,null,{metalness:.55});
+ const pine=mat(0x817a74,.79,dressedDeck()),cedar=mat(0xf2e1c4,.7,wood),dark=mat(0xb4b5ad,.69,blackwood,{bumpMap:blackwood,bumpScale:.006}),edge=mat(0x252522,.43),metal=mat(0x252828,.3,null,{metalness:.55});
  const deck=mat(0xe3d6c2,.69,dressedDeck()),wall=lime,stone=mat(0x625f54,.77,grit),warmwhite=mat(0xebe1cb),linen=mat(0xb6a592),glow=mat(0xffecc5,.4,null,{emissive:0xffbd67,emissiveIntensity:2.6});
  for(const m of [pine,cedar,dark,deck]){m.userData.grain=true;m.userData.repeatMetres=m===dark?1.75:2.8}
  deck.bumpMap=deck.map; deck.bumpScale=.0014;
@@ -106,7 +95,7 @@ export async function openPavilion(host,asset,forceGL=false,signal){
  const glass=new T.MeshPhysicalNodeMaterial({color:0xeaf0ed,roughness:.047,metalness:0,ior:1.5,clearcoat:1,clearcoatRoughness:.045,transparent:true,depthWrite:false});
  const {normalView,positionViewDirection,float}=T.TSL;
  const grazing=float(1).sub(normalView.dot(positionViewDirection).abs().clamp()).pow(4);
- glass.opacityNode=float(.035).add(grazing.mul(.38));
+ glass.opacityNode=float(.045).add(grazing.mul(.57));
  const boxes=new Map(), roofParts=new Map();
  let sheet=boxes;
  function register(m,transform){if(!sheet.has(m))sheet.set(m,[]);sheet.get(m).push(transform.clone())}
@@ -125,7 +114,10 @@ export async function openPavilion(host,asset,forceGL=false,signal){
  sheet=roofParts;
  const pitch=.085,roof=z=>2.91+z*pitch;
  box(0,roof(.55)+.10,.55,15.44,.2,6.13,edge,-Math.atan(pitch));
- for(let i=0;i<122;i++){const x=-7.64+i*.126;box(x,roof(.53)-.028,.53,.123,.045,6.1,cedar,-Math.atan(pitch))}
+ const soffitMap=await surface('soffit-lining.webp');
+ soffitMap.colorSpace=T.SRGBColorSpace;soffitMap.wrapS=soffitMap.wrapT=T.RepeatWrapping;soffitMap.anisotropy=8;
+ const soffit=mat(0xf1e8d9,.87,soffitMap);soffitMap.rotation=Math.PI/2;soffit.userData.repeatMetres=2.4;
+ box(0,roof(.53)-.028,.53,15.41,.045,6.10,soffit,-Math.atan(pitch));
  for(let i=0;i<29;i++){const x=-7.53+i*.54;box(x,roof(.55)+.218,.55,.022,.043,6.08,metal,-Math.atan(pitch))}
  box(0,roof(3.6)+.065,3.61,15.5,.245,.052,metal);
  sheet=boxes;
@@ -226,18 +218,45 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  bedroom({mesh,box,cylinder,oak,cloth,metal,limestone,glow,basketWeave});
  fitKitchen(scene,oak,slabStone,glazeNormal);
  {
- const cloth=new T.PlaneGeometry(.63,2.78,100,18),pos=cloth.attributes.position;
- for(let i=0;i<pos.count;i++){const xx=pos.getX(i),yy=pos.getY(i),t=(yy+1.39)/2.78;pos.setXYZ(i,xx*(1-.12*t),yy+.014*Math.sin(xx*18)*(1-t),Math.sin(xx*61+t*.9)*(.029+.017*(1-t))+.018*Math.sin(xx*17-t*1.4))}
- cloth.computeVertexNormals();const drape=mat(0xd6d2c3,.97,fabric,{side:T.DoubleSide});const curtain=mesh(cloth,drape,6.86,1.47,1.28);curtain.rotation.y=-Math.PI/2;
+ // Twin draw-open linen panels sit behind the end glazing on a recessed rail.
+ const drape=new T.MeshPhysicalMaterial({color:0xf3ece0,roughness:.94,sheen:.56,sheenColor:0xf4e7cf,sheenRoughness:.85,normalMap:fabricN,normalScale:new T.Vector2(.10,.10),side:T.DoubleSide});
+ box(6.85,2.897,1.16,.026,.023,1.87,edge);
+ for(const [side,width,centre] of [[1,.42,.49],[-1,.37,1.82]]){
+  const cloth=new T.PlaneGeometry(width,2.78,64,24),pos=cloth.attributes.position;
+  for(let i=0;i<pos.count;i++){
+   const u=pos.getX(i)/width+.5,t=(pos.getY(i)+1.39)/2.78;
+   const phase=u*7*Math.PI+.32*Math.sin(u*7)+.56*(1-t)*Math.sin(u*5+side);
+   const fold=Math.sin(phase)+.18*Math.sin(phase*2);
+   pos.setXYZ(i,(u-.5)*width*(1+.19*(1-t)),pos.getY(i)+.009*(1-t)*Math.cos(phase),(.037+.016*(1-t))*fold);
+  }
+  cloth.computeVertexNormals();const curtain=mesh(cloth,drape,6.845,1.485,centre);curtain.rotation.y=-Math.PI/2;
+ }
  }
  // The hearth anchors the living room behind the veranda and breaks the long roof line.
- const masonry=mat(0x99948a,.94,brick,{normalMap:brickN,normalScale:new T.Vector2(.72,.72)});
- function masonryBlock(x,y,z,w,h,d){const g=new T.BoxGeometry(w,h,d),uv=g.attributes.uv;for(let i=0;i<uv.count;i++){const face=Math.floor(i/4);uv.setXY(i,uv.getX(i)*(face<2?d:w)/1.25,uv.getY(i)*(face===2||face===3?d:h)/1.25)}mesh(g,masonry,x,y,z)}
- masonryBlock(.12,1.99,-1.04,1.49,3.87,.91);box(.12,3.966,-1.04,1.57,.07,.99,metal);box(.12,.62,-.558,.89,.52,.046,edge);box(.12,.32,-.45,1.56,.09,.53,stone);
- 
- // Brushed metal cable balustrade and a low gravel arrival terrace.
- for(let i=0;i<7;i++){let x=-7.12+i*2.12;box(x,.43,4.43,.032,.99,.032,metal)}
- for(let i=0;i<7;i++)box(-.76,.08+i*.128,4.43,12.72,i===6?.032:.008,.017,metal);
+ const honed=mat(0xcac1af,.81,hearthFace);honed.userData.repeatMetres=1.72;
+ const firesteel=mat(0x312f2c,.68),coal=mat(0x282522,.96);
+ // A continuous limestone chimney breast, with a recessed firebox and a low hearth return.
+ // Behind the opening the lining is dark on all five sides. The front is open geometry.
+ const centre=.12,back=-1.495,front=-.585,depth=front-back;
+ box(centre,.228,(back+front)/2,1.49,.32,depth,honed);
+ box(centre,2.48,(back+front)/2,1.49,2.80,depth,honed);
+ for(const side of [-1,1])box(centre+side*.64,.734,(back+front)/2,.21,.692,depth,honed);
+ box(centre,.735,back+.10,1.08,.68,.13,coal);
+ for(const side of [-1,1])box(centre+side*.527,.735,-1.06,.025,.69,.71,firesteel);
+ box(centre,.398,-1.04,1.08,.028,.83,firesteel);
+ box(centre,.32,front+.13,1.61,.10,.40,honed);
+ box(centre,3.90,-1.04,1.55,.045,.98,metal);
+ // Narrow joints disappear into the stone at a distance, with a continuous surface behind them.
+ const joint=mat(0x958e7f,.93);
+ for(const y of [1.35,2.15,2.95])box(centre,y,front+.0008,1.48,.003,.002,joint);
+ // The front edge reads as a single glazed balustrade with a continuous bronze cap.
+ const bronze=mat(0x554c43,.46,null,{metalness:.48});
+ box(-.76,.902,4.43,12.72,.042,.060,bronze);
+ box(-.76,.015,4.43,12.72,.09,.080,bronze);
+ for(let k=0;k<8;k++){const x=-7.12+(k+.5)*1.59;
+   box(x,.461,4.43,1.576,.824,.018,glass);
+   box(x-.79,.46,4.43,.019,.87,.037,bronze);
+ }
  // Eight broad mineral treads step into the garden. Recess each riser under the nosing.
  const mineral=stoneCast.clone();mineral.color.setHex(0xe6dbca);
  for(let k=0;k<8;k++){
@@ -273,9 +292,9 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  buildCoast({scene,mesh,mat,map:pasture,normal:pastureN,grit,rockTex,rockN,rand,range,loadHeadland,ripple,landcover,seaPhoto});
  const windTime=T.TSL.uniform(0),gustStrength=T.TSL.uniform(0);
  plantArrivalBorder(scene);addSedges({scene,range,rand,timeNode:windTime,gustNode:gustStrength});finePanicles(scene,windTime,gustStrength);
- const hemi=new T.HemisphereLight(0xf1f6fb,0xc9b99e,.69);scene.add(hemi);
- const sun=new T.DirectionalLight(0xfff3df,3.05);sun.position.set(.45*30,.63*30,.64*30);sun.target.position.set(0,0,0);scene.add(sun,sun.target);sun.castShadow=true;
- Object.assign(sun.shadow.camera,{left:-18,right:18,top:14,bottom:-13,near:.2,far:65});const shadowSize=compactGL?1024:2048;sun.shadow.mapSize.set(shadowSize,shadowSize);sun.shadow.normalBias=.002;sun.shadow.bias=-.00007;
+ const hemi=new T.HemisphereLight(0xeff4fb,0xb9a389,.56);scene.add(hemi);
+ const sun=new T.DirectionalLight(0xffead0,2.75);sun.position.set(-.74*30,.53*30,.61*30);sun.target.position.set(0,0,0);scene.add(sun,sun.target);sun.castShadow=true;
+ Object.assign(sun.shadow.camera,{left:-18,right:18,top:14,bottom:-13,near:.2,far:65});const shadowSize=compactGL?1024:2048;sun.shadow.mapSize.set(shadowSize,shadowSize);sun.shadow.normalBias=.017;sun.shadow.bias=-.00018;
  const fill=new T.DirectionalLight(0xe4eef6,.28);fill.position.set(2,6,-3);scene.add(fill);
  for(const x of [-3,3]){const lamp=new T.SpotLight(0xffead2,3.3,5,1.04,.86,2);lamp.position.set(x,2.64,.20);lamp.target.position.set(x,.35,-.65);scene.add(lamp,lamp.target)}
  // Area emitters fill the actual apertures. They provide broad indoor sky transport without point hotspots.
@@ -302,6 +321,7 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  }
  const around=()=>{let x,z;do{x=range(-17,16);z=range(-8,16)}while(!plantable(x,z));return [x,z]};
  const fernHollow=()=>{let x,z;do{x=range(-13,8);z=range(2,11)}while(!plantable(x,z));return [x,z]};
+ let treesReady=false;
  async function refinePlanting(){
   // The procedural coastal planting is already present. Skip the three scanned layers on small WebGL devices.
   if(compactGL)return;
@@ -334,7 +354,7 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  const plants=[[8.5,11.85,1.17],[8.92,12.18,1.13],[6.65,10.67,1],[10.63,8.91,1.12],[-4.5,6.8,.91],[-5.8,7.9,1.03],[3.5,6.7,.94],[-7.5,7.2,1.09]];
  instantiate(flower,mat(0xf6ebce,.88,null,{vertexColors:true,side:T.DoubleSide}),plants.map(([x,z,k])=>[x,ground(x,z),z,k,range(0,6)]),.11);
  signal?.throwIfAborted();
- await plantPohutukawa(scene,ground,name=>texLoader.loadAsync(asset(name)),host.clientWidth<=680);
+ await plantPohutukawa(scene,ground,name=>texLoader.loadAsync(asset(name)),host.clientWidth<=680,windTime);treesReady=true;
  // This Three revision chooses a uniform block for up to 1,000 instances. Some WebGL 2 devices
  // allow only 256 mat4 values. Give larger batches vertex-attribute storage while keeping the draw count.
  if(!renderer.backend.isWebGPUBackend){
@@ -360,6 +380,7 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  let explorePose=null,detail=null,indoors=false;
  const displacement=v(),direction=v(),stepRight=v(),next=v();
  const obstacles=[[-3.84,-.66,-2.1,-1.22],[-3.22,-1.02,.18,.80],[-4.04,-3.74,-2.1,.63],[-4.04,-3.74,1.59,2.04],[-7.03,-4.78,-1.19,.63],[-7.03,-4.95,-2.06,-1.49],[-.79,1.04,-1.69,-.10],[2.02,4.83,-1.88,-.73],[2.66,4.64,-.41,.79],[5.26,6.48,-.35,.91]];
+ const walker=houseWalk(obstacles);
  function canStand(x,z){return x> -6.87&&x<6.85&&z> -1.83&&z<1.81&&!obstacles.some(([x0,x1,z0,z1])=>x>x0&&x<x1&&z>z0&&z<z1)}
  function step(forward,right){if(!indoors||!explorePose)return;camera.getWorldDirection(direction);direction.y=0;direction.normalize();
   stepRight.set(-direction.z,0,direction.x);next.copy(camera.position).addScaledVector(direction,forward*.16).addScaledVector(stepRight,right*.16);
@@ -419,12 +440,13 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
     }
    }
 
+   if(walker.pose){walker.frame(cp,aim);camera.fov=camera.aspect<1?69:59;camera.updateProjectionMatrix()}
    camera.position.copy(cp);camera.lookAt(aim);
    for(const {o,placements,windFactor} of wind){for(let i=0;i<placements.length;i++){const [x,y,z,s,a]=placements[i];const front=Math.exp(-Math.pow((time%6.8)*3.9-x*.52-z*.34-4.5,2)/13);const wave=.26*Math.sin(time*1.18+x*.51+z*.35)+.11*Math.sin(time*2.07-z*.19)+gust*(.22+1.1*front)*Math.sin(time*2.51-x*.33);
      tmp.position.set(x,y,z);tmp.scale.setScalar(s);tmp.rotation.set(wave*windFactor*.47,a,wave*windFactor,'ZXY');tmp.updateMatrix();o.setMatrixAt(i,tmp.matrix)}o.instanceMatrix.needsUpdate=true}
-   if(contactPass){try{contactPass.render()}catch{contactPass=null;renderer.render(scene,camera)}}else renderer.render(scene,camera)
+   renderer.render(scene,camera)
  }
- size();return {backend,draw,size,refine,refineFinishes,finishesReady:()=>finishesReady,refinePlanting,step,gardenBed,furnishLivingRoom,inside:()=>indoors,resetWalk:()=>displacement.set(0,0,0),setDetail(value){detail=value;displacement.set(0,0,0)},setExplore(view){explorePose=view;if(!view)displacement.set(0,0,0)},renderer,triangleCount,pose:()=>({position:camera.position.toArray(),quaternion:camera.quaternion.toArray(),fov:camera.fov,aspect:camera.aspect})}
+ size();return {treesReady:()=>treesReady,walker,backend,draw,size,refine,refineFinishes,finishesReady:()=>finishesReady,refinePlanting,step,gardenBed,furnishLivingRoom,inside:()=>indoors,resetWalk:()=>displacement.set(0,0,0),setDetail(value){detail=value;displacement.set(0,0,0)},setExplore(view){explorePose=view;if(!view)displacement.set(0,0,0)},renderer,triangleCount,pose:()=>({position:camera.position.toArray(),quaternion:camera.quaternion.toArray(),fov:camera.fov,aspect:camera.aspect})}
  } catch(error) {
    if(initialized)renderer.dispose();
    throw error;
