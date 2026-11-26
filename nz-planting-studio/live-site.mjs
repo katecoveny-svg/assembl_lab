@@ -68,7 +68,7 @@ async function load(r) {
     }):null;
     const terrain=!!heights&&heights.every(Number.isFinite);
     const edges=rs=>rs.flatMap(ring=>ring.slice(1).map((b,i)=>clip(ring[i],b,half)).filter(Boolean));
-    studio.setLiveSite({address:r.address,lat:r.lat,lon:r.lon,heights:terrain?heights:null,parcel:edges(parcel),buildings:edges(buildings)});
+    studio.setLiveSite({address:r.address,lat:r.lat,lon:r.lon,heights:terrain?heights:null,parcel:edges(parcel),buildings:edges(buildings),parcelRings:parcel,roofRings:buildings});
     const property=local((site.property?.outlines||[]).flatMap(rings));
     const t=studio.terrainEngine;
     if(property.length)t._drawLiveEdges(t.parcelGroup,edges(property),0x963950,false);
