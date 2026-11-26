@@ -137,8 +137,8 @@ export function mountSiteStudy({T,scene,terrain,engine,camera,setCamera,readStat
  }
  const chips=()=>Array.from(document.querySelectorAll('[data-finish]'));
  const number=(id,min,max,fallback)=>{const n=parseFloat($(id).value);return Number.isFinite(n)?clamp(n,min,max):fallback};
- function value(){
-  return outcome(stats,finish,{qty:54,finishRate:userRates[finish],surfaceRate:number('study-surface-rate',0,999,22),plantFactor:number('study-plant-factor',0,5,1),labourRate:number('study-labour-rate',0,999,78),house:!!place});
+ function value(includeHouse=true){
+  return outcome(stats,finish,{qty:54,finishRate:userRates[finish],surfaceRate:number('study-surface-rate',0,999,22),plantFactor:number('study-plant-factor',0,5,1),labourRate:number('study-labour-rate',0,999,78),house:includeHouse&&!!place});
  }
  function refresh(next){
   if(next)stats=next;
@@ -178,5 +178,5 @@ export function mountSiteStudy({T,scene,terrain,engine,camera,setCamera,readStat
  document.querySelectorAll('.yr-btn').forEach(b=>b.addEventListener('click',()=>document.querySelectorAll('.yr-btn').forEach(c=>c.setAttribute('aria-pressed',String(c===b)))));
  $('study-focus').addEventListener('click',()=>{const {x,z}=place||{x:0,z:0};setCamera(x+10,Math.max(7,base.position.y+6.5),z+13,x,base.position.y+.9,z)});
  terrain.onChange(ground);ground();updateFinish();refresh();
- return {refresh,setLiveSite,reset,base,bounds,keepClear,siteMasses};
+ return {refresh,setLiveSite,reset,base,bounds,keepClear,siteMasses,readEstimate:value};
 }
