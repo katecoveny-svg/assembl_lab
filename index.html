@@ -14,12 +14,19 @@
   <link rel="icon" href="/site-v2/mark-a-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="/site-v2/mark-a-180.png">
   <link rel="canonical" href="https://lab.assembl.co.nz/">
-  <link rel="stylesheet" href="/lab/v3/front-door.css?v=coastal-garden-1">
+  <link rel="stylesheet" href="/lab/v3/front-door.css?v=planting-os-1">
   <script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
-</head>
+<link rel="stylesheet" href="/lab/v3/planting-entry.css?v=garden1"><script src="/lab/v3/planting-entry.js?v=garden1" type="module"></script></head>
 <body>
   <a class="skip" href="#main">Skip to main content</a>
-  <header class="shell site-header">
+
+
+  <main id="main" tabindex="-1" class="shell project-first">
+
+    <section id="garden" class="lab-garden" aria-label="Interactive Aotearoa planting bed">
+      <div class="planting-editor">
+<div data-planting-stage="/nz-planting-studio/studio-v9.2?embed=agency"><picture><source media="(max-width:680px)" srcset="/lab/v3/img/tiles/gemini-coastal-phone.webp"><img src="/lab/v3/img/tiles/gemini-coastal-wide.webp" width="1500" height="890" fetchpriority="high" alt="Dark-clad coastal house, glass-fronted living room and flowering garden in Planting Studio"></picture></div>
+<header class="shell site-header">
     <a class="brand" href="/" aria-label="assembl Lab home"><img src="/lab/v3/wordmark.png" alt="assembl."><span>Lab</span></a>
     <nav aria-label="Main navigation">
       <a href="https://www.assembl.co.nz/#pavilion">Pavilion</a>
@@ -28,16 +35,10 @@
       <a href="#garden">Garden studio</a>
       <a href="https://assembl-waitemata-tides.pages.dev/">Tides</a>
     </nav>
-  </header>
-
-  <main id="main" tabindex="-1" class="shell">
-    <section class="opening garden-opening" id="top">
-      <div class="opening-title"><p class="label">assembl Lab · Tāmaki Makaurau</p><h1>Plant the coast.</h1></div>
-      <p class="opening-note">Brush a native garden into place and bring it forward five years.</p>
-    </section>
-    <section id="garden" class="lab-garden" aria-label="Interactive Aotearoa planting bed">
-      <div class="garden-window"><img src="/lab/v3/img/tiles/native-garden-foliage.webp" width="1200" height="675" alt="Harakeke, grasses and flowering plants in the Aotearoa Planting Studio."><button id="open-garden" type="button" aria-expanded="false">Paint this garden</button></div>
-      <div class="garden-rail"><span id="garden-state" role="status">Aotearoa Planting Studio</span><button id="leave-garden" type="button" hidden>Close garden</button><a href="/nz-planting-studio/classic?view=bed">Open full garden ↗</a><a href="#tools">All tools ↓</a></div>
+  </header><section class="opening garden-opening" id="top">
+      <div class="opening-title"><p class="label">assembl Lab · Tāmaki Makaurau</p><h1>Paint a native garden.</h1></div>
+      <p class="opening-note">Try the 3D planting tool from Architecture OS. Brush across the soil, change the planting mix and see the garden in another season.</p>
+    </section><div class="planting-rail"><button data-open-planting type="button">Open interactive garden</button><span data-planting-status role="status">Aotearoa Planting Studio</span><div data-planting-controls hidden><label>Planting mix <select name="mix"><option value="coast">Coastal native</option><option value="fern">Fern glade</option><option value="flowers">Flower border</option></select></label><label>Season <select name="season"><option value="summer">Summer</option><option value="autumn">Autumn</option><option value="winter">Winter</option><option value="spring">Spring</option></select></label><button type="button" data-garden-action="plant">Plant a patch</button><button type="button" data-garden-action="undo">Undo</button></div><a href="https://lab.assembl.co.nz/architecture/#/planting">Full planting studio ↗</a></div></div>
     </section>
     <section id="tools" class="tool-section" aria-labelledby="tools-heading">
       <div id="more" class="section-heading">
@@ -82,7 +83,7 @@
           </div>
         </a>
       </div>
-      <a class="garden-feature" href="https://www.assembl.co.nz/#pavilion"><img src="https://www.assembl.co.nz/pavilion/assets/pavilion.webp" width="1600" height="900" loading="lazy" alt="The Waiheke Pavilion and its coastal approach."><div class="tool-copy"><p class="label">Architecture / Waiheke</p><h3>Walk into the Pavilion.</h3><p>Cross the deck, explore the rooms and rearrange the furniture.</p><span class="tool-action">Enter the house ↗</span></div></a>
+      <a class="garden-feature" href="https://www.assembl.co.nz/#work"><img src="https://www.assembl.co.nz/pavilion/assets/pavilion.webp" width="1600" height="900" loading="lazy" alt="The Waiheke Pavilion and its coastal approach."><div class="tool-copy"><p class="label">Architecture / Waiheke</p><h3>Waiheke Pavilion.</h3><p>Walk through the timber-lined house and explore the living room, kitchen and bedroom.</p><span class="tool-action">Enter the house ↗</span></div></a>
       <p class="tile-credit">Waitematā tile: <a href="https://commons.wikimedia.org/wiki/File:Auckland_skyline_from_Viaduct_Harbour.jpg">Chiara Coetzee</a>, cropped and composited, <a href="https://creativecommons.org/publicdomain/zero/1.0/">CC0 source photograph</a>. Scene is illustrative.</p>
     </section>
 
@@ -106,5 +107,5 @@
       <a href="https://www.assembl.co.nz/terms/">Terms</a>
     </nav>
   </footer>
-<script type="module" src="/lab/v3/passage.js?v=coast-garden-1"></script></body>
+</body>
 </html>

@@ -15,7 +15,7 @@ class Color {
   constructor(hex) { [this.r,this.g,this.b]=(hex.slice(1).match(/../g)??[]).map(s=>Number.parseInt(s,16)/255); }
 }
 const three={Geometry,Attribute,Color};
-const taxa=['harakeke','platts_black','silver_spear','rengarenga','libertia','toetoe','red_tussock','carex_testacea','poa_cita','ponga','tikouka','nikau','pohutukawa','manuka','kowhai','koromiko','kakabeak','panakenake'];
+const taxa=['oioi','harakeke','platts_black','silver_spear','rengarenga','libertia','toetoe','red_tussock','carex_testacea','poa_cita','ponga','tikouka','nikau','pohutukawa','manuka','kowhai','koromiko','kakabeak','panakenake'];
 const taxon=id=>({id,matureHeight:id==='panakenake'?.08:2.4,matureSpread:2,trunkColor:'#776655',flowerColor:'#ecccaa'});
 test('native plant specimen geometries are deterministic and carry rooted wind weights',()=> {
   for(const id of taxa){

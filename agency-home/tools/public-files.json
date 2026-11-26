@@ -191,6 +191,10 @@
     "pavilion/assets/kitchen-daylight.webp": "agency-home/pavilion/assets/kitchen-daylight.webp",
     "pavilion/assets/kitchen-browser.webp": "agency-home/pavilion/assets/kitchen-browser.webp",
     "pavilion/kitchen-light.js": "agency-home/pavilion/kitchen-light.js",
-    "pavilion/assets/living-daylight.webp": "agency-home/pavilion/assets/living-daylight.webp"
+    "pavilion/assets/living-daylight.webp": "agency-home/pavilion/assets/living-daylight.webp",
+    "pavilion/planting-entry.js": "lab/v3/planting-entry.js",
+    "pavilion/planting-entry.css": "lab/v3/planting-entry.css",
+    "pavilion/assets/gemini-coastal-wide.webp": "lab/v3/img/tiles/gemini-coastal-wide.webp",
+    "pavilion/assets/gemini-coastal-phone.webp": "lab/v3/img/tiles/gemini-coastal-phone.webp"
   }
 }

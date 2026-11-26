@@ -2,7 +2,7 @@
 export function houseWalk(blocks) {
   const pad=.14, eye=1.64;
   const doors=[[.04,1.70],[1.81,3.48]];
-  let pose=null,saved=null,target=null;
+  let pose=null,saved=null,target=null,destination=null;
   function clear(x,z){
     if(x < -6.94 || x > 7.02 || z < -1.88 || z > 4.26)return false;
     if(z>1.83 && z<2.10 && !doors.some(([l,r])=>x>l+pad&&x<r-pad))return false;
@@ -14,44 +14,80 @@ export function houseWalk(blocks) {
     for(let i=1;i<=steps;i++)if(!clear(x+(toX-x)*i/steps,z+(toZ-z)*i/steps))return false;
     return true;
   }
+  function route(x,z){
+    const end={x,z};
+    if(clearLine(pose.x,pose.z,x,z))return [end];
+    // Walk around actual furniture and through clear doorways using a small visibility graph.
+    const nodes=[pose,end];
+    for(const [l,r,b,t] of blocks)for(const px of [l-pad-.035,r+pad+.035])for(const pz of [b-pad-.035,t+pad+.035]){
+      if(clear(px,pz))nodes.push({x:px,z:pz});
+    }
+    for(const [l,r] of doors)for(const pz of [1.64,2.22])nodes.push({x:(l+r)/2,z:pz});
+    const cost=nodes.map(()=>Infinity),previous=nodes.map(()=>-1),done=new Set();
+    cost[0]=0;
+    while(true){
+      let from=-1;
+      for(let i=0;i<nodes.length;i++)if(!done.has(i)&&cost[i]<Infinity&&(from===-1||cost[i]<cost[from]))from=i;
+      if(from<0)return null;
+      if(from===1)break;
+      done.add(from);const a=nodes[from];
+      for(let j=1;j<nodes.length;j++){
+        if(done.has(j))continue;const b=nodes[j],next=cost[from]+Math.hypot(b.x-a.x,b.z-a.z);
+        if(next<cost[j]&&clearLine(a.x,a.z,b.x,b.z)){previous[j]=from;cost[j]=next;}
+      }
+    }
+    const steps=[];for(let i=1;i>0;i=previous[i])steps.unshift(nodes[i]);return steps;
+  }
+  function face(yaw,step){
+    const angle=Math.atan2(Math.sin(yaw-pose.yaw),Math.cos(yaw-pose.yaw));
+    pose.yaw+=angle*Math.min(1,step);
+  }
   return {
     start(){pose=saved&&clear(saved.x,saved.z)?{...saved}:{x:1.32,z:1.53,yaw:-.95,pitch:-.21};return pose},
     request(x,z){
-      target=null;if(!pose||!Number.isFinite(x+z))return false;
+      target=destination=null;if(!pose||!Number.isFinite(x+z))return false;
       // Stop on the nearest accessible part of the floor when a tap lands on a furnishing.
       const desiredX=x,desiredZ=z;
       if(!clear(x,z)){
         let nearest=null;
         for(const distance of [.23,.45,.68,.9]){
           for(let i=0;i<16;i++){const angle=i*Math.PI/8,px=desiredX+distance*Math.cos(angle),pz=desiredZ+distance*Math.sin(angle);
-            if(clear(px,pz)&&clearLine(pose.x,pose.z,px,pz)&&(!nearest||Math.hypot(px-pose.x,pz-pose.z)<nearest.d))nearest={x:px,z:pz,d:Math.hypot(px-pose.x,pz-pose.z)};
+            if(clear(px,pz)&&(!nearest||Math.hypot(px-pose.x,pz-pose.z)<nearest.d))nearest={x:px,z:pz,d:Math.hypot(px-pose.x,pz-pose.z)};
           }
           if(nearest)break;
         }
         if(!nearest)return false;x=nearest.x;z=nearest.z;
       }
-      if(clearLine(pose.x,pose.z,x,z))target=[{x,z}];
-      else {
-        // Slide around the end of a furnishing using a clear elbow in the aisle.
-        for(const elbow of [{x,z:pose.z},{x:pose.x,z}]){
-          if(clearLine(pose.x,pose.z,elbow.x,elbow.z)&&clearLine(elbow.x,elbow.z,x,z)){target=[elbow,{x,z}];break}
-        }
-      }
+      target=route(x,z);
       return !!target;
+    },
+    visit(room,instant){
+      const places={living:[1.32,1.53,-.95,-.21],kitchen:[-.62,1.21,.60,-.15],bedroom:[-4.49,1.11,.95,-.14]};
+      const choice=places[room];if(!pose||!choice)return false;
+      const [x,z,yaw,pitch]=choice;
+      if(instant){Object.assign(pose,{x,z,yaw,pitch});target=destination=null;return true;}
+      target=route(x,z);destination=target?{yaw,pitch}:null;return !!target;
     },
     advance(dt){
-      if(!pose||!target)return false;
+      if(!pose)return false;
+      if(!target){
+        if(!destination)return false;
+        const a=Math.atan2(Math.sin(destination.yaw-pose.yaw),Math.cos(destination.yaw-pose.yaw));
+        if(Math.abs(a)<.012){pose.yaw=destination.yaw;pose.pitch=destination.pitch;destination=null;return false;}
+        face(destination.yaw,dt*5);pose.pitch+=(destination.pitch-pose.pitch)*Math.min(1,dt*5);return true;
+      }
       const x=target[0].x-pose.x,z=target[0].z-pose.z,length=Math.hypot(x,z);
+      if(destination&&length>.08)face(Math.atan2(-x,-z),dt*3);
       const step=Math.min(1,Math.min(dt,.07)*1.75/Math.max(length,.00001));
       pose.x+=x*step;pose.z+=z*step;if(step===1){target.shift();if(!target.length)target=null}
-      return !!target;
+      return !!(target||destination);
     },
-    cancel(){target=null},
-    stop(){saved=pose;pose=null;target=null},
+    cancel(){target=destination=null},
+    stop(){saved=pose;pose=null;target=destination=null},
     get pose(){return pose},
     look(dx,dy){if(pose){pose.yaw-=dx;pose.pitch=Math.max(-1.05,Math.min(.96,pose.pitch-dy))}},
     move(front,side,dt){
-      if(!pose)return;target=null;
+      if(!pose)return;target=destination=null;
       const mag=Math.max(1,Math.hypot(front,side)),step=Math.min(dt,.07)*1.75/mag;
       const c=Math.cos(pose.yaw),s=Math.sin(pose.yaw);
       const x=pose.x+step*(side*c-front*s),z=pose.z-step*(front*c+side*s);
@@ -124,5 +160,5 @@ export function walkInput({button,surface,stage,pad,start,stop,look,move,clickFl
   window.addEventListener('blur',release);surface.addEventListener('blur',release);
   document.addEventListener('visibilitychange',()=>{if(document.hidden)release()});
   new IntersectionObserver(([e])=>{onScreen=e.isIntersecting;if(!onScreen)release()}).observe(stage);
-  return {enter:(focus=true)=>toggle(true,focus),leave:()=>toggle(false),active:()=>walk};
+  return {travel:wake,enter:(focus=true)=>toggle(true,focus),leave:()=>toggle(false),active:()=>walk};
 }

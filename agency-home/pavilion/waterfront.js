@@ -65,13 +65,3 @@ finish.addEventListener('keydown',e=>{
  if(delta){e.preventDefault();placeLens(fx+delta[0],fy+delta[1])}
 });
 full.onclick=()=>{const on=finish.toggleAttribute('data-full');full.setAttribute('aria-pressed',String(on));full.textContent=on?'Return to lens':'Show full render'};
-const bed=document.querySelector('#bed-stage'),startBed=document.querySelector('#start-bed'),closeBed=document.querySelector('#close-bed'),bedInfo=document.querySelector('#bed-info');
-let bedFrame=null;
-startBed.onclick=()=>{
- if(bedFrame)return;
- bedFrame=document.createElement('iframe');
- bedFrame.title='Paint the Aotearoa planting bed';bedFrame.src='https://lab.assembl.co.nz/nz-planting-studio/classic?view=bed&entry=paint';
- bedFrame.addEventListener('load',()=>{bedInfo.textContent='Planting Studio · use Paint to brush the soil'});
- bed.append(bedFrame);startBed.hidden=true;startBed.setAttribute('aria-expanded','true');closeBed.hidden=false;bedInfo.textContent='Opening the planting bed…';
-};
-closeBed.onclick=()=>{bedFrame?.remove();bedFrame=null;startBed.hidden=false;startBed.setAttribute('aria-expanded','false');closeBed.hidden=true;bedInfo.textContent='Interactive planting bed';startBed.focus({preventScroll:true})};
