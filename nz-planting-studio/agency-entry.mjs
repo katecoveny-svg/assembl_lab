@@ -21,8 +21,17 @@ const send = (type, extra = {}) => parent.postMessage({studio: 'assembl-planting
 let keyboardStroke = 0;
 function plant() {
   studio.setTool('paint-mix');
-  const offset = keyboardStroke++ % 9;
-  studio.paintAt(x + (offset % 3 - 1) * .9, z + 1.8 + Math.floor(offset / 3) * .65);
+  const candidates=[];
+  for(const row of [.9,.78,.68,.55])for(const col of [.24,.72,.46,.12,.88]){
+    const p=studio.exposedSoil(innerWidth*col,innerHeight*row);
+    if(p)candidates.push(p);
+  }
+  if(!candidates.length)candidates.push({x,z:z+2});
+  // Repeated keyboard strokes start on the least crowded visible ground.
+  const nearby=p=>studio.engine.plants.reduce((n,k)=>n+(Math.hypot(k.x-p.x,k.z-p.z)<1.6?1:0),0);
+  candidates.sort((a,b)=>nearby(a)-nearby(b));
+  const p=candidates[keyboardStroke++%Math.min(2,candidates.length)];
+  studio.paintAt(p.x,p.z);
 }
 // Dragging the building turns the view; painting begins only on exposed ground.
 canvas.addEventListener('pointerdown', e => {
