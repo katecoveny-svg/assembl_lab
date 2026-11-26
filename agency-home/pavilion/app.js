@@ -320,7 +320,7 @@ async function firstGuideClick(){
 guideButton.addEventListener('click',firstGuideClick);
 
 if(cinema){
- const hint=$('#model-hint');
+ const hint=$('#pavilion-model-hint');
  vista.setAttribute('aria-label','Waiheke Pavilion model. Drag or use the arrow keys to look around.');
  function status(){
   filmMotion.hidden=settings.get('renderer')==='still';
