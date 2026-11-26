@@ -42,9 +42,22 @@ export async function openPavilion(host,asset,forceGL=false,signal){
   refinements.push(async()=>{const detail=await texLoader.loadAsync(asset(name));texture.image=detail.image;texture.needsUpdate=true});
   return Promise.resolve(texture);
  }
+ let contactPass=null;
+ async function refineContact(){
+   if(host.clientWidth<900||!renderer.backend.isWebGPUBackend)return;
+   const {ao}=await import('./vendor/GTAONode.js');
+   const pass=T.TSL.pass(scene,camera);
+   const color=pass.getTextureNode('output');
+   const contact=ao(pass.getTextureNode('depth'),null,camera);
+   contact.resolutionScale=.5;contact.radius.value=.42;contact.thickness.value=.16;contact.samples.value=9;
+   const pipeline=new T.PostProcessing(renderer);
+   pipeline.outputNode=T.TSL.vec4(color.rgb.mul(contact.getTextureNode().r.mul(.46).add(.54)),color.a);
+   contactPass=pipeline;
+ }
  let refined=false;
  async function refine(){if(refined)return;refined=true;
    if(!compactGL)await refineApertures().catch(()=>{});
+   await refineContact().catch(()=>{});
    while(refinements.length){await Promise.allSettled(refinements.splice(0,2).map(load=>load()))}
  }
  const [sky,wood,blackwood,grit,chair,terrain]=await Promise.all([
@@ -393,7 +406,7 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
    camera.position.copy(cp);camera.lookAt(aim);
    for(const {o,placements,windFactor} of wind){for(let i=0;i<placements.length;i++){const [x,y,z,s,a]=placements[i];const front=Math.exp(-Math.pow((time%6.8)*3.9-x*.52-z*.34-4.5,2)/13);const wave=.26*Math.sin(time*1.18+x*.51+z*.35)+.11*Math.sin(time*2.07-z*.19)+gust*(.22+1.1*front)*Math.sin(time*2.51-x*.33);
      tmp.position.set(x,y,z);tmp.scale.setScalar(s);tmp.rotation.set(wave*windFactor*.47,a,wave*windFactor,'ZXY');tmp.updateMatrix();o.setMatrixAt(i,tmp.matrix)}o.instanceMatrix.needsUpdate=true}
-   renderer.render(scene,camera)
+   if(contactPass){try{contactPass.render()}catch{contactPass=null;renderer.render(scene,camera)}}else renderer.render(scene,camera)
  }
  size();return {backend,draw,size,refine,refineFinishes,finishesReady:()=>finishesReady,refinePlanting,step,gardenBed,furnishLivingRoom,inside:()=>indoors,resetWalk:()=>displacement.set(0,0,0),setDetail(value){detail=value;displacement.set(0,0,0)},setExplore(view){explorePose=view;if(!view)displacement.set(0,0,0)},renderer,triangleCount,pose:()=>({position:camera.position.toArray(),quaternion:camera.quaternion.toArray(),fov:camera.fov,aspect:camera.aspect})}
  } catch(error) {

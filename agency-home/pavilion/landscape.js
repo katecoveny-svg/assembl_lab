@@ -20,14 +20,14 @@ export function buildCoast({scene,mesh,mat,map,normal,grit,rockTex,rockN,rand,ra
  geo.setAttribute('color',new T.Float32BufferAttribute(colors,3));geo.computeVertexNormals();mesh(geo,mat(0xb4b59e,1,map,{normalMap:normal,normalScale:new T.Vector2(.25,.25),vertexColors:true}));
  const ribbon=new T.PlaneGeometry(1,1,11,80),rp=ribbon.attributes.position,ru=ribbon.attributes.uv,rc=[];
  for(let i=0;i<rp.count;i++){const u=ru.getX(i),t=ru.getY(i),z=2.54+t*21,x=pathX(z)+(u-.5)*(1.59+.18*Math.sin(z*.4))+.07*noise(z,0);rp.setXYZ(i,x,grade(x,z)+.025,z);ru.setXY(i,u*2.1,t*24);let a=.64+.27*Math.sin(Math.PI*u)+.09*noise(x*4.1,z*3.8);rc.push(a,a*.99,a*.91)}
- ribbon.setAttribute('color',new T.Float32BufferAttribute(rc,3));ribbon.computeVertexNormals();mesh(ribbon,mat(0x9d9786,.93,grit,{vertexColors:true,side:T.DoubleSide}));
+ ribbon.setAttribute('color',new T.Float32BufferAttribute(rc,3));ribbon.computeVertexNormals();mesh(ribbon,mat(0xb6afa3,.96,grit,{vertexColors:true,bumpMap:grit,bumpScale:.009,side:T.DoubleSide}));
  // A broken gravel shoulder helps the approach sit into the grass instead of drawing a ribbon over it.
- const gravel=new T.InstancedMesh(new T.IcosahedronGeometry(1,0),mat(0xc4b9a2,.91,grit),420),piece=new T.Object3D();
+ const gravel=new T.InstancedMesh(new T.IcosahedronGeometry(1,0),mat(0xb4afa2,.91,grit),3100),piece=new T.Object3D();
  // Keep this local sequence independent from the tree and planting generators.
  let gravelSeed=2701;const local=()=>((gravelSeed=Math.imul(1664525,gravelSeed)+1013904223>>>0)/4294967296);
  for(let i=0;i<gravel.count;i++){
-  const z=3+local()*16,side=i%2?1:-1,x=pathX(z)+side*(.58+local()*.42);
-  piece.position.set(x,grade(x,z)+.025,z);const size=.015+local()*.035;
+  const z=3+local()*16,side=i%2?1:-1,x=pathX(z)+side*(i<420?.58+local()*.42:local()*.79);
+  piece.position.set(x,grade(x,z)+.025,z);const size=i<420?.012+local()*.029:.007+local()*.015;
   piece.scale.set(size*1.4,size*.48,size);piece.rotation.set(local()*.3,local()*6.28,local()*.5);piece.updateMatrix();gravel.setMatrixAt(i,piece.matrix);
   const tone=.59+local()*.35;gravel.setColorAt(i,new T.Color(tone,tone*.98,tone*.91));
  }
