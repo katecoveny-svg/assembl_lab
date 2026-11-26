@@ -1,5 +1,5 @@
 import {installExplore} from './explore.js';
-import {lab} from './lab.js';
+import {lab} from './lab.js?v=27eec3907d';
 const $=s=>document.querySelector(s);
 const asset=name=>'/pavilion/assets/'+name;
 const pictures=new IntersectionObserver(entries=>{
@@ -31,10 +31,10 @@ function scrollPosition(at=scrollY){
 function stopTour(){
  if(!touring)return;
  touring=false;carry=p-scrollPosition(scrolled);carryOrigin=scrolled;manual=p;
- tourControl.hidden=true;
+ tourControl.hidden=true;if(cinema)syncMedium();
 }
 function startTour(){
- touring=true;tourTime=0;tourFrom=p;prev=performance.now();tourControl.hidden=false;wake();
+ touring=true;tourTime=0;tourFrom=p;prev=performance.now();tourControl.hidden=cinema;if(cinema)syncMedium();wake();
 }
 tourControl.onclick=stopTour;
 vista.addEventListener('pointerdown',stopTour,{passive:true,capture:true});
@@ -101,8 +101,10 @@ function frame(now){id=0;if(!world||!visible||document.hidden)return;const delta
  if(dirty||(active&&now-prev>=(1000/30-.6))){if(active)time+=delta;
  if(touring&&!paused){
   tourTime+=delta;
-  const t=Math.min(1,tourTime/27);
-  p=tourFrom+(1-tourFrom)*(t*t*(3-2*t)*.55+t*.45);
+  const t=Math.min(1,tourTime/(cinema?32:27));
+  // Give the visitor half the walk inside, after crossing the open slider.
+  const phase=cinema?(t<.52?.76*t/.52:.76+.24*(t-.52)/.48):t*t*(3-2*t)*.55+t*.45;
+  p=tourFrom+(1-tourFrom)*phase;
   if(t===1)stopTour();
  }
  if(roomMove){
@@ -112,8 +114,8 @@ function frame(now){id=0;if(!world||!visible||document.hidden)return;const delta
  }
  furnishInterior();
  const guided=!room&&!detail&&!exploring&&!garden?.active&&!settings.has('match');
- const lift=liftAt(p);prev=now;
- try{world.draw(p,time,Math.max(0,1-(time-gustAt)/3.6),lift,guided,0)}
+ const lift=cinema?0:liftAt(p);if(cinema)journey.toggleAttribute('data-walking',p>.21);prev=now;
+ try{world.draw(p,time,Math.max(0,1-(time-gustAt)/3.6),lift,guided,cinema&&guided?easeBetween(p,.93,1):0)}
  catch{staticMode('render failed');return}
  titleFrame(p,lift);if(settings.has('profile')){if(lastPaint&&now-lastPaint<250)intervals.push(now-lastPaint);if(intervals.length>500)intervals.shift();lastPaint=now}dirty=false;vista.dataset.position=p.toFixed(3)}
  if(active||roomMove)id=requestAnimationFrame(frame)}
@@ -150,7 +152,7 @@ reduced.addEventListener('change',()=>{paused=reduced.matches;if(paused)stopTour
 document.addEventListener('click',e=>{let a=e.target.closest('a');if(a?.closest('#lab,#architecture'))event(a.target==='_blank'?'demo_launch':'brief_selected',a.href);if(a?.href.startsWith('mailto:'))event('contact_open',a.hash||'email')});
 async function start(signal){
  if(settings.get('renderer')==='still')throw new Error('Still view requested');
- const {openPavilion}=await import('./world.js');signal.throwIfAborted();
+ const {openPavilion}=await import('./world.js?v=5ba72ad963');signal.throwIfAborted();
  const force=preferWebGL||settings.get('renderer')==='webgl';
  let candidate,drawnP,drawnDetail;
  async function firstFrame(webgl){
@@ -239,6 +241,7 @@ const enter=$('#enter-pavilion'),note=$('#load-note'),poster=$('#scene-poster');
 let pending=null,automaticTried=false,heroVisible=false,timer=0;
 function eligible(){
  const net=navigator.connection;
+ if(cinema)return heroVisible&&!document.hidden&&!net?.saveData&&!matchMedia('(prefers-reduced-data: reduce)').matches&&settings.get('renderer')!=='still'&&!!(navigator.gpu||window.WebGL2RenderingContext);
  return !document.hidden&&heroVisible&&!reduced.matches&&!net?.saveData&&!matchMedia('(prefers-reduced-data: reduce)').matches
   &&!['slow-2g','2g','3g'].includes(net?.effectiveType)&&!(net?.downlink>0&&(net.downlink<.7||net.downlink<2&&net.rtt>=100))
   &&!(navigator.deviceMemory>0&&navigator.deviceMemory<4)
@@ -257,9 +260,9 @@ function loadWorld(automatic=false){
  }
  const job={controller:new AbortController(),automatic,retry:false};
  pending=job;automaticTried=true;vista.toggleAttribute('data-warming',automatic);
- job.timeout=setTimeout(()=>expireLoad(job),automatic?(cinema?30000:12000):45000);
+ job.timeout=setTimeout(()=>expireLoad(job),automatic?(cinema?90000:12000):45000);
  if(!automatic){enter.disabled=true;note.textContent='Opening the pavilion…'}
- start(job.controller.signal).then(()=>{if(!cinema&&job.automatic&&eligible()&&!job.interacted)startTour()}).catch(()=>{
+ start(job.controller.signal).then(()=>{if(job.automatic&&eligible()&&!job.interacted&&!reduced.matches)startTour()}).catch(()=>{
   staticMode(job.controller.signal.reason||'renderer unavailable');
  }).finally(()=>{
   clearTimeout(job.timeout);pending=null;vista.removeAttribute('data-warming');
@@ -267,7 +270,7 @@ function loadWorld(automatic=false){
  });
 }
 // Scroll or a deliberate gesture during first-frame compilation also hands the camera to the visitor.
-function claimCamera(){if(cinema)return;if(pending){pending.interacted=true;vista.removeAttribute('data-warming')}stopTour()}
+function claimCamera(e){if(cinema&&filmMotion.contains(e.target instanceof Node?e.target:null))return;if(pending){pending.interacted=true;vista.removeAttribute('data-warming')}stopTour()}
 window.addEventListener('scroll',claimCamera,{passive:true});
 window.addEventListener('pointerdown',claimCamera,{passive:true,capture:true});
 window.addEventListener('keydown',claimCamera,{capture:true});
@@ -276,6 +279,7 @@ if(settings.get('renderer')==='still'){enter.hidden=true;note.textContent='Still
 if(vista.dataset.room)chooseRoom(vista.dataset.room);
 async function consider(){
  if(automaticTried||!eligible())return;
+ if(cinema){loadWorld(true);return}
  try {await poster.decode()}catch{return}
  const sample=performance.getEntriesByName(poster.currentSrc).at(-1);
  if(sample?.transferSize>20000&&sample.duration>1600&&sample.transferSize/sample.duration<160)return;
@@ -323,17 +327,20 @@ if(cinema){
  const hint=$('#pavilion-model-hint');
  vista.setAttribute('aria-label','Waiheke Pavilion model. Drag or use the arrow keys to look around.');
  function status(){
-  filmMotion.hidden=settings.get('renderer')==='still';
+  const supported = settings.get('renderer') !== 'still' && !!(navigator.gpu || window.WebGL2RenderingContext);
+  const conserve = navigator.connection?.saveData || matchMedia('(prefers-reduced-data: reduce)').matches;
+  const loading = supported && (!!pending || (!automaticTried && !conserve));
+  filmMotion.hidden = !supported || (!world && loading);
   filmMotion.disabled=!!pending&&!world;
-  filmMotion.textContent=world?(room==='living'?'Back outside':'Go inside'):pending?'Opening 3D…':'Open 3D';
-  hint.textContent=world?'Drag to look around':'Still view';
+  filmMotion.textContent=world?(touring?'Pause walk':p>.98?'Walk again':'Continue walk'):conserve&&!automaticTried?'Load interactive model':'Retry 3D';
+  hint.textContent=world?'Drag to look around':loading?'Loading the house…':'Still view';
  }
  syncMedium=status;
  handover=status;
  filmMotion.onclick=()=>{
   if(!world){loadWorld();status();return}
-  const next=room==='living'?'outside':'living';
-  setRoom(next);chooseRoom(next);status();
+  if(touring){stopTour();return}
+  free.releaseGlance();setRoom(null);detail=null;world.setDetail(null);if(p>.98)p=0;paused=false;startTour();
  };
  const refresh=new MutationObserver(status);
  refresh.observe(vista,{attributes:true,attributeFilter:['data-ready','data-warming']});

@@ -10,7 +10,7 @@ function geometry(vertices,uvs,indices,tones){
  if(tones)geo.setAttribute('color',new T.Float32BufferAttribute(tones,3));
  geo.setIndex(indices);geo.computeVertexNormals();return geo;
 }
-function specimen(seed,wood,leaves) {
+function specimen(seed,wood,leaves,foreground=false) {
  let state=seed;
  const random=()=>((state=Math.imul(1664525,state)+1013904223>>>0)/4294967296);
  const between=(a,b)=>a+(b-a)*random();
@@ -34,6 +34,22 @@ function specimen(seed,wood,leaves) {
    }
   }
   return curve;
+ }
+ const lamina=[],laminaColor=[],laminaUV=[],laminaIndex=[];
+ function leafPair(root,heading){
+  const tangent=point(Math.cos(heading),.36,Math.sin(heading)).normalize();
+  const cross=point(-tangent.z,0,tangent.x).normalize();
+  for(const side of [-1,1]){
+   const tip=tangent.clone().addScaledVector(cross,side*.82).normalize();
+   const across=point(-tip.z,.24*side,tip.x).normalize();
+   const length=between(.075,.115),width=length*.23,start=lamina.length/3;
+   for(const [along,apart,ridge] of [[0,0,0],[.44,-1,0],[.48,0,.006],[.51,1,0],[1,0,-.012]]){
+    const position=root.clone().addScaledVector(tip,length*along).addScaledVector(across,width*apart);
+    lamina.push(position.x,position.y+ridge,position.z);laminaUV.push(along,(apart+1)/2);
+    const tint=.70+.42*along+.08*Math.cos(heading);laminaColor.push(.10*tint,.19*tint,.095*tint);
+   }
+   for(const n of [0,1,2,0,2,3,1,4,2,2,4,3])laminaIndex.push(start+n);
+  }
  }
  function spray(root,direction,size){
   const F=direction.normalize(),right=point(1,0,0).cross(F).normalize().applyAxisAngle(F,between(-1.45,1.45)),normal=F.clone().cross(right).normalize();
@@ -59,8 +75,12 @@ function specimen(seed,wood,leaves) {
    for(let j=0;j<13;j++){
     const t=between(.22,1),p=curve.getPoint(t),az=heading+between(-2.1,2.1);
     const shoot=point(Math.cos(az),between(.15,1.24),Math.sin(az)).normalize();
-    if(j%3===0)terminals.push(p.clone().addScaledVector(shoot,.90).toArray());
-    spray(p,shoot,between(.65,1.14));spray(p.clone().addScaledVector(shoot,.27),point(shoot.x+.45,between(.15,1.1),shoot.z-.35),between(.60,.92));
+    if(j%3===0)terminals.push(p.clone().addScaledVector(shoot,.45).toArray());
+    if(foreground){
+     const size=between(.36,.63);
+     for(let n=1;n<=6;n++)leafPair(p.clone().addScaledVector(shoot,size*n/6),az+n*.57);
+     if(j%3===0)spray(p,shoot,size*.83);
+    }else {spray(p,shoot,between(.46,.82));spray(p.clone().addScaledVector(shoot,.27),point(shoot.x+.45,between(.15,1.1),shoot.z-.35),between(.44,.70));}
    }
   }
  }
@@ -77,6 +97,10 @@ function specimen(seed,wood,leaves) {
  for(const [geo,mat] of [[geometry(trunk,woodUV,woodIndex,woodTones),wood],[geometry(blades,leafUV,leafIndex,tones),leaves]]){
   const m=new T.Mesh(geo,mat);m.castShadow=m.receiveShadow=true;group.add(m)
  }
+ if(laminaIndex.length){
+  const m=new T.Mesh(geometry(lamina,laminaUV,laminaIndex,laminaColor),new T.MeshStandardMaterial({vertexColors:true,side:T.DoubleSide,roughness:.61}));
+  m.castShadow=m.receiveShadow=true;group.add(m);
+ }
  group.add(floweringSprays(terminals));return group;
 }
 export async function plantPohutukawa(scene,ground,load,small){
@@ -86,7 +110,7 @@ export async function plantPohutukawa(scene,ground,load,small){
  sprigs.anisotropy=6;
  const wood=new T.MeshStandardMaterial({map:bark,vertexColors:true,normalMap:bump,normalScale:new T.Vector2(.85,.85),roughness:.94,side:T.DoubleSide});
  const leaf=new T.MeshStandardMaterial({map:sprigs,alphaTest:.37,side:T.DoubleSide,roughness:.76,vertexColors:true});
- const variants=[257,501,791].map(s=>specimen(s,wood,leaf));
+ const variants=[257,501,791].map((s,i)=>specimen(s,wood,leaf,i===0));
  const sites=[[-12.4,1.85,1.12,-.48],[-23.5,6.0,.77,1.9],[-19.5,-4.8,.7,2.62],[15,-6,.69,2.03],[9.1,-11.2,.61,-.82],[-16,-11.4,.64,-1.2],[18,-3.3,.67,1.6],[-9,-19,.54,.73],[-1.8,-11.4,.43,2.4]];
  for(const [i,[x,z,s,yaw]] of sites.entries()){
   if(small&&i>4)continue;

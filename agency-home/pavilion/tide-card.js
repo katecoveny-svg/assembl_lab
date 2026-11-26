@@ -3,51 +3,37 @@ export function tideCard(asset){
  let days=JSON.parse(byId('tide-data').textContent),keys=Object.keys(days);
  const host=byId('water-host'),slider=byId('tide-event'),open=byId('water-open');
  const tool='https://assembl-waitemata-tides.pages.dev/';
- let day=1,index=0,visible=false,frame=null,renderTimer=0,explicit=false,showStill=false,selectedHeight=0;
- function destination(embed){
-  const url=new URL(tool);if(embed){url.searchParams.set('view','harbour');url.searchParams.set('plate','1')}
-  url.searchParams.set('date',keys[day]);url.searchParams.set('event',String(index));
-  return url.href;
+ let day=1,index=0,visible=false,scene=null,pending=null,selectedHeight=0,manual=false;
+ const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+ let paused=reduced.matches;
+ const forced=new URLSearchParams(location.search).get('renderer')==='still';
+ function destination(){
+  const url=new URL(tool);url.searchParams.set('date',keys[day]);url.searchParams.set('event',String(index));return url.href;
  }
- function conservative(){
-  return navigator.connection?.saveData||['2g','3g','slow-2g'].includes(navigator.connection?.effectiveType)
-   ||!(navigator.gpu||window.WebGL2RenderingContext);
- }
- function inputMode(){
-  const live=!!frame&&!showStill;
-  host.dataset.interactive=String(live);
-  open.setAttribute('aria-pressed',String(live));
-  open.textContent=live?'Show still':'Load water';
-  if(frame){frame.inert=false;frame.tabIndex=0}
-
+ function fallback(message){
+  host.dataset.renderer='still';host.dataset.interactive='false';byId('water-fallback').hidden=false;
+  byId('water-fallback').textContent=message;open.hidden=forced;open.textContent='Load water';
  }
  function mount(){
-  if(!visible||document.hidden)return;inputMode();
-  if(new URLSearchParams(location.search).get('renderer')==='still'){
-   host.dataset.renderer='still';byId('water-fallback').hidden=false;return;
-  }
-  open.hidden=false;
-  if(showStill||!explicit&&conservative()){
-   frame?.remove();frame=null;delete host.dataset.renderer;inputMode();return;
-  }
-  const src=destination(true);
-  if(frame?.src===src)return;
-  if(!frame){
-   frame=document.createElement('iframe');frame.title='Waitematā Harbour water and published Auckland tide prediction';
-   frame.referrerPolicy='strict-origin-when-cross-origin';frame.loading='lazy';
-   frame.addEventListener('load',()=>{if(frame)host.dataset.renderer='harbour'});
-   inputMode();host.append(frame);
-  }
-  frame.src=src;
+  if(!visible||document.hidden){scene?.setActive(false);return}
+  if(scene){scene.setActive(true);return}
+  if(forced||(!manual&&navigator.connection?.saveData)){fallback('Published tide heights below');return}
+  if(pending)return;
+  pending=import('./harbour.js?v=d48b713f56').then(m=>m.createHarbour(host)).then(water=>{
+   scene=water;scene.setHeight(selectedHeight);scene.pause(paused);scene.setActive(visible&&!document.hidden);
+   host.dataset.renderer='procedural';host.dataset.interactive='true';byId('water-fallback').hidden=true;
+   open.hidden=false;open.textContent=paused?'Resume waves':'Pause waves';
+   open.setAttribute('aria-pressed',String(paused));
+  }).catch(()=>fallback('3D unavailable · published heights below')).finally(()=>{pending=null});
  }
- function showSelection(){
-  byId('tide-link').href=destination(false);
-  clearTimeout(renderTimer);if(visible)renderTimer=setTimeout(mount,140);
- }
- open.onclick=()=>{showStill=!!frame;explicit=!showStill;mount()};
+ host.addEventListener('waterlost',()=>{scene=null;host.replaceChildren();fallback('3D interrupted · published heights below')});
+ reduced.addEventListener('change',e=>{paused=e.matches;scene?.pause(paused);if(scene)open.textContent=paused?'Resume waves':'Pause waves'});
+ function showSelection(){byId('tide-link').href=destination();scene?.setHeight(selectedHeight)}
+ open.onclick=()=>{if(!scene){manual=true;mount();return}paused=!paused;scene.pause(paused);open.textContent=paused?'Resume waves':'Pause waves';open.setAttribute('aria-pressed',String(paused))};
  function setEvent(i){
   index=Math.max(0,Math.min(i,days[keys[day]].length-1));const [time,height,,zone,kind]=days[keys[day]][index];
-  selectedHeight=Number(height);const label=kind+' tide · '+time+' '+zone+' · '+height+' m';
+  selectedHeight=Number(height);
+  const staff=document.querySelector('.water-idle');staff.style.setProperty('--level',Math.min(95,Math.max(4,selectedHeight/4.5*100))+'%');staff.dataset.height=height+' m';const label=kind+' tide · '+time+' '+zone+' · '+height+' m';
   byId('water-reading').textContent=label;slider.value=String(index);slider.setAttribute('aria-valuetext',label);
   showSelection();byId('tide-stops').querySelectorAll('button').forEach((b,j)=>b.setAttribute('aria-pressed',String(index===j)));
   const detail=byId('tide-date').textContent+' · '+label;byId('tides-context').textContent=detail;
@@ -86,13 +72,13 @@ export function tideCard(asset){
   if(inView===visible)return;
   visible=inView;
   if(visible){loadPublishedDays();mount()}
-  else{clearTimeout(renderTimer);frame?.remove();frame=null;explicit=false;inputMode();delete host.dataset.renderer}
+  else{scene?.setActive(false)}
  }
  new IntersectionObserver(checkVisible).observe(host);
  addEventListener('scroll',checkVisible,{passive:true});
  addEventListener('resize',checkVisible,{passive:true});
  addEventListener('pageshow',checkVisible);
  requestAnimationFrame(checkVisible);
- document.addEventListener('visibilitychange',()=>{if(!document.hidden&&visible)mount()});
- window.tideStudyStatus=()=>({date:keys[day],index,height:selectedHeight,visible,renderer:host.dataset.renderer||'poster',frame:frame?.src})
+ document.addEventListener('visibilitychange',mount);
+ window.tideStudyStatus=()=>({date:keys[day],index,height:selectedHeight,visible,renderer:host.dataset.renderer||'poster',water:scene?.state()})
 }

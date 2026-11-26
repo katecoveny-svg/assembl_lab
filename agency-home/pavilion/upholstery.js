@@ -75,12 +75,16 @@ export function linenSofa({mesh,cylinder,cloth,oak}){
  for(const j of [16,22,31,209,218,224]){c.fillStyle='#4a4a3f';c.fillRect(j,0,j%2?5:2,256)}
  const weave=new T.CanvasTexture(canvas);weave.colorSpace=T.SRGBColorSpace;
  const throwMat=new T.MeshStandardMaterial({map:weave,normalMap:cream.normalMap,normalScale:new T.Vector2(.53,.53),side:T.DoubleSide,roughness:.99});
- const profile=new T.CatmullRomCurve3([[.842,-.34],[.926,-.266],[.915,-.203],[.855,-.136],[.709,-.091],[.593,-.057],[.505,.008],[.502,.16],[.499,.348],[.473,.411],[.336,.447],[.254,.457]].map(([y,z])=>new T.Vector3(0,y,z)));
- const textile=new T.PlaneGeometry(1,1,38,42),pos=textile.attributes.position,uv=textile.attributes.uv;
+ // Fold the throw over the right arm. Its underside clears the arm’s actual sloping top
+ // and the loose rust cushion; the return hangs down the outboard face.
+ const profile=new T.CatmullRomCurve3([[1.00,.035],[1.08,.060],[1.16,.064],[1.23,.051],[1.274,.006],[1.284,-.10],[1.286,-.27],[1.29,-.36]].map(([x,y])=>new T.Vector3(x,y,0)));
+ const textile=new T.PlaneGeometry(1,1,48,54),pos=textile.attributes.position,uv=textile.attributes.uv;
  for(let k=0;k<pos.count;k++){
-  const u=uv.getX(k),v=1-uv.getY(k),d=profile.getPoint(v);
-  const folds=Math.sin(u*16+v*2.1+.83*Math.sin(v*5))*.012+Math.sin(u*7-v)*.009,front=Math.max(0,(v-.63)/.37);
-  pos.setXYZ(k,-.19+(u-.5)*.49+v*.092+.012*Math.sin(v*8+u*4),d.y+(folds+.018)*(1-front)+.030*Math.sin(u*7.4)*front,d.z+folds*(.47+front*.45)+.012*(1-front));
+  const u=uv.getX(k),v=1-uv.getY(k),d=profile.getPoint(v),z=.115+(u-.5)*.42;
+  const armTop=.696-.20*z/.864;
+  const fold=.009*Math.sin(u*19+v*.8)+.005*Math.sin(u*34-v*3);
+  const outside=T.MathUtils.smoothstep(v,.36,.74);
+  pos.setXYZ(k,d.x+outside*(.012+fold),armTop+d.y+(1-outside)*fold,z+.009*Math.sin(v*6+u));
  }
- textile.computeVertexNormals();mesh(textile,throwMat,sx,0,sz);
+ textile.computeVertexNormals();const throwMesh=mesh(textile,throwMat,sx,0,sz);throwMesh.castShadow=false;
 }

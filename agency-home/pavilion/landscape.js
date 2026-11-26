@@ -12,7 +12,7 @@ export function grade(x,z){
 }
 const grassField=(x,z)=>.5+.22*Math.sin(.52*x+.29*z)+.17*Math.sin(.23*x-.81*z)+.12*Math.cos(.93*x+.32*z);
 export function plantable(x,z){return !(x>-7.65&&x<9.51&&z>-2.85&&z<4.7)&&!(z>2.5&&Math.abs(x-pathX(z))<1.12)&&grade(x,z)>-4.4}
-export function buildCoast({scene,mesh,mat,map,normal,grit,rockTex,rockN,rand,range,terrain,ripple,landcover,seaPhoto}){
+export function buildCoast({scene,mesh,mat,map,normal,grit,rockTex,rockN,rand,range,loadHeadland,ripple,landcover,seaPhoto}){
  const geo=new T.PlaneGeometry(98,78,154,106);geo.rotateX(-Math.PI/2);const p=geo.attributes.position,uv=geo.attributes.uv,colors=[];
  for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i);p.setY(i,grade(x,z));uv.setXY(i,x/9.3,z/9.3);
   const d=clamp(Math.hypot(Math.max(Math.abs(x)-7.15,0),Math.max(Math.abs(z-1.25)-3.2,0))/1.65);
@@ -40,12 +40,14 @@ export function buildCoast({scene,mesh,mat,map,normal,grit,rockTex,rockN,rand,ra
  const addGeoUV=(g,ox=0,oz=0)=>{const a=g.attributes.position,uv=new Float32Array(a.count*2);for(let i=0;i<a.count;i++){uv[2*i]=((a.getX(i)+ox)*17+9800)/27700;uv[2*i+1]=1-((a.getZ(i)+oz)*17+11500)/22100}g.setAttribute('uv',new T.BufferAttribute(uv,2))};
  const seaGeom=new T.PlaneGeometry(2900,2500);seaGeom.rotateX(-Math.PI/2);addGeoUV(seaGeom,75,0);
  const water=mesh(seaGeom,new T.MeshPhysicalMaterial({color:0xb7cacb,map:seaPhoto,metalness:.01,roughness:.44,envMapIntensity:.29,specularIntensity:.27,normalMap:ripple,normalScale:new T.Vector2(.23,.19),clearcoat:.035,clearcoatRoughness:.45}),75,-4.97,0);water.castShadow=false;
+ loadHeadland(terrain=>{
  const land=terrain.scene.children[0];land.geometry.computeVertexNormals();addGeoUV(land.geometry);const vegetation=new T.MeshStandardNodeMaterial({roughness:1});
  const {positionWorld:W,texture,vec3}=T.TSL;
  const cover=texture(landcover).rgb;
  const crown=W.x.mul(.97).add(W.z.mul(.62)).sin().mul(W.z.mul(.77).sub(W.x.mul(.29)).sin()).mul(.052);
  const patch=W.x.mul(.24).add(W.z.mul(.105).sin().mul(2.1)).sin().mul(W.z.mul(.43).sin()).mul(.079);
  vegetation.colorNode=cover.mul(vec3(.85,.89,.81)).mul(crown.add(patch).add(1));land.material=vegetation;land.castShadow=false;land.receiveShadow=false;scene.add(land);
+ });
  scene.fog=new T.FogExp2(0xc4cdd0,.0024);
  return water;
 }
@@ -85,4 +87,56 @@ export function addSedges({scene,range,rand,timeNode,gustNode}){
    const h=grade(x,z)-.012,s=range(.68,1.4)*(.83+.32*mask);roots.push(x,h,z);model.position.set(x,h,z);model.rotation.y=range(0,6.28);model.scale.setScalar(s);model.updateMatrix();placements.push(model.matrix.clone())}
   geo.setAttribute('clumpRoot',new T.InstancedBufferAttribute(new Float32Array(roots),3));let o=new T.InstancedMesh(geo,material,placements.length);placements.forEach((m,i)=>o.setMatrixAt(i,m));o.castShadow=false;o.receiveShadow=true;scene.add(o)
  }
+}
+
+// Rengarenga drifts beside the approach. One shared mesh carries folded strap leaves,
+// branched flowering stalks and six-tepalled flowers; roots sit just under the local grade.
+export function plantArrivalBorder(scene){
+ const vertices=[],colors=[],indices=[];
+ const v=(x,y,z)=>new T.Vector3(x,y,z);
+ function pt(p,c){vertices.push(p.x,p.y,p.z);colors.push(...c);return vertices.length/3-1}
+ const green=[.11,.28,.115],light=[.20,.37,.16],white=[.94,.90,.79],pollen=[.81,.56,.12];
+ function stalk(a,b,r){
+  const d=b.clone().sub(a).normalize(),u=d.clone().cross(v(.31,.05,.91)).normalize(),w=d.clone().cross(u);
+  const start=vertices.length/3;
+  for(const p of [a,b])for(let i=0;i<5;i++){
+   const t=i*2*Math.PI/5;pt(p.clone().addScaledVector(u,r*Math.cos(t)).addScaledVector(w,r*Math.sin(t)),green)
+  }
+  for(let i=0;i<5;i++){const j=(i+1)%5;indices.push(start+i,start+j,start+5+i,start+j,start+5+j,start+5+i)}
+ }
+ for(let i=0;i<15;i++){
+  const angle=i*2.39996,len=.34+.24*(.5+.5*Math.sin(i*1.73)),dx=Math.cos(angle),dz=Math.sin(angle);
+  const base=vertices.length/3;
+  for(let j=0;j<=9;j++){
+   const t=j/9,reach=len*t**1.42,width=.037*Math.sin(Math.PI*(.05+.95*t))**.65;
+   for(const k of [-1,0,1])pt(v(dx*reach+dz*width*k,len*(1.57*t-1.09*t*t)+width*(k===0?.42:0),dz*reach-dx*width*k),k===0?light:green);
+   if(j){const n=base+j*3;indices.push(n-3,n-2,n,n-2,n+1,n,n-2,n-1,n+1,n-1,n+2,n+1)}
+  }
+ }
+ for(let stem=0;stem<3;stem++){
+  const a=stem*2.39996,tip=v(.15*Math.cos(a),.66+.085*Math.cos(stem),.15*Math.sin(a));
+  stalk(v(0,-.025,0),tip,.0038);
+  for(let i=0;i<9;i++){
+   const t=.54+.048*i,ang=i*2.4+a,root=tip.clone().multiplyScalar(t);
+   const end=root.clone().add(v(.13*Math.cos(ang)*(1-.55*i/9),.07,.13*Math.sin(ang)*(1-.55*i/9)));
+   stalk(root,end,.0016);
+   for(let petal=0;petal<6;petal++){
+    const d=ang+petal*Math.PI/3,dx=Math.cos(d),dz=Math.sin(d);
+    const start=pt(end,pollen);
+    pt(end.clone().add(v(.010*dx+.004*dz,-.003,.010*dz-.004*dx)),white);
+    pt(end.clone().add(v(.021*dx,-.010,.021*dz)),white);
+    pt(end.clone().add(v(.010*dx-.004*dz,-.003,.010*dz+.004*dx)),white);
+    indices.push(start,start+1,start+2,start,start+2,start+3);
+   }
+  }
+ }
+ const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(vertices,3));g.setAttribute('color',new T.Float32BufferAttribute(colors,3));g.setIndex(indices);g.computeVertexNormals();
+ const beds=[[5.4,5.7,9],[8.4,5.1,8],[11.9,5.5,6],[10.8,1.6,7],[-4.5,5.8,7]];
+ const mesh=new T.InstancedMesh(g,new T.MeshStandardMaterial({side:T.DoubleSide,vertexColors:true,roughness:.67}),beds.reduce((n,b)=>n+b[2],0));
+ const obj=new T.Object3D();let n=0;
+ for(const [cx,cz,count] of beds)for(let i=0;i<count;i++){
+  const a=i*2.39996+cx*.64,r=.36*Math.sqrt(i),x=cx+Math.cos(a)*r,z=cz+.63*Math.sin(a)*r;
+  obj.position.set(x,grade(x,z)-.028,z);obj.rotation.y=a;obj.scale.setScalar(.81+.24*Math.sin(i*3.63+cx));obj.updateMatrix();mesh.setMatrixAt(n++,obj.matrix);
+ }
+ mesh.castShadow=mesh.receiveShadow=true;scene.add(mesh)
 }
