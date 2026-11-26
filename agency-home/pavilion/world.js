@@ -73,7 +73,7 @@ export async function openPavilion(host,asset,forceGL=false,signal){
  ripple.wrapS=ripple.wrapT=T.RepeatWrapping;ripple.repeat.set(205,205);ripple.anisotropy=8;
  const litFloor=new T.MeshStandardNodeMaterial({roughness:.76,map:oakMap,normalMap:oakN,normalScale:new T.Vector2(.14,.14)});
  const evalFloor=T.TSL.texture(floorAO,T.TSL.vec2(T.TSL.positionWorld.x.div(14.4).add(.5),T.TSL.positionWorld.z.div(4.24).add(.5))).r;
- litFloor.colorNode=T.TSL.texture(oakMap).rgb.mul(evalFloor.pow(1.25));litFloor.userData={grain:true,repeatMetres:2.8};
+ litFloor.colorNode=T.TSL.texture(oakMap).rgb.mul(evalFloor.pow(1.48));litFloor.userData={grain:true,repeatMetres:2.8};
  const cloth=new T.MeshPhysicalMaterial({map:fabric,normalMap:fabricN,normalScale:new T.Vector2(.19,.19),roughness:.94,sheen:.27,sheenColor:0xd7d3c9,sheenRoughness:.87});
  const oak=mat(0xe6ddcd,.74,oakMap,{normalMap:oakN,normalScale:new T.Vector2(.24,.24)});oak.userData={grain:true,repeatMetres:2.8};
  const lime=new T.MeshStandardNodeMaterial({roughness:.95,map:plaster,normalMap:plasterN,normalScale:new T.Vector2(.16,.16)});lime.userData.repeatMetres=2.1;
@@ -82,12 +82,14 @@ export async function openPavilion(host,asset,forceGL=false,signal){
  lime.colorNode=T.TSL.texture(plaster).rgb.mul(nearRear.select(rearFactor.pow(1.12),T.TSL.float(1)));
  const stoneCast=mat(0xd0d0c4,.91,concrete,{normalMap:concreteN,normalScale:new T.Vector2(.22,.22)});stoneCast.userData.repeatMetres=2.7;
  const pine=mat(0x817a74,.79,dressedDeck()),cedar=mat(0xf2e1c4,.7,wood),dark=mat(0x98978d,.79,blackwood),edge=mat(0x252522,.43),metal=mat(0x252828,.3,null,{metalness:.55});
- const deck=mat(0xf1e7d9,.61,dressedDeck()),wall=lime,stone=mat(0x625f54,.77,grit),warmwhite=mat(0xebe1cb),linen=mat(0xb6a592),glow=mat(0xffecc5,.4,null,{emissive:0xffbd67,emissiveIntensity:2.6});
+ const deck=mat(0xe3d6c2,.69,dressedDeck()),wall=lime,stone=mat(0x625f54,.77,grit),warmwhite=mat(0xebe1cb),linen=mat(0xb6a592),glow=mat(0xffecc5,.4,null,{emissive:0xffbd67,emissiveIntensity:2.6});
  for(const m of [pine,cedar,dark,deck]){m.userData.grain=true;m.userData.repeatMetres=m===dark?1.75:2.8}
+ deck.bumpMap=deck.map; deck.bumpScale=.0014;
+ cedar.bumpMap=wood; cedar.bumpScale=.0011;
  const glass=new T.MeshPhysicalNodeMaterial({color:0xeaf0ed,roughness:.047,metalness:0,ior:1.5,clearcoat:1,clearcoatRoughness:.045,transparent:true,depthWrite:false});
  const {normalView,positionViewDirection,float}=T.TSL;
  const grazing=float(1).sub(normalView.dot(positionViewDirection).abs().clamp()).pow(4);
- glass.opacityNode=float(.012).add(grazing.mul(.21));
+ glass.opacityNode=float(.035).add(grazing.mul(.38));
  const boxes=new Map(), roofParts=new Map();
  let sheet=boxes;
  function register(m,transform){if(!sheet.has(m))sheet.set(m,[]);sheet.get(m).push(transform.clone())}
@@ -164,7 +166,10 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
    box(x,2.69,1.99,.066,.038,.11,metal);
  }
  for(const x of [-6.24,-4.46,-2.69,-.91,.86,2.64,4.42,6.20]){
-   if(x!==.86&&x!==2.64)box(x,1.46,1.956,1.72,2.88,.018,glass);
+   if(x!==.86&&x!==2.64){
+     box(x,1.46,1.956,1.72,2.88,.018,glass);
+     for(const side of [-1,1])box(x+side*.853,1.46,1.972,.012,2.84,.012,edge);
+   }
  }
  for(const y of [.069,2.86,3])box(0,y,1.96,14.22,.052,.111,metal);
  for(const x of [-7.11,-.05,7.11])box(x,roof(3.1)*.5,3.12,.087,roof(3.1),.087,metal);
@@ -241,8 +246,8 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  const windTime=T.TSL.uniform(0),gustStrength=T.TSL.uniform(0);
  addSedges({scene,range,rand,timeNode:windTime,gustNode:gustStrength});finePanicles(scene,windTime,gustStrength);
  const hemi=new T.HemisphereLight(0xe5edf2,0x99968b,.24);scene.add(hemi);
- const sun=new T.DirectionalLight(0xffeed5,2.72);sun.position.set(.58*30,.47*30,.68*30);sun.target.position.set(0,0,0);scene.add(sun,sun.target);sun.castShadow=true;
- Object.assign(sun.shadow.camera,{left:-18,right:18,top:14,bottom:-13,near:.2,far:65});const shadowSize=compactGL?1024:2048;sun.shadow.mapSize.set(shadowSize,shadowSize);sun.shadow.normalBias=.003;sun.shadow.bias=-.00007;
+ const sun=new T.DirectionalLight(0xffeed5,2.72);sun.position.set(-.75*30,.46*30,.54*30);sun.target.position.set(0,0,0);scene.add(sun,sun.target);sun.castShadow=true;
+ Object.assign(sun.shadow.camera,{left:-18,right:18,top:14,bottom:-13,near:.2,far:65});const shadowSize=compactGL?1024:2048;sun.shadow.mapSize.set(shadowSize,shadowSize);sun.shadow.normalBias=.002;sun.shadow.bias=-.00007;
  const fill=new T.DirectionalLight(0xe4eef6,.12);fill.position.set(2,6,-3);scene.add(fill);
  for(const x of [-3,3]){const lamp=new T.SpotLight(0xffead2,3.3,5,1.04,.86,2);lamp.position.set(x,2.64,.20);lamp.target.position.set(x,.35,-.65);scene.add(lamp,lamp.target)}
  // Area emitters fill the actual apertures. They provide broad indoor sky transport without point hotspots.
@@ -318,7 +323,9 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  signal?.throwIfAborted();
  host.replaceChildren(renderer.domElement);renderer.domElement.setAttribute('aria-hidden','true');
  const match=new URLSearchParams(location.search).has('match');
- const positions=[v(13.65,1.42,15.65),v(5.8,.88,8.45),(match?v(1.55,1.40,1.48):v(.89,1.49,1.69))],targets=[v(.23,1.21,.40),v(.07,1.21,.12),(match?v(4.28,1.27,-1.25):v(4.08,1.14,-.78))];
+ // Follow the gravel approach, rise with the deck stair, then turn along the veranda to the open slider.
+ const positions=[v(14.4,.25,11.3),v(11.1,.02,6.3),v(8.65,.85,3.34),v(6.4,1.57,3.18),v(1.78,1.57,2.74),match?v(1.55,1.40,1.48):v(.89,1.49,1.69)];
+ const targets=[v(-1.2,1.1,.48),v(.32,1.08,.21),v(-.65,1.2,1.08),v(-.58,1.28,1.05),v(2.85,1.24,-.32),match?v(4.28,1.27,-1.25):v(4.08,1.14,-.78)];
  const camPath=new T.CatmullRomCurve3(positions,false,'centripetal'),aimPath=new T.CatmullRomCurve3(targets,false,'centripetal');
  let garden=null;
  async function gardenBed(){const {createGardenBed}=await import("./garden-bed.js");return garden??=createGardenBed(scene,camera,ground)}
@@ -367,7 +374,7 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
    if(detail==='deck'){cp.set(6.75,1.41,4.0);aim.set(-1.10,1.04,2.61);camera.fov=57}
    if(garden?.active)garden.frame(cp,aim);
    indoors=!garden?.active&&p>.63&&!['deck','tree'].includes(detail);
-   scene.environmentIntensity=indoors?.43:1.03;
+   scene.environmentIntensity=indoors?.46:.85;
    camera.updateProjectionMatrix();
    if(explorePose){
     const {yaw,pitch,travel}=explorePose;
