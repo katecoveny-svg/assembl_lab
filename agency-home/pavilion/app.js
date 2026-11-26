@@ -101,8 +101,10 @@ function frame(now){id=0;if(!world||!visible||document.hidden)return;const delta
  if(dirty||(active&&now-prev>=(1000/30-.6))){if(active)time+=delta;
  if(touring&&!paused){
   tourTime+=delta;
-  const t=Math.min(1,tourTime/27);
-  p=tourFrom+(1-tourFrom)*(t*t*(3-2*t)*.55+t*.45);
+  const t=Math.min(1,tourTime/(cinema?32:27));
+  // Give the visitor half the walk inside, after crossing the open slider.
+  const phase=cinema?(t<.52?.76*t/.52:.76+.24*(t-.52)/.48):t*t*(3-2*t)*.55+t*.45;
+  p=tourFrom+(1-tourFrom)*phase;
   if(t===1)stopTour();
  }
  if(roomMove){
@@ -113,7 +115,7 @@ function frame(now){id=0;if(!world||!visible||document.hidden)return;const delta
  furnishInterior();
  const guided=!room&&!detail&&!exploring&&!garden?.active&&!settings.has('match');
  const lift=cinema?0:liftAt(p);if(cinema)journey.toggleAttribute('data-walking',p>.06);prev=now;
- try{world.draw(p,time,Math.max(0,1-(time-gustAt)/3.6),lift,guided,0)}
+ try{world.draw(p,time,Math.max(0,1-(time-gustAt)/3.6),lift,guided,cinema&&guided?easeBetween(p,.93,1):0)}
  catch{staticMode('render failed');return}
  titleFrame(p,lift);if(settings.has('profile')){if(lastPaint&&now-lastPaint<250)intervals.push(now-lastPaint);if(intervals.length>500)intervals.shift();lastPaint=now}dirty=false;vista.dataset.position=p.toFixed(3)}
  if(active||roomMove)id=requestAnimationFrame(frame)}
