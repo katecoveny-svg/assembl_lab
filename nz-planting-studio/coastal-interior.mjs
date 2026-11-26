@@ -5,9 +5,12 @@ function surface(reference, file) {
     const img = new Image();
     const texture = reference.clone();
     // clone() shares the Source; swapping the bitmap on our copy must leave other presets intact.
-    texture.source = new reference.source.constructor(reference.image);
+    const tile=document.createElement('canvas');tile.width=tile.height=512;
+    const brush=tile.getContext('2d');brush.drawImage(reference.image,0,0,512,512);
+    texture.source = new reference.source.constructor(tile);
+    texture.repeat.set(1,1);
     texture.colorSpace = reference.colorSpace; texture.anisotropy = 4;
-    img.onload = () => { texture.image = img; texture.needsUpdate = true; };
+    img.onload = () => { brush.drawImage(img,0,0,512,512); texture.needsUpdate = true; };
     img.src = new URL('./study-assets/' + file, import.meta.url).href;
     surfaces.set(file, texture);
   }

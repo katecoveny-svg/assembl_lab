@@ -7,7 +7,7 @@ const x = centre.x / bed.points.length, z = centre.z / bed.points.length;
 const compact = innerWidth < 640;
 const gy = studio.terrainEngine.getHeight(-5.5,-10.2);
 studio.setSunHour(9.65);
-studio.setCamera(compact ? -8.65 : -11.35, gy + (compact ? 2.85 : 2.50), compact ? 4.3 : 3.70, -5.25, gy + 1.43, -9.45);
+studio.setCamera(compact ? -12 : -11.35, gy + (compact ? 3.00 : 2.50), compact ? 6 : 3.70, compact ? -1.70 : -5.25, gy + (compact ? 1.64 : 1.43), compact ? -9.8 : -9.45);
 studio.setTool('paint-mix');
 studio.controls.enableZoom = false;
 studio.controls.enableRotate = true;
@@ -51,7 +51,6 @@ window.addEventListener('message', e => {
   if (e.data.type === 'plant') plant();
 });
 try {
-  await new Promise(resolve=>requestAnimationFrame(resolve));
   await studio.present();
   send('ready');
 } catch { send('unavailable'); }

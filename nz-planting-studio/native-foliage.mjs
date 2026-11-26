@@ -2,6 +2,7 @@
 // Coordinates are in metres; the renderer supplies Three.js constructors and instancing.
 const PI=Math.PI, TAU=2*PI;
 const palette={
+  oioi:['#424735','#85815a','#bd955f'],
   hydrangea:['#233c23','#45683a','#6e8b53'],
   harakeke:['#244326','#567047','#a2a16d'], platts_black:['#332323','#693f42','#ae7266'],
   silver_spear:['#476158','#7f9a84','#bcc7a1'], rengarenga:['#306132','#5c884a','#c3cc98'],
@@ -14,6 +15,7 @@ const palette={
   koromiko:['#314330','#58764d','#9cab7b'], kakabeak:['#2a482e','#5f8043','#a4a06b'], panakenake:['#395b28','#5a7835','#a3a46b'],
 };
 const clans={
+  oioi:'wire-rush',
   hydrangea:'mophead',
   harakeke:'fan',platts_black:'fan',silver_spear:'fan',rengarenga:'straps',libertia:'straps',
   toetoe:'grass',red_tussock:'grass',carex_testacea:'grass',poa_cita:'grass',
@@ -116,6 +118,23 @@ export function makeNativeFoliage(species, three,{compact=false}={}){
      tube([x,far],.005,.002,middle,4,.7,2);
      for(let k=0;k<(id==='rengarenga'?4:3);k++)bladeFlower(add(far,point(k*TAU/3,.022,0)),az+k*2.1,id==='harakeke'?.045:.038,flower);
     }
+   }
+  }
+ }else if(clan==='wire-rush'){
+  // Jointed oioi culms rise in uneven fans, with dark sheaths at staggered nodes.
+  const stems=compact?26:47;
+  for(let i=0;i<stems;i++){
+   const a=i*2.39996+random(-.24,.24), radius=random(.07,.49)*spread;
+   const base=point(a,radius*.35,0),height=h*random(.45,1.04),lean=point(a,radius*.63,0);
+   const curl=point(a+PI/2,random(-.033,.033)*spread,0);
+   const path=t=>add(base,add(mul(lean,t*t),add(mul(curl,Math.sin(PI*t)),[0,t*height,0])));
+   const width=random(.0019,.0032),tone=lerp(middle,light,random(.15,.79));
+   tube(Array.from({length:6},(_,j)=>path(j/5)),width,width*.58,tone,5,.70,1);
+   // Joint details share the stalk's wind weight so the russet sheaths stay attached.
+   for(const t of [.29,.53,.76]){
+    const p=path(t),q=path(t+.022),side=point(a+PI/2,1,0);
+    ribbon(v=>lerp(p,add(q,point(a,.006,.008)),v),()=>side,v=>width*(1.4-v),2,
+      bark,lerp(bark,light,.39),v=>(t+v*.022)*.7,0,.24);
    }
   }
  }else if(clan==='grass'){

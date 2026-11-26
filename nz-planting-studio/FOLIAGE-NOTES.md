@@ -12,3 +12,7 @@ The public entry remains `index.html`. Its bundled Three.js 187 renderer calls `
 - Small screens, touch-primary entry, and the explicit lack of WebGPU select a lower tessellation of the same forms. The remaining realism gains are better large-scale terrain contact/ground dress, a camera-dependent performance tier for plans with many trees, and licensed photographic bark and close-up leaf normals per species. This release uses procedural grain and a soft backlight term, not measured or photographic textures and not a field ID guide.
 
 Wind observes reduced-motion at startup and has an accessible toggle. Plants keep the original brush, season, cost, placement, WebGPU and WebGL path. Foliage module output is deterministic per taxon, but each scene instance has a different angle, scale, and wind phase/colour tint.
+
+## Coastal house and garden opening
+
+The close pōhutukawa uses branchlets with attached leaf meshes and seasonal stamens. The brush uses instanced jointed oioi stems. Both have rooted wind weights and smaller phone geometries. Bracts and culm colour follow the [NZ Plant Conservation Network species description](https://www.nzpcn.org.nz/flora/species/apodasmia-similis/). The local sky texture is a tone-mapped derivative of the public Pavilion’s [Kloofendal 38d Partly Cloudy Pure Sky, Poly Haven, CC0](https://polyhaven.com/a/kloofendal_38d_partly_cloudy_puresky).
