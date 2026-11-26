@@ -220,3 +220,34 @@ addEventListener('message',event=>{
  if(event.source!==parent||event.origin!==location.origin||!document.documentElement.classList.contains('roof-plate'))return;
  if(event.data?.type==='assembl:roof-shot'&&['detail','home','overview'].includes(event.data.view))S.twin?.reset(event.data.view);
 });
+
+// ---- 1-click assembl. Studio Still PNG export ---------------------------------------------------------------------------------------------
+function exportSolarStill() {
+  const cv = document.querySelector('#twinView canvas') && !$('#twinView').hidden
+    ? document.querySelector('#twinView canvas')
+    : $('#gl');
+  if (!cv) return;
+  requestAnimationFrame(() => {
+    try {
+      const out = document.createElement('canvas');
+      out.width = cv.width;
+      out.height = cv.height;
+      const ctx = out.getContext('2d');
+      ctx.drawImage(cv, 0, 0);
+      const barH = Math.max(40, Math.round(out.height * 0.048));
+      ctx.fillStyle = 'rgba(246, 241, 237, 0.94)';
+      ctx.fillRect(0, out.height - barH, out.width, barH);
+      ctx.fillStyle = '#240B21';
+      ctx.font = `500 ${Math.round(barH * 0.42)}px "Instrument Sans", system-ui, sans-serif`;
+      const place = S.site?.label || '16D Proposed Home';
+      const kwh = $('#kwh')?.textContent ? ` · ${$('#kwh').textContent}` : '';
+      ctx.fillText(`assembl. Solar · ${place}${kwh} · ${new Date().toISOString().slice(0, 10)}`, 18, out.height - Math.round(barH * 0.34));
+      const a = document.createElement('a');
+      a.download = `assembl-roof-solar-${new Date().toISOString().slice(0, 10)}.png`;
+      a.href = out.toDataURL('image/png');
+      a.click();
+    } catch (e) { console.warn('Solar still export:', e); }
+  });
+}
+$('#stillBtn')?.addEventListener('click', exportSolarStill);
+$('#stillBtnStudy')?.addEventListener('click', exportSolarStill);

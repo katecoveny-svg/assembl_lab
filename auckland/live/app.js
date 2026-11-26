@@ -370,3 +370,31 @@ function wireUi() {
     label.innerHTML = `${esc(r?.short || v.routeId)}<small>${esc(st.status === 'unknown' ? (v.speedKmh != null ? v.speedKmh + ' km/h' : '') : st.label)}</small>`;
   };
 }
+
+// 1-click hi-res PNG still export for Auckland live
+const aklStillBtn = document.getElementById('akl-still');
+if (aklStillBtn) {
+  aklStillBtn.addEventListener('click', () => {
+    const cv = document.getElementById('scene');
+    if (!cv) return;
+    requestAnimationFrame(() => {
+      try {
+        const out = document.createElement('canvas');
+        out.width = cv.width;
+        out.height = cv.height;
+        const ctx = out.getContext('2d');
+        ctx.drawImage(cv, 0, 0);
+        const barH = Math.max(36, Math.round(out.height * 0.042));
+        ctx.fillStyle = 'rgba(246, 241, 237, 0.92)';
+        ctx.fillRect(0, out.height - barH, out.width, barH);
+        ctx.fillStyle = '#240B21';
+        ctx.font = `500 ${Math.round(barH * 0.42)}px "Instrument Sans", system-ui, sans-serif`;
+        ctx.fillText('assembl. lab · Auckland live (Tāmaki Makaurau)', 18, out.height - Math.round(barH * 0.34));
+        const a = document.createElement('a');
+        a.download = `assembl-auckland-live-${new Date().toISOString().slice(0, 10)}.png`;
+        a.href = out.toDataURL('image/png');
+        a.click();
+      } catch (e) { console.warn('Auckland live still export:', e); }
+    });
+  });
+}

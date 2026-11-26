@@ -10,17 +10,17 @@
 }
 
 .le-root {
-  --le-bg: #180B18;
-  --le-surface: rgba(33, 18, 31, 0.86);
-  --le-surface-solid: #21121F;
-  --le-surface-hi: rgba(45, 25, 42, 0.92);
-  --le-ivory: #F9F6F2;
+  --le-bg: #F6F1ED;
+  --le-surface: rgba(255, 253, 251, 0.92);
+  --le-surface-solid: #FFFDFB;
+  --le-surface-hi: rgba(246, 241, 237, 0.96);
+  --le-ivory: #240B21;
   --le-paper: #FFFDFB;
-  --le-muted: #CBBBC6;
+  --le-muted: #654A4E;
   --le-rose: #D9BACB;
   --le-petal: #E8C9DC;
-  --le-line: rgba(217, 186, 203, 0.22);
-  --le-hair: rgba(217, 186, 203, 0.12);
+  --le-line: rgba(36, 11, 33, 0.14);
+  --le-hair: rgba(36, 11, 33, 0.08);
   --le-live: #6CD4A0;
   --le-sim: #D9BACB;
   --le-warn: #F0A35E;
@@ -766,7 +766,7 @@
   padding: 24px;
   text-align: center;
   color: var(--le-ivory);
-  background: radial-gradient(circle at 50% 40%, #2A1628 0%, #180B18 70%);
+  background: radial-gradient(circle at 50% 40%, #FFFDFB 0%, #EFE8E1 75%);
 }
 
 /* Responsive layout */
