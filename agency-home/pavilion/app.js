@@ -12,7 +12,7 @@ function cameraDining(progress){
  const [x,a]=tourKeys[low],[y,b]=tourKeys[high];
  return (a+(b-a)*Math.max(0,Math.min(1,(target-x)/Math.max(1,y-x))))/10000;
 }
-import {walkInput} from './house-walk.js?v=a687941e76';
+import {walkInput} from './house-walk.js?v=ee2f6128a2';
 import {installExplore} from './explore.js?v=832259faaa';
 import {lab} from './lab.js?v=ad470dddf6';
 const $=s=>document.querySelector(s);
@@ -33,6 +33,7 @@ const vista=$('#vista'),journey=$('.journey'),settings=new URLSearchParams(locat
 if(settings.has('match'))document.documentElement.classList.add('match-camera');
 const cinema=document.documentElement.classList.contains('agency-landing'),filmMotion=$('#film-motion');
 let syncMedium=()=>{},handover=()=>{};
+let requestedRoom=null;
 let room=null,roomMove=null,preferWebGL=false;
 let exploring=false,detail=null;
 let intervals=[],lastPaint=0;let world,p=0,paused=reduced.matches,visible=true,time=0,prev=0,id=0,gustAt=-10,manual=null,scrolled=window.scrollY,trace=false,lx=.5,ly=.49,dirty=true;
@@ -173,7 +174,7 @@ reduced.addEventListener('change',()=>{paused=reduced.matches;if(paused)stopTour
 document.addEventListener('click',e=>{let a=e.target.closest('a');if(a?.closest('#lab,#architecture'))event(a.target==='_blank'?'demo_launch':'brief_selected',a.href);if(a?.href.startsWith('mailto:'))event('contact_open',a.hash||'email')});
 async function start(signal){
  if(settings.get('renderer')==='still')throw new Error('Still view requested');
- const {openPavilion}=await import('./world.js?v=9d0ade704a');signal.throwIfAborted();
+ const {openPavilion}=await import('./world.js?v=fc8a038255');signal.throwIfAborted();
  const force=preferWebGL||settings.get('renderer')==='webgl';
  let candidate,drawnP,drawnDetail;
  async function firstFrame(webgl){
@@ -198,7 +199,7 @@ async function start(signal){
  const renderer=candidate.renderer;
  world=candidate;if(cinema){
   walkButton.hidden=false;$('.house-tools').hidden=false;
-  if(reduced.matches){walking.enter(false)}else{arrival=0;walkButton.textContent='Step inside';prev=performance.now()}
+  if(requestedRoom){const room=requestedRoom;requestedRoom=null;visitRoom(room,true)}else if(reduced.matches){walking.enter(false)}else{arrival=0;walkButton.textContent='Step inside';prev=performance.now()}
   candidate.refineFinishes().then(()=>{if(world===candidate)repaintGarden()}).catch(()=>{});
   candidate.furniture().then(room=>{if(world===candidate)layout=room}).catch(()=>{});
  }handover();if(drawnP!==p||drawnDetail!==detail){world.setDetail(detail);world.draw(p,0,0,liftAt(p))}
@@ -208,7 +209,7 @@ async function start(signal){
  vista.dataset.ready='true';vista.dataset.renderer=world.backend;journey.classList.remove('still');
  document.documentElement.classList.remove('no-js');$('#backend').textContent=world.backend;
  $('.scene-controls').hidden=false;gardenButton.hidden=false;enter.hidden=true;note.textContent='';motionLabel();free.ready();sync();
- window.pavilionStatus=()=>({treesReady:world.treesReady(),windTime:time,walking:world.walker.pose,arrival,touring,finishesReady:world.finishesReady(),exploring,detail,roofLift:liftAt(p),layout:layout?.positions(),garden:garden?{active:garden.active,planted:garden.count()}:null,backend:world.backend,draw:world.renderer.info.render,position:p,paused,visible,triangles:Math.round(world.triangleCount),pose:world.pose(),intervals});
+ window.pavilionStatus=()=>({dog:world.dogPose(),treesReady:world.treesReady(),windTime:time,walking:world.walker.pose,arrival,touring,finishesReady:world.finishesReady(),exploring,detail,roofLift:liftAt(p),layout:layout?.positions(),garden:garden?{active:garden.active,planted:garden.count()}:null,backend:world.backend,draw:world.renderer.info.render,position:p,paused,visible,triangles:Math.round(world.triangleCount),pose:world.pose(),intervals});
  requestAnimationFrame(()=>{if(world!==candidate)return;
   candidate.refine().then(()=>{if(world===candidate){dirty=true;wake()}}).catch(()=>{});
  });
@@ -310,6 +311,20 @@ const walking=walkInput({button:walkButton,surface:$('#gpu'),stage:journey,pad:$
  look(dx,dy){world?.walker.look(dx,dy);dirty=true;wake()},
  move(forward,right,dt){world?.walker.move(forward,right,dt);dirty=true;wake()}
 });
+function visitRoom(room,firstLoad=false){
+  if(!world){requestedRoom=room;loadWorld();return;}
+  if(editing())closeEditor();
+  walking.enter(false);
+  if(world.walker.visit(room,firstLoad||reduced.matches)){walking.travel();dirty=true;wake();}
+}
+for(const link of document.querySelectorAll('[data-walk-to]')){
+  link.addEventListener('click',e=>{
+    if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;
+    e.preventDefault();vista.scrollIntoView({block:'center',behavior:'instant'});
+    if(settings.get('renderer')==='still'){if(link.dataset.walkTo==='bedroom'){note.textContent='The bedroom is available in live 3D.';}else{chooseRoom(link.dataset.walkTo);}return;}
+    visitRoom(link.dataset.walkTo);
+  });
+}
 const free=installExplore(vista,{
  available:()=>!!world&&arrival===null&&!editing()&&!garden?.active&&!walking.active(),paused:()=>paused,
  togglePause(){paused=!paused;motionLabel();dirty=true;wake()},

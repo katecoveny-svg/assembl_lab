@@ -1,5 +1,5 @@
 import {profiles} from './design-profiles.js?v=1484423fe1';
-import {houseWalk} from './house-walk.js?v=a687941e76';
+import {houseWalk} from './house-walk.js?v=ee2f6128a2';
 import {bedroom} from './bedroom.js';
 import {deckGarden} from './deck-garden.js';
 import {dressedDeck,deckFixings} from './coastal-finish.js';
@@ -421,17 +421,38 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
   if(canStand(next.x,camera.position.z))displacement.x+=next.x-camera.position.x;
   if(canStand(camera.position.x,next.z))displacement.z+=next.z-camera.position.z;
  }
+ let dogMesh=null;
  async function furnishLivingRoom(){
   const {scene:model}=await glLoader.loadAsync(asset('living-room-dog.glb'));
   // The reviewed metre-scale model is centred in XZ, with its lowest paw at Y=0.
   model.position.set(4.97,.0865,.84);
-  model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
+  model.traverse(o=>{
+    if(!o.isMesh)return;
+    o.castShadow=true;o.receiveShadow=true;
+    // The authored mesh faces +X. Only its tail, upper chest and head move; all paws stay grounded.
+    const g=o.geometry,p=g.attributes.position,tail=new Float32Array(p.count*3),attention=new Float32Array(p.count*3);
+    for(let i=0;i<p.count;i++){
+      const x=p.getX(i),y=p.getY(i),z=p.getZ(i);
+      const tailWeight=T.MathUtils.smoothstep(-x,.54,.91)*T.MathUtils.smoothstep(y,-.45,-.24);
+      tail[3*i+2]=tailWeight*.15;tail[3*i+1]=tailWeight*.026;
+      const raised=T.MathUtils.smoothstep(y,-.24,.16),head=T.MathUtils.smoothstep(x,.27,.55)*raised;
+      attention[3*i+2]=(x-.26)*.17*head;
+      attention[3*i+1]=raised*(.010+.015*head);
+      attention[3*i]=-z*.12*head;
+    }
+    g.morphTargetsRelative=true;g.morphAttributes.position=[new T.Float32BufferAttribute(tail,3),new T.Float32BufferAttribute(attention,3)];
+    o.updateMorphTargets();dogMesh=o;
+  });
   const shade=new T.Mesh(new T.PlaneGeometry(.81,.35),new T.MeshBasicMaterial({map:contactMap,transparent:true,opacity:.72,depthWrite:false}));
   shade.rotation.x=-Math.PI/2;shade.position.set(4.97,.0878,.84);
   scene.add(shade,model);
  }
  function size(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
- function draw(progress,time,gust,roofLift=0,guided=false,benchPass=0,arrival=null){windTime.value=time;gustStrength.value=gust;let p=Math.max(0,Math.min(1,progress));const track=guided?Math.min(1,p/.76):p;
+ function draw(progress,time,gust,roofLift=0,guided=false,benchPass=0,arrival=null){windTime.value=time;gustStrength.value=gust;
+   if(dogMesh){
+     dogMesh.morphTargetInfluences[0]=Math.sin(time*4.1)*(.36+.42*(.5+.5*Math.sin(time*.79)));
+     dogMesh.morphTargetInfluences[1]=.5-.5*Math.cos(time*.84);
+   }let p=Math.max(0,Math.min(1,progress));const track=guided?Math.min(1,p/.76):p;
    const cp=camPath.getPoint(track),aim=aimPath.getPoint(track);
    if(guided&&p>.76){
     // Turn via the open aisle. Interpolating the look-at endpoints would aim straight into the camera.
@@ -483,7 +504,7 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
      tmp.position.set(x,y,z);tmp.scale.setScalar(s);tmp.rotation.set(wave*windFactor*.47,a,wave*windFactor,'ZXY');tmp.updateMatrix();o.setMatrixAt(i,tmp.matrix)}o.instanceMatrix.needsUpdate=true}
    renderer.render(scene,camera)
  }
- size();return {floorTarget,furniture,treesReady:()=>treesReady,walker,backend,draw,size,refine,refineFinishes,finishesReady:()=>finishesReady,refinePlanting,step,gardenBed,furnishLivingRoom,inside:()=>indoors,resetWalk:()=>displacement.set(0,0,0),setDetail(value){detail=value;displacement.set(0,0,0)},setExplore(view){explorePose=view;if(!view)displacement.set(0,0,0)},renderer,triangleCount,pose:()=>({position:camera.position.toArray(),quaternion:camera.quaternion.toArray(),fov:camera.fov,aspect:camera.aspect})}
+ size();return {dogPose:()=>dogMesh?.morphTargetInfluences?.slice(),floorTarget,furniture,treesReady:()=>treesReady,walker,backend,draw,size,refine,refineFinishes,finishesReady:()=>finishesReady,refinePlanting,step,gardenBed,furnishLivingRoom,inside:()=>indoors,resetWalk:()=>displacement.set(0,0,0),setDetail(value){detail=value;displacement.set(0,0,0)},setExplore(view){explorePose=view;if(!view)displacement.set(0,0,0)},renderer,triangleCount,pose:()=>({position:camera.position.toArray(),quaternion:camera.quaternion.toArray(),fov:camera.fov,aspect:camera.aspect})}
  } catch(error) {
    if(initialized)renderer.dispose();
    throw error;

@@ -104,3 +104,6 @@ h3 { font: 500 clamp(1.26rem, 2.1vw, 2rem)/1.08 var(--sans); letter-spacing: -.0
 .garden-window button{position:absolute;left:clamp(1rem,3vw,3rem);bottom:clamp(1rem,3vw,3rem)}.garden-rail{display:flex;align-items:center;gap:.5rem 1.5rem;flex-wrap:wrap;padding:.7rem 0;border-bottom:1px solid var(--line)}
 .garden-rail span{margin-right:auto}.garden-rail a{display:inline-flex;min-height:44px;align-items:center}.garden-feature,.tool,.tool img,.garden-feature img,.brand span{border-radius:0}
 @media(max-width:700px){.garden-opening .opening-title,.garden-opening .opening-note{grid-column:1/-1}.garden-opening .opening-note{margin:1rem 0 0}.garden-window{height:clamp(470px,70svh,710px)}}
+.project-first #garden{margin-top:0}
+.project-first [data-planting-stage]{width:100vw;margin-inline:calc((100% - 100vw)/2);height:100svh;min-height:340px}
+.project-first .site-header{max-width:none;padding-inline:0}.project-first .garden-opening{padding-bottom:1rem}

@@ -108,3 +108,19 @@ html.agency-landing #pavilion .house-tools button:hover,html.agency-landing #pav
 @media(max-width:680px){html.agency-landing #pavilion .film-signature{flex-wrap:wrap;gap:0 10px;padding:6px 15px}html.agency-landing #pavilion .house-tools{max-width:100%;gap:14px}html.agency-landing #pavilion .film-signature p{font-size:12px;margin:0}html.agency-landing #pavilion .house-tools button,html.agency-landing #pavilion .house-tools #walk-house{font-size:13px}}
 html.agency-landing #pavilion{align-items:stretch}
 html.agency-landing #pavilion :is(.pinned,.agency-lead,.film-signature){width:100%;max-width:none}
+html body #garden.agency-garden{padding:0;margin:0;max-width:none}
+.agency-garden [data-planting-stage],.project-first [data-planting-stage]{height:100svh;min-height:340px}
+.agency-garden :is(.garden-intro,.planting-rail),.pavilion-project,.agency-services,.kitchen-comparison{max-width:1580px;margin:0 auto;padding-left:var(--pad);padding-right:var(--pad)}
+.agency-garden .planting-rail{margin:0 var(--pad);max-width:none;padding:4px 0 12px}
+.garden-intro,.pavilion-project{display:grid;grid-template-columns:1.45fr 1fr;gap:clamp(20px,6vw,110px);align-items:end;padding-top:clamp(30px,4vw,75px);padding-bottom:clamp(22px,3vw,56px)}
+.garden-intro h1,.pavilion-project h2,.agency-services h2{font-weight:500;letter-spacing:-.043em;line-height:.96;font-size:clamp(46px,6.3vw,104px);margin:10px 0}
+.agency-place{font-size:15px;line-height:1.35}
+.garden-intro>div>p:not(.agency-place),.pavilion-project>div>p:not(.agency-place){font-size:clamp(16px,1.42vw,24px);max-width:36ch}
+.garden-intro a,.project-choices a,.agency-services>a{display:inline-flex;min-height:44px;align-items:center;font-weight:500}
+.project-choices{display:flex;gap:20px;flex-wrap:wrap}
+.pavilion-project{padding-top:clamp(38px,7vw,108px)}
+.kitchen-comparison{margin-block:18px 34px}.kitchen-comparison>summary{cursor:pointer;padding:14px 0}.kitchen-comparison .room-story{padding:0;margin:18px 0}
+.agency-services{padding-top:clamp(32px,5vw,78px);padding-bottom:clamp(38px,6vw,92px)}
+.agency-services>div{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(18px,4vw,70px);margin:28px 0 12px}.agency-services article{border-top:1px solid var(--rose);padding-top:14px}.agency-services h3{font:500 clamp(22px,2.3vw,40px)/1.1 Instrument;letter-spacing:-.03em;margin:0 0 10px}.agency-services p{max-width:38ch}
+.pavilion-tool :is(.agency-garden,.pavilion-project){display:none}
+@media(max-width:680px){.garden-intro,.pavilion-project{grid-template-columns:1fr;gap:6px}.agency-services>div{grid-template-columns:1fr}.agency-garden .head{padding-inline:15px}}
