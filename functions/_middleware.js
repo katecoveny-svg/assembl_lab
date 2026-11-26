@@ -15,6 +15,16 @@ export async function onRequest({ request, next, env }) {
     if (url.pathname === '/') return Response.redirect(new URL('/study/', url), 302);
     for (const [re, to] of STUDY) if (re.test(url.pathname)) return Response.redirect(new URL(url.pathname.replace(re, to) + url.search, url), 302);
   }
+  // Auckland Live computes nearby stops locally, only after the visitor presses Nearby stops.
+  // Permit the device prompt on that document alone; leave the rest of the Lab unchanged.
+  if (request.method === 'GET' && /^\/auckland\/live(?:\/|\/index\.html)?$/.test(url.pathname)) {
+    const res = await next();
+    const out = new Response(res.body, res);
+    if (out.ok && (out.headers.get('content-type') || '').includes('text/html')) {
+      out.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self), payment=()');
+    }
+    return out;
+  }
   // the shared lab bar and the twin fixes are unversioned and loaded by every lab page: make browsers check for a newer copy
   if (url.pathname === '/lab/navigation.js' || url.pathname.startsWith('/plan-studio/twins/css/')) {
     const res = await next(); const out = new Response(res.body, res); out.headers.set('cache-control', 'public, max-age=0, must-revalidate'); return out;
