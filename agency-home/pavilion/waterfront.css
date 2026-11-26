@@ -32,3 +32,6 @@
 .jump-work i{font-style:normal}.jump-work a:focus-visible{outline:2px solid #654a4e}
 @media(prefers-reduced-motion:no-preference){.jump-work i{transition:transform .25s}.jump-work a:hover i{transform:translate(4px,4px)}.head nav a:last-child{transition:transform .25s,box-shadow .25s}.head nav a:last-child:hover{transform:translateY(-2px);box-shadow:0 5px 16px #654a4e40}}
 @media(max-width:680px){.jump-work{grid-template-columns:1fr}.jump-work a{margin-right:0;padding:14px 0}}
+.lab .more-tools{display:block}.lab .more-tools .tool{grid-template-columns:minmax(0,1.8fr) minmax(220px,1fr);gap:clamp(22px,5vw,90px);padding:30px 0}.lab .more-tools .tool img{aspect-ratio:2.2}.lab .more-tools .tool h4{font-size:clamp(30px,4.5vw,70px)}
+.water-idle{background:linear-gradient(to top,#e3d0d2 var(--level,45%),#fffdfb var(--level,45%));border-bottom:1px solid #654a4e}.water-idle::before{content:attr(data-height);position:absolute;bottom:var(--level,45%);inset-inline:5%;border-bottom:1px solid #654a4e;color:#654a4e;padding-bottom:5px;font:500 clamp(30px,6vw,80px)/1 Instrument,sans-serif}
+@media(max-width:680px){.lab .more-tools .tool{grid-template-columns:1fr}.lab .more-tools .tool img{aspect-ratio:1.65}}

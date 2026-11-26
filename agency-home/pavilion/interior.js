@@ -1,4 +1,4 @@
-import {linenSofa} from './upholstery.js';
+import {linenSofa} from './upholstery.js?v=c1f59a4740';
 import * as T from './vendor/three.webgpu.min.js';
 import {RoundedBoxGeometry} from './vendor/RoundedBoxGeometry.js';
 

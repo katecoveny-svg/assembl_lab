@@ -2,14 +2,14 @@ import {bedroom} from './bedroom.js';
 import {deckGarden} from './deck-garden.js';
 import {dressedDeck,deckFixings} from './coastal-finish.js';
 import {fitKitchen} from './kitchen.js';
-import {plantPohutukawa} from './pohutukawa.js';
+import {plantPohutukawa} from './pohutukawa.js?v=1c2f5c0915';
 import * as T from './vendor/three.webgpu.min.js';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
 import {HDRLoader} from './vendor/HDRLoader.js';
 import {RoundedBoxGeometry} from './vendor/RoundedBoxGeometry.js';
 import {finePanicles} from './panicles.js';
-import {furnishRoom,placeLoungeChair} from './interior.js';
-import {buildCoast,addSedges,plantArrivalBorder,grade,plantable,pathX} from './landscape.js';
+import {furnishRoom,placeLoungeChair} from './interior.js?v=1f22eb3e10';
+import {buildCoast,addSedges,plantArrivalBorder,grade,plantable,pathX} from './landscape.js?v=a2969bdf0c';
 import {buildBoards} from './metric.js';
 import {houseParts} from './house-parts.js';
 

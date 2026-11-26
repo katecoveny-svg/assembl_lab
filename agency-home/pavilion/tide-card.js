@@ -19,7 +19,7 @@ export function tideCard(asset){
   if(scene){scene.setActive(true);return}
   if(forced||(!manual&&navigator.connection?.saveData)){fallback('Published tide heights below');return}
   if(pending)return;
-  pending=import('./harbour.js').then(m=>m.createHarbour(host)).then(water=>{
+  pending=import('./harbour.js?v=d48b713f56').then(m=>m.createHarbour(host)).then(water=>{
    scene=water;scene.setHeight(selectedHeight);scene.pause(paused);scene.setActive(visible&&!document.hidden);
    host.dataset.renderer='procedural';host.dataset.interactive='true';byId('water-fallback').hidden=true;
    open.hidden=false;open.textContent=paused?'Resume waves':'Pause waves';
@@ -32,7 +32,8 @@ export function tideCard(asset){
  open.onclick=()=>{if(!scene){manual=true;mount();return}paused=!paused;scene.pause(paused);open.textContent=paused?'Resume waves':'Pause waves';open.setAttribute('aria-pressed',String(paused))};
  function setEvent(i){
   index=Math.max(0,Math.min(i,days[keys[day]].length-1));const [time,height,,zone,kind]=days[keys[day]][index];
-  selectedHeight=Number(height);const label=kind+' tide · '+time+' '+zone+' · '+height+' m';
+  selectedHeight=Number(height);
+  const staff=document.querySelector('.water-idle');staff.style.setProperty('--level',Math.min(95,Math.max(4,selectedHeight/4.5*100))+'%');staff.dataset.height=height+' m';const label=kind+' tide · '+time+' '+zone+' · '+height+' m';
   byId('water-reading').textContent=label;slider.value=String(index);slider.setAttribute('aria-valuetext',label);
   showSelection();byId('tide-stops').querySelectorAll('button').forEach((b,j)=>b.setAttribute('aria-pressed',String(index===j)));
   const detail=byId('tide-date').textContent+' · '+label;byId('tides-context').textContent=detail;

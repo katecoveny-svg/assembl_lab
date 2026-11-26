@@ -1,5 +1,5 @@
 import {setupPlanReveal} from './plan-reveal.js';
-import {tideCard} from './tide-card.js';
+import {tideCard} from './tide-card.js?v=2a57698d57';
 export function lab(asset){const $=s=>document.querySelector(s);
 const plates={drawing:['plan16a.webp','Floor plan','Floor plan of the two-bedroom timber home with a deck along the living area.'],model:['16a-model-to-site-poster.webp','Site model','Aerial visualisation of the two timber homes and the existing house.'],exterior:['16a-poster.webp','Evening exterior','Visualisation of the two timber homes at dusk.']};
 $('.arch-views').hidden=false;
