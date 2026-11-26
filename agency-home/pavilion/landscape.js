@@ -88,3 +88,55 @@ export function addSedges({scene,range,rand,timeNode,gustNode}){
   geo.setAttribute('clumpRoot',new T.InstancedBufferAttribute(new Float32Array(roots),3));let o=new T.InstancedMesh(geo,material,placements.length);placements.forEach((m,i)=>o.setMatrixAt(i,m));o.castShadow=false;o.receiveShadow=true;scene.add(o)
  }
 }
+
+// Rengarenga drifts beside the approach. One shared mesh carries folded strap leaves,
+// branched flowering stalks and six-tepalled flowers; roots sit just under the local grade.
+export function plantArrivalBorder(scene){
+ const vertices=[],colors=[],indices=[];
+ const v=(x,y,z)=>new T.Vector3(x,y,z);
+ function pt(p,c){vertices.push(p.x,p.y,p.z);colors.push(...c);return vertices.length/3-1}
+ const green=[.11,.28,.115],light=[.20,.37,.16],white=[.94,.90,.79],pollen=[.81,.56,.12];
+ function stalk(a,b,r){
+  const d=b.clone().sub(a).normalize(),u=d.clone().cross(v(.31,.05,.91)).normalize(),w=d.clone().cross(u);
+  const start=vertices.length/3;
+  for(const p of [a,b])for(let i=0;i<5;i++){
+   const t=i*2*Math.PI/5;pt(p.clone().addScaledVector(u,r*Math.cos(t)).addScaledVector(w,r*Math.sin(t)),green)
+  }
+  for(let i=0;i<5;i++){const j=(i+1)%5;indices.push(start+i,start+j,start+5+i,start+j,start+5+j,start+5+i)}
+ }
+ for(let i=0;i<15;i++){
+  const angle=i*2.39996,len=.34+.24*(.5+.5*Math.sin(i*1.73)),dx=Math.cos(angle),dz=Math.sin(angle);
+  const base=vertices.length/3;
+  for(let j=0;j<=9;j++){
+   const t=j/9,reach=len*t**1.42,width=.037*Math.sin(Math.PI*(.05+.95*t))**.65;
+   for(const k of [-1,0,1])pt(v(dx*reach+dz*width*k,len*(1.57*t-1.09*t*t)+width*(k===0?.42:0),dz*reach-dx*width*k),k===0?light:green);
+   if(j){const n=base+j*3;indices.push(n-3,n-2,n,n-2,n+1,n,n-2,n-1,n+1,n-1,n+2,n+1)}
+  }
+ }
+ for(let stem=0;stem<3;stem++){
+  const a=stem*2.39996,tip=v(.15*Math.cos(a),.66+.085*Math.cos(stem),.15*Math.sin(a));
+  stalk(v(0,-.025,0),tip,.0038);
+  for(let i=0;i<9;i++){
+   const t=.54+.048*i,ang=i*2.4+a,root=tip.clone().multiplyScalar(t);
+   const end=root.clone().add(v(.13*Math.cos(ang)*(1-.55*i/9),.07,.13*Math.sin(ang)*(1-.55*i/9)));
+   stalk(root,end,.0016);
+   for(let petal=0;petal<6;petal++){
+    const d=ang+petal*Math.PI/3,dx=Math.cos(d),dz=Math.sin(d);
+    const start=pt(end,pollen);
+    pt(end.clone().add(v(.010*dx+.004*dz,-.003,.010*dz-.004*dx)),white);
+    pt(end.clone().add(v(.021*dx,-.010,.021*dz)),white);
+    pt(end.clone().add(v(.010*dx-.004*dz,-.003,.010*dz+.004*dx)),white);
+    indices.push(start,start+1,start+2,start,start+2,start+3);
+   }
+  }
+ }
+ const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(vertices,3));g.setAttribute('color',new T.Float32BufferAttribute(colors,3));g.setIndex(indices);g.computeVertexNormals();
+ const beds=[[5.4,5.7,9],[8.4,5.1,8],[11.9,5.5,6],[10.8,1.6,7],[-4.5,5.8,7]];
+ const mesh=new T.InstancedMesh(g,new T.MeshStandardMaterial({side:T.DoubleSide,vertexColors:true,roughness:.67}),beds.reduce((n,b)=>n+b[2],0));
+ const obj=new T.Object3D();let n=0;
+ for(const [cx,cz,count] of beds)for(let i=0;i<count;i++){
+  const a=i*2.39996+cx*.64,r=.36*Math.sqrt(i),x=cx+Math.cos(a)*r,z=cz+.63*Math.sin(a)*r;
+  obj.position.set(x,grade(x,z)-.028,z);obj.rotation.y=a;obj.scale.setScalar(.81+.24*Math.sin(i*3.63+cx));obj.updateMatrix();mesh.setMatrixAt(n++,obj.matrix);
+ }
+ mesh.castShadow=mesh.receiveShadow=true;scene.add(mesh)
+}

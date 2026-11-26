@@ -46,7 +46,7 @@ function specimen(seed,wood,leaves,foreground=false) {
    for(const [along,apart,ridge] of [[0,0,0],[.44,-1,0],[.48,0,.006],[.51,1,0],[1,0,-.012]]){
     const position=root.clone().addScaledVector(tip,length*along).addScaledVector(across,width*apart);
     lamina.push(position.x,position.y+ridge,position.z);laminaUV.push(along,(apart+1)/2);
-    const tint=.76+.24*along;laminaColor.push(.069*tint,.125*tint,.073*tint);
+    const tint=.70+.42*along+.08*Math.cos(heading);laminaColor.push(.10*tint,.19*tint,.095*tint);
    }
    for(const n of [0,1,2,0,2,3,1,4,2,2,4,3])laminaIndex.push(start+n);
   }
@@ -75,12 +75,12 @@ function specimen(seed,wood,leaves,foreground=false) {
    for(let j=0;j<13;j++){
     const t=between(.22,1),p=curve.getPoint(t),az=heading+between(-2.1,2.1);
     const shoot=point(Math.cos(az),between(.15,1.24),Math.sin(az)).normalize();
-    if(j%3===0)terminals.push(p.clone().addScaledVector(shoot,.90).toArray());
-    if(foreground&&j%2===0){
-     const size=between(.25,.43);
-     for(let n=1;n<=4;n++)leafPair(p.clone().addScaledVector(shoot,size*n/4),az+n*.38);
-     spray(p,shoot,size);
-    }else spray(p,shoot,between(.56,1.02));spray(p.clone().addScaledVector(shoot,.27),point(shoot.x+.45,between(.15,1.1),shoot.z-.35),between(.60,.92));
+    if(j%3===0)terminals.push(p.clone().addScaledVector(shoot,.45).toArray());
+    if(foreground){
+     const size=between(.36,.63);
+     for(let n=1;n<=6;n++)leafPair(p.clone().addScaledVector(shoot,size*n/6),az+n*.57);
+     if(j%3===0)spray(p,shoot,size*.83);
+    }else {spray(p,shoot,between(.46,.82));spray(p.clone().addScaledVector(shoot,.27),point(shoot.x+.45,between(.15,1.1),shoot.z-.35),between(.44,.70));}
    }
   }
  }

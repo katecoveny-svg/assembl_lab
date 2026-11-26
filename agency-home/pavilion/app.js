@@ -114,7 +114,7 @@ function frame(now){id=0;if(!world||!visible||document.hidden)return;const delta
  }
  furnishInterior();
  const guided=!room&&!detail&&!exploring&&!garden?.active&&!settings.has('match');
- const lift=cinema?0:liftAt(p);if(cinema)journey.toggleAttribute('data-walking',p>.06);prev=now;
+ const lift=cinema?0:liftAt(p);if(cinema)journey.toggleAttribute('data-walking',p>.21);prev=now;
  try{world.draw(p,time,Math.max(0,1-(time-gustAt)/3.6),lift,guided,cinema&&guided?easeBetween(p,.93,1):0)}
  catch{staticMode('render failed');return}
  titleFrame(p,lift);if(settings.has('profile')){if(lastPaint&&now-lastPaint<250)intervals.push(now-lastPaint);if(intervals.length>500)intervals.shift();lastPaint=now}dirty=false;vista.dataset.position=p.toFixed(3)}
