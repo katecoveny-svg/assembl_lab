@@ -1,6 +1,6 @@
 // Aotearoa Planting Studio OS add-on for /architecture/
 // Registers #/planting (top nav + full-bleed OS screen) and a per-project "Planting" tab,
-// embedding /landscape/?embed=os&project=...&lat=...&lon=... cleanly inside the assembl. shell.
+// embedding /nz-planting-studio/studio-v9.2 cleanly inside the warm-ivory assembl. shell.
 
 import { registerNav, registerRoute, registerProjectTab } from './modules.js';
 
@@ -12,18 +12,19 @@ const PLANTING_ICON =
 const CSS = `
 .pl-os-shell {
   width: 100%;
-  background: #180B18;
-  color: #F9F6F2;
+  background: #F6F1ED;
+  color: #240B21;
   display: flex;
   flex-direction: column;
   min-height: calc(100dvh - 108px);
 }
 .pl-os-shell.is-tab {
-  min-height: clamp(640px, 78dvh, 920px);
-  border-radius: 14px;
+  min-height: clamp(660px, 80dvh, 940px);
+  border-radius: 18px;
   overflow: hidden;
-  border: 1px solid rgba(101, 74, 78, 0.32);
+  border: 1px solid rgba(36, 11, 33, 0.12);
   margin-top: 8px;
+  box-shadow: 0 14px 32px -22px rgba(36, 11, 33, 0.18);
 }
 .pl-os-bar {
   display: flex;
@@ -31,9 +32,9 @@ const CSS = `
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 10px;
-  padding: 10px 18px;
-  background: #21121F;
-  border-bottom: 1px solid rgba(217, 186, 203, 0.22);
+  padding: 11px 18px;
+  background: #FFFDFB;
+  border-bottom: 1px solid rgba(36, 11, 33, 0.10);
 }
 .pl-os-meta {
   display: flex;
@@ -45,18 +46,18 @@ const CSS = `
   font: 500 10.5px/1.2 "IBM Plex Mono", ui-monospace, monospace;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #D9BACB;
+  color: #654A4E;
 }
 .pl-os-title {
   font: 500 15px/1.2 "Instrument Sans", system-ui, sans-serif;
   letter-spacing: -0.02em;
-  color: #FFFDFB;
+  color: #240B21;
 }
 .pl-os-stats {
   font: 500 11px/1.2 "IBM Plex Mono", ui-monospace, monospace;
-  color: #F9F6F2;
-  background: rgba(217, 186, 203, 0.14);
-  border: 1px solid rgba(217, 186, 203, 0.28);
+  color: #240B21;
+  background: #F6F1ED;
+  border: 1px solid rgba(36, 11, 33, 0.12);
   padding: 4px 10px;
   border-radius: 999px;
 }
@@ -68,11 +69,11 @@ const CSS = `
 }
 .pl-os-btn {
   appearance: none;
-  border: 1px solid rgba(255, 253, 251, 0.26);
-  background: rgba(24, 11, 24, 0.58);
-  color: #FFFDFB;
+  border: 1px solid rgba(36, 11, 33, 0.14);
+  background: #F6F1ED;
+  color: #240B21;
   font: 500 12px/1 "Instrument Sans", system-ui, sans-serif;
-  padding: 7px 12px;
+  padding: 7px 13px;
   min-height: 32px;
   border-radius: 999px;
   cursor: pointer;
@@ -80,22 +81,23 @@ const CSS = `
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 .pl-os-btn:hover {
-  background: rgba(36, 11, 33, 0.85);
-  border-color: rgba(255, 253, 251, 0.65);
+  background: #FFFDFB;
+  border-color: rgba(36, 11, 33, 0.34);
 }
 .pl-os-btn[aria-pressed="true"] {
-  background: #FFFDFB;
-  color: #240B21;
-  border-color: #FFFDFB;
+  background: #240B21;
+  color: #FFFDFB;
+  border-color: #240B21;
 }
 .pl-os-frame {
   flex: 1 1 auto;
   width: 100%;
-  min-height: 620px;
+  min-height: 640px;
   border: 0;
-  background: #180B18;
+  background: #F6F1ED;
   display: block;
 }
 `;
@@ -108,7 +110,7 @@ function ensureCss() {
   document.head.append(s);
 }
 
-/** Build the /landscape/ embed URL for an optional project & mode. Pure and Node-testable. */
+/** Build the /nz-planting-studio/studio-v9.2 embed URL for an optional project & mode. Pure and Node-testable. */
 export function buildPlantingEmbedUrl(project = null, opts = {}) {
   const params = new URLSearchParams();
   params.set('embed', 'os');
@@ -121,7 +123,7 @@ export function buildPlantingEmbedUrl(project = null, opts = {}) {
     params.set('lon', lon.toFixed(6));
   }
   if (opts.mode && opts.mode !== 'studio') params.set('mode', String(opts.mode));
-  return `/landscape/?${params.toString()}`;
+  return `/nz-planting-studio/studio-v9.2?${params.toString()}`;
 }
 
 export function formatPlantingStats(payload) {
@@ -148,14 +150,14 @@ function mountPlantingHost(el, ctx, { isTab = false } = {}) {
     <section class="pl-os-shell${isTab ? ' is-tab' : ''}" aria-label="Aotearoa 3D Planting Studio">
       <div class="pl-os-bar">
         <div class="pl-os-meta">
-          <span class="pl-os-eyebrow">Aotearoa Planting OS</span>
-          <span class="pl-os-title">${esc(project?.name ? `${project.name} · Site & Native Planting` : '3D Native Planting & Site-Plan Brush')}</span>
+          <span class="pl-os-eyebrow">Aotearoa Planting Studio · v9.2</span>
+          <span class="pl-os-title">${esc(project?.name ? `${project.name} · Site, Pool & Native Planting` : '3D Native Planting, Pool F9 & LINZ Site Studio')}</span>
           <span class="pl-os-stats" data-pl-stats hidden></span>
         </div>
         <div class="pl-os-actions" role="group" aria-label="Planting workspace mode">
           <button type="button" class="pl-os-btn" data-pl-mode="studio" aria-pressed="true">3D Garden</button>
-          <button type="button" class="pl-os-btn" data-pl-mode="siteplan" aria-pressed="false">Site Plan Brush</button>
-          <button type="button" class="pl-os-btn" data-pl-mode="photo" aria-pressed="false">Photo Backdrop</button>
+          <button type="button" class="pl-os-btn" data-pl-mode="model" aria-pressed="false">Model Grid</button>
+          <button type="button" class="pl-os-btn" data-pl-mode="photo" aria-pressed="false">Photo Match</button>
           <a class="pl-os-btn" href="${esc(standaloneUrl)}" target="_blank" rel="noopener" data-pl-ext>Open Full Screen ↗</a>
         </div>
       </div>
