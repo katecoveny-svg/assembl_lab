@@ -21,10 +21,10 @@ const rbox = (w, h, d, r) => new RoundedBoxGeometry(w, h, d, 2, r);
 const wheel = (r, w, at) => { const g = new T.CylinderGeometry(r, r, w, 14); g.rotateZ(Math.PI / 2); return part(g, '#161718', { rough: 0.8, at }); };
 
 // Forward is -z (north at bearing 0). y = 0 is the road, rail or water surface.
-export function busGeometry() { // a 12 m low-floor city bus
+export function busGeometry(detail = false) { // a representative 12 m low-floor city bus, not an operator model
   const P = [
     part(rbox(2.5, 2.75, 11.9, 0.2), '#e8eae7', { at: [0, 1.73, 0], rough: 0.34 }),
-    part(box(2.53, 0.95, 10.6), '#1a2228', { at: [0, 2.2, 0.35], rough: 0.08 }), // side glass
+    part(box(2.522, 0.77, 10.6), detail ? '#293437' : '#1a2228', { at: [0, 2.23, 0.35], rough: detail ? 0.34 : 0.12 }),
     part(box(2.28, 1.55, 0.08), '#1a2228', { at: [0, 1.95, -5.95], rough: 0.06 }), // windscreen
     part(box(1.7, 0.26, 0.06), '#f6b73c', { at: [0, 3.0, -5.95], rough: 0.3 }), // destination sign (lit amber; no text)
     part(box(2.54, 0.22, 11.4), '#c3c7cc', { at: [0, 1.32, 0], band: 1, rough: 0.3 }), // status band
@@ -33,6 +33,26 @@ export function busGeometry() { // a 12 m low-floor city bus
     part(box(0.34, 0.16, 0.06), '#fff6dc', { at: [0.85, 0.95, -5.97], rough: 0.1 }), part(box(0.34, 0.16, 0.06), '#fff6dc', { at: [-0.85, 0.95, -5.97], rough: 0.1 }),
     wheel(0.5, 0.32, [1.12, 0.5, -3.7]), wheel(0.5, 0.32, [-1.12, 0.5, -3.7]), wheel(0.5, 0.32, [1.12, 0.5, 2.9]), wheel(0.5, 0.32, [-1.12, 0.5, 2.9]),
   ];
+  if (!detail) return mergeGeometries(P);
+  for (const side of [-1,1]) {
+    const x = side * 1.270;
+    for (const z of [-3.9,-2.38,-.86,.66,2.18,3.70,5.0]) {
+      P.push(part(box(.035,.68,1.35),'#283c44',{at:[x,2.24,z],rough:.12}));
+      P.push(part(box(.05,.025,1.38),'#858d8e',{at:[x,1.902,z],rough:.5}));
+    }
+    P.push(part(rbox(.13,.24,.42,.055),'#242c30',{at:[side*1.40,2.18,-5.1],rough:.43}));
+    P.push(part(box(.12,.045,.14),'#3b4143',{at:[side*1.30,2.18,-5.1],rough:.48}));
+    for (const z of [-5.65,5.62]) P.push(part(box(.045,.12,.26),'#da933b',{at:[x,.82,z],rough:.31}));
+    P.push(part(box(.19,.44,.065),'#b82a22',{at:[side*.95,1.08,5.97],rough:.37}));
+  }
+  // Auckland left-side kerb doors. Dark perimeter, separate tall glazing and shut line.
+  for (const z of [-4.79,.86]) {
+    P.push(part(box(.042,1.78,1.32),'#272e31',{at:[-1.288,1.68,z],rough:.42}));
+    for (const dz of [-.31,.31]) P.push(part(box(.036,1.01,.53),'#21353e',{at:[-1.314,1.91,z+dz],rough:.13}));
+    P.push(part(box(.041,.12,1.18),'#747e80',{at:[-1.310,.85,z],rough:.55}));
+  }
+  for (let i=0;i<7;i++) P.push(part(box(1.65,.035,.047),'#6c7374',{at:[0,3.425,1+i*.23],rough:.53}));
+  P.push(part(box(1.95,1.01,.065),'#24333b',{at:[0,2.27,5.94],rough:.18}));
   return mergeGeometries(P);
 }
 export function trainGeometry() { // a three-car electric multiple unit, about 72 m
@@ -112,17 +132,30 @@ export function createFleet(scene, { max = { bus: 1400, train: 80, ferry: 60 } }
     const m = new T.InstancedMesh(geo[k], mat, max[k]); m.count = 0; m.castShadow = true; m.receiveShadow = true; m.frustumCulled = false;
     m.instanceColor = new T.InstancedBufferAttribute(new Float32Array(max[k] * 3), 3); m.name = 'fleet_' + k; scene.add(m); meshes[k] = m;
   }
+  // A single near-detail instance. Never multiply the close-up geometry by the whole live fleet.
+  let closeBus = null;
   const dummy = new T.Object3D(), col = new T.Color();
   return {
     meshes, material: mat,
     // list: [{mode, x, y, z, heading (radians, 0 = north), colour}]
-    update(list) {
+    update(list, selectedId = null, cameraDistance = Infinity) {
+      let featured = false;
       const n = { bus: 0, train: 0, ferry: 0 };
       for (const v of list) {
-        const m = meshes[v.mode]; if (!m || n[v.mode] >= m.instanceMatrix.count) continue;
+        const high = v.mode === 'bus' && v.id === selectedId && cameraDistance < 210;
+        if (high && !closeBus) {
+          closeBus = new T.InstancedMesh(busGeometry(true), mat, 1);
+          closeBus.instanceColor = new T.InstancedBufferAttribute(new Float32Array(3), 3);
+          closeBus.frustumCulled = false; closeBus.castShadow = closeBus.receiveShadow = true;
+          closeBus.name = 'fleet_bus_closeup'; scene.add(closeBus);
+        }
+        const m = high ? closeBus : meshes[v.mode]; if (!m || (!high && n[v.mode] >= m.instanceMatrix.count)) continue;
         dummy.position.set(v.x, v.y, v.z); dummy.rotation.set(0, -v.heading, 0); dummy.updateMatrix();
-        m.setMatrixAt(n[v.mode], dummy.matrix); m.setColorAt(n[v.mode], col.set(v.colour)); n[v.mode]++;
+        const slot = high ? 0 : n[v.mode]++;
+        m.setMatrixAt(slot, dummy.matrix); m.setColorAt(slot, col.set(v.colour));
+        if (high) { featured = true; m.instanceMatrix.needsUpdate = m.instanceColor.needsUpdate = true; }
       }
+      if (closeBus) closeBus.count = featured ? 1 : 0;
       for (const k of Object.keys(meshes)) { meshes[k].count = n[k]; meshes[k].instanceMatrix.needsUpdate = true; if (meshes[k].instanceColor) meshes[k].instanceColor.needsUpdate = true; }
     },
     setNight(f) { mat.userData.uNight.value = f; },

@@ -417,9 +417,14 @@ export async function createWorld(canvas, { phone = false, capture = false, time
   controls.addEventListener('start',stopFlight);
   reducedMotion.addEventListener('change', () => { if (reducedMotion.matches) stopFlight(); });
   function setView(v) { stopFlight(); controls.target.set(...v.t); camera.position.set(...v.p); controls.update(); }
-  function flyTo(t, dist = 900, pitch = 0.5) {
+  function flyTo(t, dist = 900, pitch = 0.5, bearing = null) {
     stopFlight();
     const to = new T.Vector3(t[0], t[1] ?? 0, t[2]), off = camera.position.clone().sub(controls.target); off.y = 0; if (off.lengthSq() < 1) off.set(0.6, 0, -1);
+    if (Number.isFinite(bearing)) {
+      // Rear three-quarter view along the actual reported heading, not broadside through the city block.
+      const angle = bearing + .25;
+      off.set(-Math.sin(angle),0,Math.cos(angle));
+    }
     off.normalize().multiplyScalar(Math.cos(pitch) * dist); off.y = Math.sin(pitch) * dist;
     if (reducedMotion.matches) { fly = null; controls.target.copy(to); camera.position.copy(to).add(off); controls.update(); return; }
     fly = { t0: performance.now(), dur: 1400, fromT: controls.target.clone(), fromP: camera.position.clone(), toT: to, toP: to.clone().add(off) };
@@ -450,7 +455,7 @@ export async function createWorld(canvas, { phone = false, capture = false, time
       s.x = s.fx + (s.tx - s.fx) * e; s.z = s.fz + (s.tz - s.fz) * e; s.y = s.fy + (s.ty - s.fy) * e;
       list.push({ id: s.id, mode: s.mode, x: s.x, y: s.y, z: s.z, heading: s.h, colour: s.colour });
     }
-    fleet.update(list); beacons.update(list, selectedId);
+    fleet.update(list, selectedId, camera.position.distanceTo(controls.target)); beacons.update(list, selectedId);
   }
   // nearest vehicle to a screen point (pixels), for taps
   const v3 = new T.Vector3();
