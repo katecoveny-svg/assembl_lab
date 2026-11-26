@@ -1,3 +1,4 @@
+import {profiles} from './design-profiles.js?v=1484423fe1';
 import * as T from './vendor/three.webgpu.min.js';
 import {RoundedBoxGeometry} from './vendor/RoundedBoxGeometry.js';
 import {mergeGeometries} from './vendor/BufferGeometryUtils.js';
@@ -124,7 +125,13 @@ export function fitKitchen(scene,oak,stone,glazeNormal){
  function diningChair(x,z,rotation){
   const chair=new T.Group(), parts=[];
   function piece(g,m,px,py,pz){const o=new T.Mesh(g,m);o.position.set(px,py,pz);chair.add(o);parts.push(o)}
-  function limb(a,b,r0,r1){const d=v(...b).sub(v(...a)),g=new T.CylinderGeometry(r1,r0,d.length(),16);g.applyQuaternion(new T.Quaternion().setFromUnitVectors(v(0,1,0),d.normalize()));piece(g,oakSeat,...a.map((n,i)=>(n+b[i])/2))}
+  function turnedLeg(a,b){
+   const axis=v(...b).sub(v(...a)),length=axis.length(),section=[];
+   for(let i=1;i<31;i++)section.push(new T.Vector2(.023*profiles['turned-leg'][i],length*((i-1)/29-.5)));
+   const geo=new T.LatheGeometry(section,16);
+   geo.applyQuaternion(new T.Quaternion().setFromUnitVectors(v(0,1,0),axis.normalize()));
+   piece(geo,oakSeat,...a.map((n,i)=>(n+b[i])*.5));
+  }
   const saddle=new RoundedBoxGeometry(.421,.041,.366,3,.020);
   piece(saddle,oakSeat,0,.463,0);
   // Cords span the seat and turn on its curved rail. They share one batched material.
@@ -134,7 +141,7 @@ export function fitKitchen(scene,oak,stone,glazeNormal){
    const curve=new T.CatmullRomCurve3([v(-span/2,.472,z),v(-span*.43,.491,z),v(0,.481,z),v(span*.43,.491,z),v(span/2,.472,z)]);
    piece(new T.TubeGeometry(curve,10,.0044,5),rush,0,0,0);
   }
-  for(const sx of [-1,1])for(const sz of [-1])limb([sx*.159,.069,sz*.145],[sx*.126,.452,sz*.107],.014,.022);
+  for(const side of [-1,1])turnedLeg([side*.159,.069,-.145],[side*.126,.452,-.107]);
   // Rear stiles rise continuously from the floor and bury their tenons in the curved crest.
   for(const sx of [-1,1]){
    const t=.173/.2255;

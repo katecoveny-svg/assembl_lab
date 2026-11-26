@@ -1,0 +1,256 @@
+{
+  "sheetsById": {
+    "Pavilion": {
+      "staticOverrides": {
+        "byObject": {}
+      },
+      "sequence": {
+        "type": "PositionalSequence",
+        "length": 37,
+        "subUnitsPerUnit": 30,
+        "tracksByObject": {
+          "Camera": {
+            "trackIdByPropPath": {
+              "[\"travel\"]": "travel",
+              "[\"dining\"]": "dining"
+            },
+            "trackData": {
+              "travel": {
+                "type": "BasicKeyframedTrack",
+                "__debugName": "travel",
+                "keyframes": [
+                  {
+                    "id": "travel0",
+                    "position": 0,
+                    "value": 0,
+                    "connectedRight": true,
+                    "handles": [
+                      0.68,
+                      1,
+                      0.32,
+                      0
+                    ]
+                  },
+                  {
+                    "id": "travel1",
+                    "position": 4.5,
+                    "value": 0.055,
+                    "connectedRight": true,
+                    "handles": [
+                      0.68,
+                      1,
+                      0.32,
+                      0
+                    ]
+                  },
+                  {
+                    "id": "travel2",
+                    "position": 9,
+                    "value": 0.23,
+                    "connectedRight": true,
+                    "handles": [
+                      0.66,
+                      0.66,
+                      0.34,
+                      0.34
+                    ]
+                  },
+                  {
+                    "id": "travel3",
+                    "position": 17,
+                    "value": 0.62,
+                    "connectedRight": true,
+                    "handles": [
+                      0.66,
+                      0.66,
+                      0.34,
+                      0.34
+                    ]
+                  },
+                  {
+                    "id": "travel4",
+                    "position": 21,
+                    "value": 0.76,
+                    "connectedRight": true,
+                    "handles": [
+                      0.68,
+                      1,
+                      0.32,
+                      0
+                    ]
+                  },
+                  {
+                    "id": "travel5",
+                    "position": 26,
+                    "value": 0.8,
+                    "connectedRight": true,
+                    "handles": [
+                      0.68,
+                      1,
+                      0.32,
+                      0
+                    ]
+                  },
+                  {
+                    "id": "travel6",
+                    "position": 29,
+                    "value": 0.86,
+                    "connectedRight": true,
+                    "handles": [
+                      0.68,
+                      1,
+                      0.32,
+                      0
+                    ]
+                  },
+                  {
+                    "id": "travel7",
+                    "position": 33,
+                    "value": 0.953,
+                    "connectedRight": true,
+                    "handles": [
+                      0.66,
+                      0.66,
+                      0.34,
+                      0.34
+                    ]
+                  },
+                  {
+                    "id": "travel8",
+                    "position": 37,
+                    "value": 1,
+                    "connectedRight": true,
+                    "handles": [
+                      0.68,
+                      1,
+                      0.32,
+                      0
+                    ]
+                  }
+                ]
+              },
+              "dining": {
+                "type": "BasicKeyframedTrack",
+                "__debugName": "dining",
+                "keyframes": [
+                  {
+                    "id": "dining0",
+                    "position": 0,
+                    "value": 0,
+                    "connectedRight": true,
+                    "handles": [
+                      0.68,
+                      1,
+                      0.32,
+                      0
+                    ]
+                  },
+                  {
+                    "id": "dining1",
+                    "position": 4.5,
+                    "value": 0,
+                    "connectedRight": true,
+                    "handles": [
+                      0.68,
+                      1,
+                      0.32,
+                      0
+                    ]
+                  },
+                  {
+                    "id": "dining2",
+                    "position": 9,
+                    "value": 0,
+                    "connectedRight": true,
+                    "handles": [
+                      0.66,
+                      0.66,
+                      0.34,
+                      0.34
+                    ]
+                  },
+                  {
+                    "id": "dining3",
+                    "position": 17,
+                    "value": 0,
+                    "connectedRight": true,
+                    "handles": [
+                      0.66,
+                      0.66,
+                      0.34,
+                      0.34
+                    ]
+                  },
+                  {
+                    "id": "dining4",
+                    "position": 21,
+                    "value": 0,
+                    "connectedRight": true,
+                    "handles": [
+                      0.68,
+                      1,
+                      0.32,
+                      0
+                    ]
+                  },
+                  {
+                    "id": "dining5",
+                    "position": 26,
+                    "value": 0,
+                    "connectedRight": true,
+                    "handles": [
+                      0.68,
+                      1,
+                      0.32,
+                      0
+                    ]
+                  },
+                  {
+                    "id": "dining6",
+                    "position": 29,
+                    "value": 0.04,
+                    "connectedRight": true,
+                    "handles": [
+                      0.68,
+                      1,
+                      0.32,
+                      0
+                    ]
+                  },
+                  {
+                    "id": "dining7",
+                    "position": 33,
+                    "value": 0.68,
+                    "connectedRight": true,
+                    "handles": [
+                      0.66,
+                      0.66,
+                      0.34,
+                      0.34
+                    ]
+                  },
+                  {
+                    "id": "dining8",
+                    "position": 37,
+                    "value": 1,
+                    "connectedRight": true,
+                    "handles": [
+                      0.68,
+                      1,
+                      0.32,
+                      0
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitionVersion": "0.4.0",
+  "revisionHistory": [
+    "assembl-waiheke-01"
+  ]
+}

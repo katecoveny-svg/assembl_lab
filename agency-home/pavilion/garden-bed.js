@@ -1,3 +1,4 @@
+import {profiles,widthAt} from './design-profiles.js?v=1484423fe1';
 // Original Pavilion planting. Dimensions are scene metres. Site Scatter inspired the ground brush.
 import * as T from './vendor/three.webgpu.min.js';
 import {stampSweep} from './garden-sampling.js';
@@ -44,10 +45,10 @@ function specimen(kind,seed){
   positions.push(x,y,z);colours.push(c.r*tone,c.g*tone,c.b*tone);
  }
  function blade({a,h,reach,w,base,bend,colour,ox=0,oz=0,tip=.72}){
-  const start=positions.length/3,L=8,dx=Math.cos(a),dz=Math.sin(a);
+  const start=positions.length/3,L=flax?13:8,dx=Math.cos(a),dz=Math.sin(a);
   for(let k=0;k<=L;k++){
    const u=k/L,sweep=base+reach*u**1.5,y=h*(u-bend*u**2.6);
-   const x=ox+dx*sweep,z=oz+dz*sweep,width=w*Math.max(.012,(1-u**1.8))*(.70+.3*Math.sin(Math.PI*u));
+   const x=ox+dx*sweep,z=oz+dz*sweep,width=w*(flax?widthAt(profiles.harakeke,Math.max(.04,u)):Math.max(.012,1-u**1.8)*(.70+.3*Math.sin(Math.PI*u)));
    const shade=.63+.37*Math.sin(Math.PI*u*.78);
    point(x-dz*width,y,z+dx*width,colour,shade*tip);
    point(x-dx*width*.34,y+width*.12,z-dz*width*.34,colour,shade*1.15);
@@ -81,7 +82,7 @@ function specimen(kind,seed){
  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(positions,3));g.setAttribute('color',new T.Float32BufferAttribute(colours,3));g.setIndex(indices);g.computeVertexNormals();return g;
 }
 
-export function createGardenBed(scene,camera,grade){
+export function createGardenBed(scene,camera,grade,windTime){
  const rng=randomSource(196165),group=new T.Group(),soil=substrate(grade,rng),ray=new T.Raycaster(),ndc=new T.Vector2();
  group.add(soil);group.visible=false;scene.add(group);
  const up=new T.Vector3(0,-1,0);
@@ -102,7 +103,12 @@ export function createGardenBed(scene,camera,grade){
   detritus.setMatrixAt(i,chip.matrix);detritus.setColorAt(i,new T.Color().setScalar(.20+smallRng()*.53));
  }
  detritus.receiveShadow=true;group.add(detritus);
- const rows=[],batches=[],material=new T.MeshStandardMaterial({vertexColors:true,side:T.DoubleSide,roughness:.78});
+ const rows=[],batches=[],material=new T.MeshStandardNodeMaterial({vertexColors:true,side:T.DoubleSide,roughness:.78});
+ // Model-space displacement leaves each fan rooted in the painted soil.
+ const local=T.TSL.positionLocal,height=local.y.max(0);
+ const phase=windTime.mul(1.34).add(T.TSL.instanceIndex.toFloat().mul(.71));
+ const sway=height.mul(height).mul(phase.sin().mul(.040).add(phase.mul(1.83).sin().mul(.011)));
+ material.positionNode=local.add(T.TSL.vec3(sway,0,sway.mul(.37)));
  for(let kind=0;kind<3;kind++){
   const batch=new T.InstancedMesh(specimen(kind,6749+kind),material,[30,90,180][kind]);
   batch.count=0;batch.frustumCulled=false;batch.castShadow=true;batch.receiveShadow=true;group.add(batch);batches.push(batch);

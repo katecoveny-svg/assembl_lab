@@ -1,0 +1,14 @@
+{
+  "name": "assembl-scene-authoring",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node serve.mjs",
+    "bake": "node bake.cjs"
+  },
+  "dependencies": {
+    "@theatre/core": "0.7.2",
+    "@theatre/studio": "0.7.2",
+    "esbuild": "0.25.12"
+  }
+}
