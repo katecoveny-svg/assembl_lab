@@ -19,7 +19,7 @@ if(window.parent!==window){
  addEventListener('message',e=>{
   if(e.origin!==location.origin||e.source!==parent||e.data?.type!=='waiheke-rehearsal'||!world)return;
   const {travel,dining}=e.data;if(![travel,dining].every(n=>Number.isFinite(n)&&n>=0&&n<=1))return;
-  stopTour();paused=true;setRoom(null);manual=p=travel;rehearsalDining=dining;dirty=true;wake();
+  arrival=null;walking.leave();stopTour();paused=true;setRoom(null);manual=p=travel;rehearsalDining=dining;dirty=true;wake();
  });
 }`;
 writeFileSync(app,code);

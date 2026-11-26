@@ -12,9 +12,9 @@ function cameraDining(progress){
  const [x,a]=tourKeys[low],[y,b]=tourKeys[high];
  return (a+(b-a)*Math.max(0,Math.min(1,(target-x)/Math.max(1,y-x))))/10000;
 }
-import {walkInput} from './house-walk.js?v=29559704e7';
+import {walkInput} from './house-walk.js?v=a687941e76';
 import {installExplore} from './explore.js?v=832259faaa';
-import {lab} from './lab.js?v=27eec3907d';
+import {lab} from './lab.js?v=ad470dddf6';
 const $=s=>document.querySelector(s);
 const asset=name=>'/pavilion/assets/'+name;
 const pictures=new IntersectionObserver(entries=>{
@@ -38,6 +38,7 @@ let exploring=false,detail=null;
 let intervals=[],lastPaint=0;let world,p=0,paused=reduced.matches,visible=true,time=0,prev=0,id=0,gustAt=-10,manual=null,scrolled=window.scrollY,trace=false,lx=.5,ly=.49,dirty=true;
 function event(name,value){window.dispatchEvent(new CustomEvent('assembl:interaction',{detail:{name,value}}))}
 function bounds(){const r=journey.getBoundingClientRect();return {top:r.top+scrollY,range:Math.max(1,r.height-$('.pinned').offsetHeight)}}
+let arrival=null;
 let touring=false,tourTime=0,tourFrom=0,carry=0,carryOrigin=0;
 const tourControl=$('#pavilion-tour');
 function scrollPosition(at=scrollY){
@@ -114,6 +115,11 @@ addEventListener('scroll',scrollStill,{passive:true});reduced.addEventListener('
 function frame(now){id=0;if(!world||!visible||document.hidden)return;const delta=Math.min(.1,Math.max(0,(now-prev)/1000));const active=!paused||time-gustAt<3.6;
  furnishExterior();
  if(dirty||(active&&now-prev>=(1000/30-.6))){if(active)time+=delta;
+ if(arrival!==null){
+  arrival=paused?1:Math.min(1,arrival+delta/10.5);
+  p=arrival*.76;
+  if(arrival===1){arrival=null;walking.enter(false);syncMedium()}
+ }
  if(touring&&!paused){
   tourTime+=delta;
   const t=Math.min(1,tourTime/(cinema?tourSeconds:27));
@@ -130,10 +136,10 @@ function frame(now){id=0;if(!world||!visible||document.hidden)return;const delta
  furnishInterior();
  const guided=!room&&!detail&&!exploring&&!garden?.active&&!settings.has('match');
  const lift=cinema?0:liftAt(p);if(cinema)journey.toggleAttribute('data-walking',p>.21);prev=now;
- try{world.draw(p,time,Math.max(0,1-(time-gustAt)/3.6),lift,guided,cinema&&guided?cameraDining(p):0)}
+ try{world.draw(p,time,Math.max(0,1-(time-gustAt)/3.6),lift,guided,cinema&&guided?cameraDining(p):0,arrival===null?null:arrival+(.5-Math.cos(arrival*Math.PI)*.5-arrival)*.60)}
  catch{staticMode('render failed');return}
- titleFrame(p,lift);if(settings.has('profile')){if(lastPaint&&now-lastPaint<250)intervals.push(now-lastPaint);if(intervals.length>500)intervals.shift();lastPaint=now}dirty=false;vista.dataset.position=p.toFixed(3)}
- if(active||roomMove)id=requestAnimationFrame(frame)}
+ if(cinema)syncLens();titleFrame(p,lift);if(settings.has('profile')){if(lastPaint&&now-lastPaint<250)intervals.push(now-lastPaint);if(intervals.length>500)intervals.shift();lastPaint=now}dirty=false;vista.dataset.position=p.toFixed(3)}
+ if(active||roomMove||arrival!==null)id=requestAnimationFrame(frame)}
 function wake(){if(!id)id=requestAnimationFrame(frame)}
 function jump(t,view=null){roomMove=null;finishGarden();setRoom(view==='kitchen'?'kitchen':t===1&&!view?'living':null);stopTour();carry=0;free.leave(false);free.releaseGlance();detail=view;world?.setDetail(view);document.querySelectorAll("[data-detail]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.detail===view)));manual=t;p=t;if(!paused&&!reduced.matches){const b=bounds();const coordinate=t;window.scrollTo(0,b.top+coordinate*b.range+(t===1&&!settings.has('match')?Math.min(95,innerHeight*.09):0))}sync();event('pavilion_view',view??t)}
 function traceAt(x,y){lx=Math.min(1,Math.max(0,x));ly=Math.min(1,Math.max(0,y));vista.style.setProperty('--mx',(lx*100)+'%');vista.style.setProperty('--my',(ly*100)+'%')}
@@ -149,7 +155,7 @@ $('#trace').onclick=()=>{trace=!trace;$('.tracing').hidden=!trace;$('#trace').se
 function motionLabel(){$('#pause').setAttribute('aria-pressed',String(paused));$('#pause').textContent=paused?'Resume motion':'Pause motion'}
 $('#pause').onclick=()=>{stopTour();paused=!paused;motionLabel();dirty=true;wake()};
 $('#gust').onclick=()=>{gustAt=time;dirty=true;wake();event('pavilion_gust',true)};
-function staticMode(reason){closeEditor();$('.house-tools').hidden=true;if(walkButton){walking.leave();walkButton.hidden=true}
+function staticMode(reason){arrival=null;closeEditor();hideLens();$('.house-tools').hidden=true;if(walkButton){walking.leave();walkButton.hidden=true}
  finishGarden();garden=null;gardenButton.hidden=true;stopTour();if(roomMove){p=roomMove.to;roomMove=null}
  const failed=world;world=null;window.pavilionStatus=undefined;
  if(failed?.backend==='WebGPU')preferWebGL=true;
@@ -167,14 +173,14 @@ reduced.addEventListener('change',()=>{paused=reduced.matches;if(paused)stopTour
 document.addEventListener('click',e=>{let a=e.target.closest('a');if(a?.closest('#lab,#architecture'))event(a.target==='_blank'?'demo_launch':'brief_selected',a.href);if(a?.href.startsWith('mailto:'))event('contact_open',a.hash||'email')});
 async function start(signal){
  if(settings.get('renderer')==='still')throw new Error('Still view requested');
- const {openPavilion}=await import('./world.js?v=164a5b2f47');signal.throwIfAborted();
+ const {openPavilion}=await import('./world.js?v=9d0ade704a');signal.throwIfAborted();
  const force=preferWebGL||settings.get('renderer')==='webgl';
  let candidate,drawnP,drawnDetail;
  async function firstFrame(webgl){
   const scene=await openPavilion($('#gpu'),asset,webgl,signal);
   try{
    signal.throwIfAborted();drawnP=p;drawnDetail=detail;
-   scene.setDetail(detail);scene.size();scene.draw(p,0,0,liftAt(p));
+   scene.setDetail(detail);scene.size();scene.draw(p,0,0,liftAt(p),false,0,cinema?0:null);
    const queue=scene.renderer.backend.device?.queue;
    if(queue){
     let abort;
@@ -190,14 +196,19 @@ async function start(signal){
   candidate=await firstFrame(true);
  }
  const renderer=candidate.renderer;
- world=candidate;if(cinema){walkButton.hidden=false;$('.house-tools').hidden=false}handover();if(drawnP!==p||drawnDetail!==detail){world.setDetail(detail);world.draw(p,0,0,liftAt(p))}
+ world=candidate;if(cinema){
+  walkButton.hidden=false;$('.house-tools').hidden=false;
+  if(reduced.matches){walking.enter(false)}else{arrival=0;walkButton.textContent='Step inside';prev=performance.now()}
+  candidate.refineFinishes().then(()=>{if(world===candidate)repaintGarden()}).catch(()=>{});
+  candidate.furniture().then(room=>{if(world===candidate)layout=room}).catch(()=>{});
+ }handover();if(drawnP!==p||drawnDetail!==detail){world.setDetail(detail);world.draw(p,0,0,liftAt(p))}
  const lost=()=>{if(world===candidate)staticMode('context lost')};
  renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();lost()},{once:true});
  renderer.backend.device?.lost.then(lost);
  vista.dataset.ready='true';vista.dataset.renderer=world.backend;journey.classList.remove('still');
  document.documentElement.classList.remove('no-js');$('#backend').textContent=world.backend;
  $('.scene-controls').hidden=false;gardenButton.hidden=false;enter.hidden=true;note.textContent='';motionLabel();free.ready();sync();
- window.pavilionStatus=()=>({treesReady:world.treesReady(),windTime:time,walking:world.walker.pose,touring,finishesReady:world.finishesReady(),exploring,detail,roofLift:liftAt(p),layout:layout?.positions(),garden:garden?{active:garden.active,planted:garden.count()}:null,backend:world.backend,draw:world.renderer.info.render,position:p,paused,visible,triangles:Math.round(world.triangleCount),pose:world.pose(),intervals});
+ window.pavilionStatus=()=>({treesReady:world.treesReady(),windTime:time,walking:world.walker.pose,arrival,touring,finishesReady:world.finishesReady(),exploring,detail,roofLift:liftAt(p),layout:layout?.positions(),garden:garden?{active:garden.active,planted:garden.count()}:null,backend:world.backend,draw:world.renderer.info.render,position:p,paused,visible,triangles:Math.round(world.triangleCount),pose:world.pose(),intervals});
  requestAnimationFrame(()=>{if(world!==candidate)return;
   candidate.refine().then(()=>{if(world===candidate){dirty=true;wake()}}).catch(()=>{});
  });
@@ -254,13 +265,14 @@ function closeEditor(focus=false){
  if(!previous)return;
  layout?.leave();finishGarden();journey.removeAttribute('data-edit');editor.hidden=true;
  controls.hidden=!world;$('#paint-tools').hidden=$('#arrange-tools').hidden=true;
+ if(focus&&cinema&&world)walking.enter(false);
  if(focus)(previous==='garden'?paint:arrange).focus({preventScroll:true});
  repaintGarden();
 }
 async function openEditor(mode){
  if(!world||editing())return;
  const current=world,ticket=++editorTicket;editorName=mode;
- walking.leave();stopTour();free.leave(false);free.releaseGlance();roomMove=null;detail=null;world.setDetail(null);
+ arrival=null;walking.leave();stopTour();free.leave(false);free.releaseGlance();roomMove=null;detail=null;world.setDetail(null);
  controls.hidden=true;editor.hidden=false;journey.dataset.edit=mode;$('#edit-help').textContent='Opening…';
  const report=message=>{$('#edit-status').textContent=message};
  try{
@@ -289,13 +301,17 @@ $('#layout-reset').onclick=()=>{layout?.reset();repaintGarden();$('#edit-status'
 new IntersectionObserver(([entry])=>{if(!entry.isIntersecting&&editing())closeEditor()}).observe(vista);
 const walkButton=$('#walk-house');
 const walking=walkInput({button:walkButton,surface:$('#gpu'),stage:journey,pad:$('#walk-pad'),
- start(){if(!world||!cinema||editing())return false;stopTour();free.releaseGlance();world.walker.start();p=.76;detail=null;world.setDetail(null);setRoom(null);manual=p;roomMove=null;dirty=true;wake();return true},
- stop(){world?.walker.stop();dirty=true;wake()},
+ start(){if(!world||!cinema||editing())return false;arrival=null;stopTour();free.releaseGlance();world.walker.start();p=.76;detail=null;world.setDetail(null);setRoom(null);manual=p;roomMove=null;dirty=true;wake();return true},
+ stop(){world?.walker.stop();manual=p=0;dirty=true;wake();queueMicrotask(syncMedium)},
+ clickFloor:e=>world?.floorTarget(e),
+ advance(dt){if(!world)return false;const more=world.walker.advance(dt);dirty=true;wake();return more},
+ cancel:()=>world?.walker.cancel(),
+ grab(e){const drag=layout?.grab(e,surface,world?.walker.pose);return drag?event=>{if(drag(event)){dirty=true;wake()}}:null},
  look(dx,dy){world?.walker.look(dx,dy);dirty=true;wake()},
  move(forward,right,dt){world?.walker.move(forward,right,dt);dirty=true;wake()}
 });
 const free=installExplore(vista,{
- available:()=>!!world&&!editing()&&!garden?.active&&!walking.active(),paused:()=>paused,
+ available:()=>!!world&&arrival===null&&!editing()&&!garden?.active&&!walking.active(),paused:()=>paused,
  togglePause(){paused=!paused;motionLabel();dirty=true;wake()},
  lock(value){stopTour();roomMove=null;exploring=value;if(value&&trace){trace=false;$('.tracing').hidden=true;$('#trace').setAttribute('aria-pressed','false')}},
  inside:()=>world?.inside(),step:(f,r)=>world?.step(f,r),resetWalk:()=>world?.resetWalk(),setCamera(view){world?.setExplore(view)},repaint(){dirty=true;wake()}
@@ -325,7 +341,7 @@ function loadWorld(automatic=false){
  pending=job;automaticTried=true;vista.toggleAttribute('data-warming',automatic);
  job.timeout=setTimeout(()=>expireLoad(job),automatic?(cinema?90000:12000):45000);
  if(!automatic){enter.disabled=true;note.textContent='Opening the pavilion…'}
- start(job.controller.signal).then(()=>{if(job.automatic&&eligible()&&!job.interacted&&!reduced.matches)startTour()}).catch(()=>{
+ start(job.controller.signal).then(()=>{if(!cinema&&job.automatic&&eligible()&&!job.interacted&&!reduced.matches)startTour()}).catch(()=>{
   staticMode(job.controller.signal.reason||'renderer unavailable');
  }).finally(()=>{
   clearTimeout(job.timeout);pending=null;vista.removeAttribute('data-warming');
@@ -354,7 +370,7 @@ async function consider(){
 function visibilityChange(){
  clearTimeout(timer);
  if(pending?.automatic&&!eligible())pending.controller.abort('poster');
- if(!automaticTried&&eligible())timer=setTimeout(consider,250);
+ if(!automaticTried&&eligible())timer=setTimeout(consider,cinema?0:250);
 }
 new IntersectionObserver(([entry])=>{
  visible=entry.isIntersecting;heroVisible=entry.intersectionRatio>=.15;
@@ -393,20 +409,62 @@ if(cinema){
   const supported = settings.get('renderer') !== 'still' && !!(navigator.gpu || window.WebGL2RenderingContext);
   const conserve = navigator.connection?.saveData || matchMedia('(prefers-reduced-data: reduce)').matches;
   const loading = supported && (!!pending || (!automaticTried && !conserve));
-  filmMotion.hidden = !supported || (!world && loading);
+  filmMotion.hidden = !!world || !supported || loading;
   filmMotion.disabled=!!pending&&!world;
-  filmMotion.textContent=world?(touring?'Pause tour':p>.98?'Replay tour':'Resume tour'):conserve&&!automaticTried?'Load interactive model':'Retry 3D';
-  hint.textContent=world?(walking.active()?'First-person walk':'Drag to look around'):loading?'Loading the house…':'Still view';
+  filmMotion.textContent=conserve&&!automaticTried?'Load interactive model':'Retry 3D';
+  hint.textContent=world?(arrival!==null?'Entering the house…':walking.active()?'Walk through the house':'Exterior view'):loading?'Loading the house…':'Still view';
  }
  syncMedium=status;
  handover=status;
  filmMotion.onclick=()=>{
   if(!world){loadWorld();status();return}
-  if(touring){stopTour();return}
-  walking.leave();closeEditor();
-  free.releaseGlance();setRoom(null);detail=null;world.setDetail(null);if(p>.98)p=0;paused=false;startTour();
  };
  const refresh=new MutationObserver(status);
  refresh.observe(vista,{attributes:true,attributeFilter:['data-ready','data-warming']});
  status();
 }
+
+// Register the offline light-transport pass to the live camera. Movement always releases the lens.
+const lens=$('#room-lens'),lensButton=$('#daylight-lens'),lensImage=lens.querySelector('img');
+let lensPinned=false,registered=false,lensX=.5,lensY=.55,lensWidth=0,lensHeight=0;
+function hideLens(){
+ registered=false;lensPinned=false;lensButton.hidden=true;lensButton.setAttribute('aria-pressed','false');
+ lens.removeAttribute('data-on');lens.removeAttribute('data-pinned');
+}
+function syncLens(){
+ const pose=world?.walker.pose;
+ const aligned=pose&&Math.abs(pose.x-1.32)<.002&&Math.abs(pose.z-1.53)<.002&&Math.abs(pose.yaw+.95)<.0005&&Math.abs(pose.pitch+.21)<.0005
+  &&!Object.values(layout?.positions()||{}).some(([x,z])=>Math.abs(x)+Math.abs(z)>.002);
+ if(!aligned){if(registered)hideLens();return}
+ const w=surface.clientWidth,h=surface.clientHeight;
+ if(registered&&w===lensWidth&&h===lensHeight)return;
+ const verticalFov=w<h?77:59,scaledHeight=h*Math.tan(77*Math.PI/360)/Math.tan(verticalFov*Math.PI/360);
+ // The source is a larger gate around the same optical centre. An ultrawide viewport may exceed it.
+ if(w>scaledHeight*1.75+1){if(registered)hideLens();return}
+ registered=true;lensWidth=w;lensHeight=h;lensButton.hidden=false;
+ lens.style.setProperty('--gate',scaledHeight+'px');
+ if(!lensImage.hasAttribute('src'))lensImage.src='/pavilion/assets/living-daylight.webp';
+}
+function moveLens(x,y){
+ lensX=Math.min(1,Math.max(0,x));lensY=Math.min(1,Math.max(0,y));
+ lens.style.setProperty('--x',lensX*100+'%');lens.style.setProperty('--y',lensY*100+'%');
+ const gateH=parseFloat(lens.style.getPropertyValue('--gate'))||lensHeight;
+ lens.style.setProperty('--image-x',(50+(lensX-.5)*100*lensWidth/(gateH*1.75))+'%');
+ lens.style.setProperty('--image-y',(50+(lensY-.5)*100*lensHeight/gateH)+'%');
+ lens.toggleAttribute('data-on',registered&&lensImage.complete&&lensImage.naturalWidth>0);
+}
+function pointLens(e){const r=vista.getBoundingClientRect();moveLens((e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height)}
+vista.addEventListener('pointermove',e=>{if(registered&&(lensPinned||e.pointerType==='mouse'&&!e.buttons))pointLens(e)});
+vista.addEventListener('pointerleave',()=>{if(!lensPinned)lens.removeAttribute('data-on')});
+surface.addEventListener('pointerdown',()=>{lens.removeAttribute('data-on')},{capture:true});
+lensButton.onclick=()=>{
+ lensPinned=!lensPinned;lensButton.setAttribute('aria-pressed',String(lensPinned));lens.toggleAttribute('data-pinned',lensPinned);
+ if(lensPinned)moveLens(.5,.57);else lens.removeAttribute('data-on');
+};
+lens.addEventListener('pointerdown',pointLens);
+lensButton.addEventListener('keydown',e=>{
+ if(!lensPinned)return;
+ const d={ArrowLeft:[-.08,0],ArrowRight:[.08,0],ArrowUp:[0,-.08],ArrowDown:[0,.08]}[e.key];
+ if(d){e.preventDefault();moveLens(lensX+d[0],lensY+d[1])}if(e.key==='Escape')lensButton.click();
+});
+lensImage.addEventListener('load',()=>{if(lensPinned)moveLens(lensX,lensY)});

@@ -187,6 +187,10 @@
     "pavilion/assets/quay-glazing.webp": "agency-home/pavilion/assets/quay-glazing.webp",
     "auckland/3d/skytower-parts.json": "agency-home/pavilion/assets/skytower-parts.json",
     "pavilion/house-walk.js": "agency-home/pavilion/house-walk.js",
-    "pavilion/assets/soffit-lining.webp": "agency-home/pavilion/assets/soffit-lining.webp"
+    "pavilion/assets/soffit-lining.webp": "agency-home/pavilion/assets/soffit-lining.webp",
+    "pavilion/assets/kitchen-daylight.webp": "agency-home/pavilion/assets/kitchen-daylight.webp",
+    "pavilion/assets/kitchen-browser.webp": "agency-home/pavilion/assets/kitchen-browser.webp",
+    "pavilion/kitchen-light.js": "agency-home/pavilion/kitchen-light.js",
+    "pavilion/assets/living-daylight.webp": "agency-home/pavilion/assets/living-daylight.webp"
   }
 }

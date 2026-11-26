@@ -1,3 +1,4 @@
+import {joineryLight} from './kitchen-light.js?v=b9c34058b0';
 import {profiles} from './design-profiles.js?v=1484423fe1';
 import * as T from './vendor/three.webgpu.min.js';
 import {RoundedBoxGeometry} from './vendor/RoundedBoxGeometry.js';
@@ -193,5 +194,17 @@ export function fitKitchen(scene,oak,stone,glazeNormal){
  sc.fillStyle=ramp;sc.fillRect(0,0,2,64);
  const shade=new T.Mesh(new T.PlaneGeometry(.57,.095),new T.MeshBasicMaterial({map:new T.CanvasTexture(railShade),transparent:true,depthWrite:false}));
  shade.position.set(-2.855,1.485,-1.935);scene.add(shade);
- for(const [m,geos] of bins){const g=mergeGeometries(geos,false);const o=new T.Mesh(g,m);o.castShadow=o.receiveShadow=true;scene.add(o);for(const geo of geos)geo.dispose()}
+ for(const [m,geos] of bins){
+  const g=mergeGeometries(geos,false);
+  if(ceramics.includes(m)||m===timber||m===grout){
+   const pos=g.attributes.position,old=g.attributes.color,values=new Float32Array(pos.count*3);
+   for(let i=0;i<pos.count;i++){
+    const occlusion=pos.getZ(i)<-1.27?joineryLight(pos.getX(i),pos.getY(i)):1;
+    values[i*3]=occlusion*(old?old.getX(i):1);
+    values[i*3+1]=occlusion*(old?old.getY(i):1);
+    values[i*3+2]=occlusion*(old?old.getZ(i):1);
+   }
+   g.setAttribute('color',new T.BufferAttribute(values,3));m.vertexColors=true;
+  }
+  const o=new T.Mesh(g,m);o.castShadow=o.receiveShadow=true;scene.add(o);for(const geo of geos)geo.dispose()}
 }
