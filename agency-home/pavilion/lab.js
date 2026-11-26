@@ -1,49 +1,5 @@
-import {setupPlanReveal} from './plan-reveal.js';
 import {tideCard} from './tide-card.js?v=2a57698d57';
 export function lab(asset){const $=s=>document.querySelector(s);
-const plates={drawing:['plan16a.webp','Floor plan','Floor plan of the two-bedroom timber home with a deck along the living area.'],model:['16a-model-to-site-poster.webp','Site model','Aerial visualisation of the two timber homes and the existing house.'],exterior:['16a-poster.webp','Evening exterior','Visualisation of the two timber homes at dusk.']};
-$('.arch-views').hidden=false;
-const activeMotion=matchMedia('(prefers-reduced-motion: reduce)'),prior=$('#prior-plate'),caseImage=$('#arch-img');let plate='exterior',transition=0;
-const sectionVisibility=setupPlanReveal(asset);
-function showPlate(key,action){
- sectionVisibility(key==='section');if(key===plate)return;
- if(key==='section'){plate=key;++transition;prior.hidden=true;$('#arch-label').textContent='16C · Registered section';$('#arch-context').textContent='Selected view · Registered plan and model';
- $('#brief-16a a[href^="mailto"]').href='mailto:assembl@assembl.co.nz?subject=A%20project%20like%2016A&body=I%20was%20looking%20at%20the%20registered%2016C%20plan%20and%20model.';
- document.querySelectorAll('[data-plate]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.plate===key)));return}
- const [name,title,alt]=plates[key],oldKey=plate;plate=key;const token=++transition;
- if(!activeMotion.matches){prior.src=caseImage.src;prior.toggleAttribute('data-drawing',oldKey==='drawing');prior.hidden=false;prior.getAnimations().forEach(a=>a.cancel());prior.animate([{opacity:1},{opacity:0}],{duration:380,fill:'forwards'}).finished.then(()=>{if(token===transition)prior.hidden=true}).catch(()=>{})}
- delete caseImage.dataset.image;caseImage.src=asset(name);caseImage.alt=alt;caseImage.toggleAttribute('data-drawing',key==='drawing');$('#arch-label').textContent=title;
- $('#arch-context').textContent='Selected view · '+title;$('#brief-16a a[href^="mailto"]').href='mailto:assembl@assembl.co.nz?subject='+encodeURIComponent('A project like 16A')+'&body='+encodeURIComponent('I was looking at the 16A '+title.toLowerCase()+' study.');
- document.querySelectorAll('[data-plate]').forEach(b=>b.setAttribute('aria-pressed',String(key===b.dataset.plate)));
- if(action)window.dispatchEvent(new CustomEvent('assembl:interaction',{detail:{name:'plate_selected',value:key}}));
-}
-document.querySelectorAll('[data-plate]').forEach(b=>b.onclick=()=>showPlate(b.dataset.plate,true));
-showPlate('exterior',false);
-const filmWrap=$('.film-wrap');
-const platesFrame=$('#architecture .plate-img');
-const groups=[...document.querySelectorAll('.intro-title,#waiheke-title,.lab-lines')].map(el=>{
- const lines=[...el.querySelectorAll('span')];lines.forEach(line=>line.classList.add('motion-line'));return {el,lines};
-});
-const active=new Set(), watched=[filmWrap,platesFrame,...groups.map(g=>g.el)];
-const bounded=x=>Math.max(-1,Math.min(1,x));
-let tick=0;
-function paint(){
- tick=0;
- for(const el of active){
-  const r=el.getBoundingClientRect(),t=bounded((innerHeight/2-r.top-r.height/2)/((innerHeight+r.height)/2));
-  if(el===filmWrap){el.style.setProperty('--film-shift',(t*5.7).toFixed(2)+'%');continue}
-  if(el===platesFrame){el.style.setProperty('--plate-shift',(t*3.8).toFixed(2)+'%');continue}
-  const lines=groups.find(g=>g.el===el).lines;
-  lines.forEach((line,i)=>{
-   line.style.setProperty('--type-x',(t*(i-(lines.length-1)/2)*(innerWidth<681?15:47)).toFixed(1)+'px');
-   line.style.setProperty('--type-y',(-t*(i+1)*8).toFixed(1)+'px');
-  });
- }
-}
-function update(){if(!activeMotion.matches&&!tick&&active.size)tick=requestAnimationFrame(paint)}
-const observer=new IntersectionObserver(entries=>{for(const e of entries){if(e.isIntersecting)active.add(e.target);else active.delete(e.target)}update()});
-watched.forEach(el=>observer.observe(el));
-window.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);activeMotion.addEventListener('change',update);
 tideCard(asset);
 let audioContext,soundOn=false;
 const soundControl=$('#sound');
@@ -64,38 +20,4 @@ soundControl.addEventListener('click',async()=>{
 });
 document.addEventListener('click',e=>{if(e.isTrusted&&e.target.closest('button,a')&&e.target!==soundControl)clickSound()});
 
- const film=$('.film-wrap video'),play=$('#play-film');
- const source='https://lab.assembl.co.nz/media/work/waiheke-flythrough.mp4';
- let onScreen=false,autoTried=false,manualPlayback=false,resumeWhenVisible=false;
- play.hidden=false;
- async function playFilm(manual){
-  manualPlayback=manual;
-  if(!film.hasAttribute('src'))film.src=source;
-  film.hidden=false;film.muted=true;
-  try{await film.play()}catch{
-   if(!film.paused)return;
-   film.classList.remove('playing');play.hidden=false;
-  }
- }
- film.addEventListener('playing',()=>{
-  if(document.hidden||!onScreen&&!manualPlayback){film.pause();return}
-  film.classList.add('playing');play.hidden=true;
- });
- film.addEventListener('ended',()=>{film.classList.remove('playing');play.hidden=false;play.textContent='Replay fly-through ▷'});
- film.addEventListener('error',()=>{film.classList.remove('playing');film.hidden=true;film.removeAttribute('src');play.hidden=false;play.textContent='Retry fly-through'});
- function syncFilm(){
-  const net=navigator.connection;
-  const restricted=activeMotion.matches||net?.saveData||matchMedia('(prefers-reduced-data: reduce)').matches
-   ||['3g','2g','slow-2g'].includes(net?.effectiveType)||(net?.downlink>0&&net.downlink<.7)
-   ||(navigator.deviceMemory>0&&navigator.deviceMemory<4)||(navigator.hardwareConcurrency>0&&navigator.hardwareConcurrency<4);
-  if(document.hidden||!onScreen||restricted&&!manualPlayback){
-   if(!film.paused){resumeWhenVisible=true;film.pause()}return;
-  }
-  if(resumeWhenVisible){resumeWhenVisible=false;playFilm(manualPlayback);return}
-  if(!manualPlayback&&!autoTried&&!restricted){autoTried=true;playFilm(false)}
- }
- play.onclick=()=>{autoTried=true;playFilm(true)};
- new IntersectionObserver(([e])=>{onScreen=e.intersectionRatio>=.32;syncFilm()},{threshold:[0,.32]}).observe(filmWrap);
- activeMotion.addEventListener('change',syncFilm);navigator.connection?.addEventListener('change',syncFilm);
- document.addEventListener('visibilitychange',syncFilm);
 }

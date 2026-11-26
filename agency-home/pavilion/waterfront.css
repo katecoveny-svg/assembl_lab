@@ -60,3 +60,51 @@
 .agency-landing #pavilion[data-edit] .film-signature>:is(p,#film-motion){display:none}
 #pavilion .house-tools[hidden],#pavilion .house-editor[hidden],#pavilion .house-editor>[hidden]{display:none!important}
 @media(max-width:680px){.agency-landing #pavilion .house-tools{right:10px;top:9px}.agency-landing #pavilion .house-tools button{font-size:13px;padding-inline:10px}#pavilion .house-editor #edit-help{flex-basis:100%}}
+/* Give the model the entire gesture surface. The agency introduction follows it. */
+.agency-landing #pavilion[data-first-person] .agency-lead{position:static;visibility:visible;background:#fffdfb;color:#654a4e;padding:22px var(--pad);pointer-events:auto}
+.agency-landing #pavilion[data-first-person] .walk-directions{top:auto;left:var(--pad);max-width:calc(100% - 36px);bottom:14px;background:#fffdfbf0;color:#654a4e;padding:9px 12px}
+.agency-landing #pavilion[data-first-person] .film-signature{min-height:54px}
+.agency-landing #pavilion #walk-pad{bottom:80px;top:auto}
+/* The doorway and the room share one viewport and one document position throughout the approach. */
+html.agency-landing #pavilion .vista{height:clamp(385px,73svh,900px)}
+html.agency-landing #pavilion .agency-lead,html.agency-landing #pavilion[data-first-person] .agency-lead{position:static;opacity:1;visibility:visible;background:var(--paper);color:var(--plum);padding:clamp(24px,3.1vw,56px) var(--pad) 8px}
+html.agency-landing #pavilion .pinned{overflow:clip}
+html.agency-landing #pavilion .film-signature{position:static;padding:3px var(--pad) 8px;border:0;min-height:40px}
+html.agency-landing #pavilion .film-signature p{visibility:visible;min-height:28px;color:var(--plum)}
+html.agency-landing #pavilion .house-tools{right:var(--pad);top:12px}
+html.agency-landing .vista[data-warming] picture img{animation:none}
+html.agency-landing #pavilion[data-edit] .agency-lead{display:none}
+.opening>.gemini-summary{box-sizing:content-box}
+.room-story,.garden-studio{max-width:1480px;margin:clamp(56px,8vw,124px) auto;padding:0 var(--pad)}
+.spread-heading{display:grid;grid-template-columns:1.5fr 1fr;align-items:end;gap:16px clamp(24px,8vw,116px);margin-bottom:clamp(20px,3vw,42px);background:transparent;border:0}
+.spread-heading :is(h2,h3){font:500 clamp(46px,6.4vw,101px)/.99 Instrument,sans-serif;letter-spacing:-.04em;margin:.14em 0 0}
+.spread-heading>p{max-width:32ch;font-size:clamp(16px,1.4vw,21px);margin:0 0 3px}
+.finish-study{margin:0}
+#finish-view{--x:57%;--y:52%;--r:clamp(62px,10vw,172px);position:relative;overflow:hidden;touch-action:pan-y;aspect-ratio:1440/848;background:var(--rose)}
+#finish-view img,.bed-stage>img,.bed-stage iframe{display:block;width:100%;height:100%;object-fit:cover}
+#finish-view .daylight{position:absolute;inset:0;clip-path:circle(var(--r) at var(--x) var(--y))}
+#finish-view i{pointer-events:none;position:absolute;left:var(--x);top:var(--y);width:calc(2 * var(--r));aspect-ratio:1;transform:translate(-50%,-50%);border:1px solid #fffdfbc7;border-radius:50%}
+#finish-view[data-full] .daylight{clip-path:none}#finish-view[data-full] i{display:none}
+.finish-study figcaption,.bed-foot{display:flex;align-items:center;gap:10px 22px;flex-wrap:wrap;justify-content:space-between;border-bottom:1px solid var(--rose);padding:9px 0}
+.finish-study button,.bed-foot button{border:0;border-radius:0;background:none;text-decoration:underline;text-underline-offset:.22em;font:500 15px Instrument;min-height:44px;cursor:pointer}
+#garden{padding:0;margin:clamp(32px,5vw,80px) auto clamp(62px,8vw,130px)}
+.bed-stage{position:relative;background:var(--rose);height:clamp(440px,70svh,850px);isolation:isolate}
+.bed-stage iframe{position:absolute;inset:0;border:0;background:var(--paper)}.bed-stage button{position:absolute;left:clamp(13px,3vw,48px);bottom:clamp(13px,3vw,48px);background:var(--paper);border:0;border-radius:0;padding:12px 20px;min-height:48px;cursor:pointer}
+.bed-foot span{margin-right:auto}.project-index{display:flex;flex-wrap:wrap;gap:14px 32px;padding:20px 0;border-top:1px solid var(--rose)}.project-index a{display:flex;gap:8px;align-items:center;min-height:44px}
+@media(max-width:680px){html.agency-landing #pavilion .vista{height:clamp(360px,65svh,710px)}.spread-heading{grid-template-columns:1fr}.spread-heading>p{max-width:37ch}.bed-stage{height:clamp(470px,76svh,720px)}#finish-view{aspect-ratio:1.23}.bed-foot{gap:9px}}
+.room-lens{--x:50%;--y:55%;--radius:clamp(65px,10vw,176px);position:absolute;inset:0;z-index:3;overflow:hidden;pointer-events:none;visibility:hidden;clip-path:circle(var(--radius) at var(--x) var(--y))}
+.room-lens[data-on]{visibility:visible}.room-lens[data-pinned]{pointer-events:auto;touch-action:pan-y;clip-path:none}
+.room-lens[data-pinned] img{mask-image:radial-gradient(circle var(--radius) at var(--image-x,50%) var(--image-y,50%),#000 99%,transparent 100%)}
+.room-lens img{position:absolute;left:50%;top:50%;height:var(--gate);width:auto;max-width:none;transform:translate(-50%,-50%)}
+.room-lens i{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);width:calc(var(--radius) * 2);aspect-ratio:1;border:1px solid #fffdfbb3;border-radius:50%}
+.agency-landing #pavilion .house-tools #daylight-lens[aria-pressed=true]{background:var(--rose)}
+@media(max-width:500px){.agency-landing #pavilion .house-tools{left:8px;right:auto;max-width:calc(100% - 16px)}.agency-landing #pavilion .house-tools button,.agency-landing #pavilion .house-tools #walk-house{font-size:12px;padding-inline:7px}}
+html.agency-landing #pavilion{display:flex;flex-direction:column}
+html.agency-landing #pavilion .film-signature{order:1;position:relative;align-items:center;justify-content:space-between;padding:5px var(--pad);border-bottom:1px solid var(--rose)}
+html.agency-landing #pavilion .agency-lead{order:2}
+html.agency-landing #pavilion .house-tools{position:static;display:flex;align-items:center;gap:clamp(4px,1.6vw,26px);background:transparent}
+html.agency-landing #pavilion .house-tools button,html.agency-landing #pavilion .house-tools #walk-house{background:transparent;color:var(--plum);padding:0 3px;border:0;text-decoration:none}
+html.agency-landing #pavilion .house-tools button:hover,html.agency-landing #pavilion .house-tools button:focus-visible{text-decoration:underline;text-underline-offset:.28em}
+@media(max-width:680px){html.agency-landing #pavilion .film-signature{flex-wrap:wrap;gap:0 10px;padding:6px 15px}html.agency-landing #pavilion .house-tools{max-width:100%;gap:14px}html.agency-landing #pavilion .film-signature p{font-size:12px;margin:0}html.agency-landing #pavilion .house-tools button,html.agency-landing #pavilion .house-tools #walk-house{font-size:13px}}
+html.agency-landing #pavilion{align-items:stretch}
+html.agency-landing #pavilion :is(.pinned,.agency-lead,.film-signature){width:100%;max-width:none}

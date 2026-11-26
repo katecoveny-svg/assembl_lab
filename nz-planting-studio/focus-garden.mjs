@@ -128,6 +128,6 @@ export async function initialise(){
   }catch{$('bed-save-status').textContent='The comparison could not download.';}
  };
  if(reduced&&$('btn-wind').getAttribute('aria-pressed')==='true')$('btn-wind').click();
- s.study.base.visible=false;document.documentElement.setAttribute('data-garden-bed','');frame();year(5);setMonth(11.4);mode(false);
+ s.study.base.visible=false;document.documentElement.setAttribute('data-garden-bed','');frame();year(5);setMonth(11.4);mode(new URLSearchParams(location.search).get('entry')==='paint');
 }
 initialise().catch(e=>console.warn('Close-up garden view unavailable.',e));

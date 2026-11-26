@@ -14,7 +14,7 @@
   <link rel="icon" href="/site-v2/mark-a-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="/site-v2/mark-a-180.png">
   <link rel="canonical" href="https://lab.assembl.co.nz/">
-  <link rel="stylesheet" href="/lab/v3/front-door.css?v=waiheke-3d">
+  <link rel="stylesheet" href="/lab/v3/front-door.css?v=coastal-garden-1">
   <script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
 </head>
 <body>
@@ -22,32 +22,27 @@
   <header class="shell site-header">
     <a class="brand" href="/" aria-label="assembl Lab home"><img src="/lab/v3/wordmark.png" alt="assembl."><span>Lab</span></a>
     <nav aria-label="Main navigation">
-      <a href="/plan-studio/twins/16a/">Architecture</a>
-      <a href="/auckland/live/">Auckland Live</a>
+      <a href="https://www.assembl.co.nz/#pavilion">Pavilion</a>
+      <a href="/auckland/live/?view=3d">Auckland Live</a>
       <a href="/roof-solar/">Roof solar</a>
-      <a href="/nz-planting-studio/">Garden studio</a>
+      <a href="#garden">Garden studio</a>
       <a href="https://assembl-waitemata-tides.pages.dev/">Tides</a>
     </nav>
   </header>
 
   <main id="main" tabindex="-1" class="shell">
-    <section class="opening" id="top">
-      <div class="opening-title"><p class="label">assembl Lab · Tāmaki Makaurau</p><h1>Catch the light.<br><i>Follow the tide.</i></h1></div>
-      <p class="opening-note">Orbit a live 3D Waiheke coastal pavilion in twilight, then scroll down to the Waitematā Harbour at water level.</p>
+    <section class="opening garden-opening" id="top">
+      <div class="opening-title"><p class="label">assembl Lab · Tāmaki Makaurau</p><h1>Plant the coast.</h1></div>
+      <p class="opening-note">Brush a native garden into place and bring it forward five years.</p>
     </section>
-    <section class="passage" aria-label="From Waiheke pavilion to the harbour">
-      <div class="passage-frame">
-        <div class="plate water"><img src="/lab/v3/img/tiles/16a-cutaway-r2.webp" alt="Interactive 3D Waiheke coastal pavilion in twilight with native Aotearoa planting."><div class="surface"></div></div>
-        <div class="plate roof"><img src="/lab/v3/img/tiles/water-plate.webp" alt="Illustrative water and sailing boat below the Auckland skyline."><div class="surface"></div></div>
-        <div class="rail"><div class="rail-title"><span class="label" id="plate-kicker">Architectural film / Waiheke</span><h2 id="plate-title">Catch the light.</h2></div>
-        <div class="rail-links"><a id="open-plate" href="/waiheke-hero/">Open full-screen 3D ↗</a><a href="#tools">All tools ↓</a><button hidden id="still-plate" aria-pressed="false">Pause motion</button></div></div>
-      </div>
+    <section id="garden" class="lab-garden" aria-label="Interactive Aotearoa planting bed">
+      <div class="garden-window"><img src="/lab/v3/img/tiles/native-garden-foliage.webp" width="1200" height="675" alt="Harakeke, grasses and flowering plants in the Aotearoa Planting Studio."><button id="open-garden" type="button" aria-expanded="false">Paint this garden</button></div>
+      <div class="garden-rail"><span id="garden-state" role="status">Aotearoa Planting Studio</span><button id="leave-garden" type="button" hidden>Close garden</button><a href="/nz-planting-studio/classic?view=bed">Open full garden ↗</a><a href="#tools">All tools ↓</a></div>
     </section>
-    <p class="scene-source">Illustrative harbour water. Auckland skyline photograph by <a href="https://commons.wikimedia.org/wiki/File:Auckland_skyline_from_Viaduct_Harbour.jpg">Chiara Coetzee</a>, cropped and composited, <a href="https://creativecommons.org/publicdomain/zero/1.0/">CC0 source photograph</a>. The 16D roof is a modelled design study.</p>
     <section id="tools" class="tool-section" aria-labelledby="tools-heading">
       <div id="more" class="section-heading">
         <p class="label">Public tools</p>
-        <h2 id="tools-heading">Keep exploring.</h2>
+        <h2 id="tools-heading">Across Tāmaki Makaurau.</h2>
       </div>
       <div class="tool-grid">
         <a class="tool" href="/plan-studio/twins/16a/">
@@ -59,7 +54,7 @@
             <span class="tool-action">Open the 3D model <span aria-hidden="true">↗</span></span>
           </div>
         </a>
-        <a class="tool" href="/auckland/live/">
+        <a class="tool" href="/auckland/live/?view=3d">
           <img src="/lab/v3/img/tiles/auckland-harbour-r2.webp" width="960" height="600" loading="lazy" decoding="async" alt="">
           <div class="tool-copy">
             <p class="label">02 / TRANSPORT</p>
@@ -87,12 +82,7 @@
           </div>
         </a>
       </div>
-      <a class="garden-feature" href="/nz-planting-studio/">
-        <img src="/lab/v3/img/tiles/native-garden-foliage.webp" width="1200" height="675" loading="lazy" decoding="async" alt="A 3D planting bed with flax, tussocks and flowering native plants.">
-        <div class="tool-copy"><p class="label">05 / LANDSCAPE</p><h3>Plant an Aotearoa garden.</h3>
-        <p>Start with a real NZ property boundary. Brush in harakeke and tussock, then scrub through the seasons.</p>
-        <span class="tool-action">Open the Planting Studio <span aria-hidden="true">↗</span></span></div>
-      </a>
+      <a class="garden-feature" href="https://www.assembl.co.nz/#pavilion"><img src="https://www.assembl.co.nz/pavilion/assets/pavilion.webp" width="1600" height="900" loading="lazy" alt="The Waiheke Pavilion and its coastal approach."><div class="tool-copy"><p class="label">Architecture / Waiheke</p><h3>Walk into the Pavilion.</h3><p>Cross the deck, explore the rooms and rearrange the furniture.</p><span class="tool-action">Enter the house ↗</span></div></a>
       <p class="tile-credit">Waitematā tile: <a href="https://commons.wikimedia.org/wiki/File:Auckland_skyline_from_Viaduct_Harbour.jpg">Chiara Coetzee</a>, cropped and composited, <a href="https://creativecommons.org/publicdomain/zero/1.0/">CC0 source photograph</a>. Scene is illustrative.</p>
     </section>
 
@@ -116,5 +106,5 @@
       <a href="https://www.assembl.co.nz/terms/">Terms</a>
     </nav>
   </footer>
-<script type="module" src="/lab/v3/passage.js"></script></body>
+<script type="module" src="/lab/v3/passage.js?v=coast-garden-1"></script></body>
 </html>

@@ -1,9 +1,9 @@
 import {profiles} from './design-profiles.js?v=1484423fe1';
-import {houseWalk} from './house-walk.js?v=29559704e7';
+import {houseWalk} from './house-walk.js?v=a687941e76';
 import {bedroom} from './bedroom.js';
 import {deckGarden} from './deck-garden.js';
 import {dressedDeck,deckFixings} from './coastal-finish.js';
-import {fitKitchen} from './kitchen.js?v=ad18805e89';
+import {fitKitchen} from './kitchen.js?v=6dbe9c84b2';
 import {plantPohutukawa} from './pohutukawa.js?v=b772133fb9';
 import * as T from './vendor/three.webgpu.min.js';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
@@ -308,8 +308,8 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  const windTime=T.TSL.uniform(0),gustStrength=T.TSL.uniform(0);
  plantArrivalBorder(scene);addSedges({scene,range,rand,timeNode:windTime,gustNode:gustStrength});finePanicles(scene,windTime,gustStrength);
  const hemi=new T.HemisphereLight(0xeff4fb,0xb9a389,.56);scene.add(hemi);
- const sun=new T.DirectionalLight(0xffead0,2.75);sun.position.set(-.74*30,.53*30,.61*30);sun.target.position.set(0,0,0);scene.add(sun,sun.target);sun.castShadow=true;
- Object.assign(sun.shadow.camera,{left:-18,right:18,top:14,bottom:-13,near:.2,far:65});const shadowSize=compactGL?1024:2048;sun.shadow.mapSize.set(shadowSize,shadowSize);sun.shadow.normalBias=.017;sun.shadow.bias=-.00018;
+ const sun=new T.DirectionalLight(0xffead0,2.75);sun.position.set(-.66*30,.39*30,.70*30);sun.target.position.set(0,0,0);scene.add(sun,sun.target);sun.castShadow=true;
+ Object.assign(sun.shadow.camera,{left:-18,right:18,top:14,bottom:-13,near:.2,far:65});const shadowSize=compactGL?1024:2048;sun.shadow.mapSize.set(shadowSize,shadowSize);sun.shadow.normalBias=.011;sun.shadow.bias=-.00018;
  const fill=new T.DirectionalLight(0xe4eef6,.28);fill.position.set(2,6,-3);scene.add(fill);
  for(const x of [-3,3]){const lamp=new T.SpotLight(0xffead2,3.3,5,1.04,.86,2);lamp.position.set(x,2.64,.20);lamp.target.position.set(x,.35,-.65);scene.add(lamp,lamp.target)}
  // Area emitters fill the actual apertures. They provide broad indoor sky transport without point hotspots.
@@ -394,10 +394,26 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  async function gardenBed(){const {createGardenBed}=await import("./garden-bed.js?v=315be6137c");return garden??=createGardenBed(scene,camera,ground,windTime)}
  let explorePose=null,detail=null,indoors=false;
  const displacement=v(),direction=v(),stepRight=v(),next=v();
- const obstacles=[[-3.84,-.66,-2.1,-1.22],[-3.22,-1.02,.18,.80],[-4.04,-3.74,-2.1,.63],[-4.04,-3.74,1.59,2.04],[-7.03,-4.78,-1.19,.63],[-7.03,-4.95,-2.06,-1.49],[-.79,1.04,-1.69,-.10],[2.02,4.83,-1.88,-.73],[2.66,4.64,-.41,.79],[5.26,6.48,-.35,.91]];
+ const obstacles=[[-3.84,-.66,-2.1,-1.22],[-3.22,-1.02,.18,.80],[-4.04,-3.74,-2.1,.63],[-4.04,-3.74,1.59,2.04],[-7.03,-4.78,-1.19,.63],[-7.03,-4.95,-2.06,-1.49],[-.79,1.04,-1.69,-.10],[2.02,4.83,-1.88,-.73],[2.83,4.45,-.29,.67],[5.32,6.43,-.27,.77]];
  const walker=houseWalk(obstacles);
+ // A single eye-level approach. Both points at the glazing cross the clear opening between x=.04 and 1.70.
+ const arrivalPath=new T.CatmullRomCurve3([v(13.6,.45,9.8),v(11.1,.48,5.5),v(8.72,1.03,3.32),v(6.65,1.59,3.16),v(3.05,1.59,3.13),v(1.31,1.59,2.61),v(1.18,1.64,2.02),v(1.32,1.707,1.53)],false,'centripetal');
+ const arrivalAim=new T.CatmullRomCurve3([v(.25,1.28,.10),v(.55,1.29,.14),v(1.13,1.3,.82),v(1.32,1.38,1.5),v(1.36,1.39,1.06),v(2.26,1.40,.55),v(3.56,1.16,-.18),v(1.32+3*Math.sin(.95)*Math.cos(.21),1.707-3*Math.sin(.21),1.53-3*Math.cos(.95)*Math.cos(.21))],false,'centripetal');
+ function entryCamera(u,cp,aim){
+   const t=arrivalPath.getUtoTmapping(u);arrivalPath.getPoint(t,cp);arrivalAim.getPoint(t,aim);
+   const narrow=Math.max(0,1.05-camera.aspect),outside=(1-u)**3;
+   cp.x+=2.3*narrow*outside;cp.z+=7*narrow*outside;
+   camera.fov=T.MathUtils.lerp(camera.aspect<1?61:44,camera.aspect<1?77:59,T.MathUtils.smoothstep(u,.40,1));
+   camera.updateProjectionMatrix();
+ }
+ const floorRay=new T.Raycaster(),floorPointer=new T.Vector2(),floorPlane=new T.Plane(v(0,1,0),-.077);
+ function floorTarget(e){
+  const rect=host.getBoundingClientRect();floorPointer.set(2*(e.clientX-rect.left)/rect.width-1,1-2*(e.clientY-rect.top)/rect.height);
+  floorRay.setFromCamera(floorPointer,camera);const pt=floorRay.ray.intersectPlane(floorPlane,v());
+  return pt&&walker.request(pt.x,pt.z);
+ }
  let layout;
- async function furniture(){const {arrangeRoom}=await import('./arrange-room.js?v=3d0fd8db73');return layout??=arrangeRoom(camera,movable,obstacles)}
+ async function furniture(){const {arrangeRoom}=await import('./arrange-room.js?v=00f272ca16');return layout??=arrangeRoom(camera,movable,obstacles)}
 
  function canStand(x,z){return x> -6.87&&x<6.85&&z> -1.83&&z<1.81&&!obstacles.some(([x0,x1,z0,z1])=>x>x0&&x<x1&&z>z0&&z<z1)}
  function step(forward,right){if(!indoors||!explorePose)return;camera.getWorldDirection(direction);direction.y=0;direction.normalize();
@@ -415,7 +431,7 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
   scene.add(shade,model);
  }
  function size(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
- function draw(progress,time,gust,roofLift=0,guided=false,benchPass=0){windTime.value=time;gustStrength.value=gust;let p=Math.max(0,Math.min(1,progress));const track=guided?Math.min(1,p/.76):p;
+ function draw(progress,time,gust,roofLift=0,guided=false,benchPass=0,arrival=null){windTime.value=time;gustStrength.value=gust;let p=Math.max(0,Math.min(1,progress));const track=guided?Math.min(1,p/.76):p;
    const cp=camPath.getPoint(track),aim=aimPath.getPoint(track);
    if(guided&&p>.76){
     // Turn via the open aisle. Interpolating the look-at endpoints would aim straight into the camera.
@@ -442,7 +458,7 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
    if(detail==='deck'){cp.set(6.75,1.41,4.0);aim.set(-1.10,1.04,2.61);camera.fov=57}
    if(garden?.active)garden.frame(cp,aim);
    indoors=!garden?.active&&p>.63&&!['deck','tree'].includes(detail);
-   scene.environmentIntensity=indoors?.85:1.17;
+   scene.environmentIntensity=indoors?.78:1.13;
    camera.updateProjectionMatrix();
    if(explorePose){
     const {yaw,pitch,travel}=explorePose;
@@ -459,14 +475,15 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
     }
    }
 
+   if(arrival!==null)entryCamera(arrival,cp,aim);
    if(layout?.active){layout.frame(cp,aim);camera.updateProjectionMatrix()}
-   if(walker.pose){walker.frame(cp,aim);camera.fov=camera.aspect<1?69:59;camera.updateProjectionMatrix()}
+   if(walker.pose){walker.frame(cp,aim);camera.fov=camera.aspect<1?77:59;camera.updateProjectionMatrix()}
    camera.position.copy(cp);camera.lookAt(aim);
    for(const {o,placements,windFactor} of wind){for(let i=0;i<placements.length;i++){const [x,y,z,s,a]=placements[i];const front=Math.exp(-Math.pow((time%6.8)*3.9-x*.52-z*.34-4.5,2)/13);const wave=.26*Math.sin(time*1.18+x*.51+z*.35)+.11*Math.sin(time*2.07-z*.19)+gust*(.22+1.1*front)*Math.sin(time*2.51-x*.33);
      tmp.position.set(x,y,z);tmp.scale.setScalar(s);tmp.rotation.set(wave*windFactor*.47,a,wave*windFactor,'ZXY');tmp.updateMatrix();o.setMatrixAt(i,tmp.matrix)}o.instanceMatrix.needsUpdate=true}
    renderer.render(scene,camera)
  }
- size();return {furniture,treesReady:()=>treesReady,walker,backend,draw,size,refine,refineFinishes,finishesReady:()=>finishesReady,refinePlanting,step,gardenBed,furnishLivingRoom,inside:()=>indoors,resetWalk:()=>displacement.set(0,0,0),setDetail(value){detail=value;displacement.set(0,0,0)},setExplore(view){explorePose=view;if(!view)displacement.set(0,0,0)},renderer,triangleCount,pose:()=>({position:camera.position.toArray(),quaternion:camera.quaternion.toArray(),fov:camera.fov,aspect:camera.aspect})}
+ size();return {floorTarget,furniture,treesReady:()=>treesReady,walker,backend,draw,size,refine,refineFinishes,finishesReady:()=>finishesReady,refinePlanting,step,gardenBed,furnishLivingRoom,inside:()=>indoors,resetWalk:()=>displacement.set(0,0,0),setDetail(value){detail=value;displacement.set(0,0,0)},setExplore(view){explorePose=view;if(!view)displacement.set(0,0,0)},renderer,triangleCount,pose:()=>({position:camera.position.toArray(),quaternion:camera.quaternion.toArray(),fov:camera.fov,aspect:camera.aspect})}
  } catch(error) {
    if(initialized)renderer.dispose();
    throw error;
