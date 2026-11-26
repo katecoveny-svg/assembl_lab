@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aotearoa Planting Studio · assembl Lab</title>
-  <script type="module" crossorigin>import { makeNativeFoliage } from "./native-foliage.mjs"; import { mountSiteStudy } from "./site-study.mjs";
+  <script type="module" crossorigin>import { makeNativeFoliage } from "./native-foliage.mjs"; import { makeBedModel } from "./bed-model.mjs"; import { mountSiteStudy } from "./site-study.mjs";
 (function(){const e=document.createElement("link").relList;if(e&&e.supports&&e.supports("modulepreload"))return;for(const i of document.querySelectorAll('link[rel="modulepreload"]'))s(i);new MutationObserver(i=>{for(const n of i)if(n.type==="childList")for(const r of n.addedNodes)r.tagName==="LINK"&&r.rel==="modulepreload"&&s(r)}).observe(document,{childList:!0,subtree:!0});function t(i){const n={};return i.integrity&&(n.integrity=i.integrity),i.referrerPolicy&&(n.referrerPolicy=i.referrerPolicy),i.crossOrigin==="use-credentials"?n.credentials="include":i.crossOrigin==="anonymous"?n.credentials="omit":n.credentials="same-origin",n}function s(i){if(i.ep)return;i.ep=!0;const n=t(i);fetch(i.href,n)}})();/**
  * @license
  * Copyright 2010-2026 Three.js Authors
@@ -677,7 +677,12 @@ const d=new lL(i,_d,96),f=new bL(i,o,_d,512,d),p=new RL(i,d);f.setPropsEngine(p)
         </div>
         <div class="bom-qty">${ke.count}×</div>
       </div>
-    `).join("")}ne(),Le(),We(),window.addEventListener('garden-site-reset',()=>{S.group.visible=true;realStudy?.reset()}),window.__nzStudio={terrainEngine:d,engine:f,propsEngine:p,camera:n,controls:r,setCamera:(I,V,ee,ke,Re,Vt)=>{Ce=null,n.position.set(I,V,ee),r.target.set(ke,Re,Vt),r.update()},setLiveSite:site=>{
+    `).join("")}ne(),Le(),We(),window.addEventListener('garden-site-reset',()=>{S.group.visible=true;realStudy?.reset()});const setBedModel=makeBedModel({SceneColor:me,Texture:F0,Material:Ke,scene:i,terrain:d,ground:g,horizon:A,sky:l,engine:f,sun:c,fill:u,rim:h,restoreLight:()=>R(J.sunHour)});
+  const modelButton=document.getElementById('btn-model');
+  function fullModel(on){setBedModel(on);modelButton.classList.toggle('active',on);modelButton.setAttribute('aria-pressed',String(on));}
+  modelButton.addEventListener('click',()=>fullModel(modelButton.getAttribute('aria-pressed')!=='true'));
+  for(const id of ['btn-plan','btn-3d'])document.getElementById(id).addEventListener('click',()=>fullModel(false));
+  window.__nzStudio={setBedModel,reshuffleBed:id=>{const bed=f.beds.find(x=>x.id===id);if(!bed)return false;const mix=hi.find(x=>x.id===bed.compositionId);if(!mix)return false;f.pushUndoState();f.regenerateBed(id,mix,true);We();return true},terrainEngine:d,engine:f,propsEngine:p,camera:n,controls:r,setCamera:(I,V,ee,ke,Re,Vt)=>{Ce=null,n.position.set(I,V,ee),r.target.set(ke,Re,Vt),r.update()},setLiveSite:site=>{
     if(!ut.querySelector('option[value="live-linz"]'))ut.add(new Option("Real address · LINZ","live-linz",false,false));
     ut.value="live-linz";ut.querySelector('option[value="live-linz"]').disabled=true;
     d.applyLiveSite(site);S.group.visible=false;realStudy?.setLiveSite(site);
@@ -760,7 +765,7 @@ html,body,#canvas-wrap{font-family:Instrument Sans,system-ui,sans-serif}
   <div class="top-controls">
     <div class="seg-group" role="group" aria-label="View Mode">
       <button class="seg-btn" id="btn-plan">Plan</button>
-      <button class="seg-btn active" id="btn-3d">3D</button>
+      <button class="seg-btn active" id="btn-3d">3D</button><button class="seg-btn" id="btn-model" type="button" aria-pressed="false">Model</button>
     </div>
 
     <div class="ctrl-pill sun-pill" title="NZ Southern Hemisphere Solar Azimuth & Elevation">
@@ -965,6 +970,6 @@ html,body,#canvas-wrap{font-family:Instrument Sans,system-ui,sans-serif}
 </section>
 
 <script type="module" src="./live-site.mjs"></script>
-<script type="module">if(new URLSearchParams(location.search).get("view")==="bed")import("./focus-garden.mjs")</script>
+<script type="module">if(new URLSearchParams(location.search).get("view")==="bed")import("./focus-garden.mjs?v=model1")</script>
 </body>
 </html>

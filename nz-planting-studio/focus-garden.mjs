@@ -14,7 +14,8 @@ export async function initialise(){
  if(!bed?.points?.length)return;
  const nx=bed.points.reduce((x,v)=>x+v.x,0)/bed.points.length,nzPos=bed.points.reduce((z,v)=>z+v.z,0)/bed.points.length;
  const y=s.terrainEngine.getHeight(nx,nzPos);
- const aim=()=>{const small=innerWidth<610;return [nx+(small?4.2:4.5),y+(small?3.95:4.35),nzPos+(small?6.5:6.55),nx,y+.27,nzPos];};
+ let presentation=false;
+ const aim=()=>{const small=innerWidth<610;if(presentation)return [nx+(small?4.2:5.2),y+(small?8.7:7.4),nzPos+(small?9.0:8.3),nx,y+.19,nzPos];return [nx+(small?4.2:4.5),y+(small?3.95:4.35),nzPos+(small?6.5:6.55),nx,y+.27,nzPos];};
  const snap=(values)=>{
   const damping=s.controls.enableDamping;s.controls.enableDamping=false;
   try{s.controls.update();s.setCamera(...values);}finally{s.controls.enableDamping=damping;}
@@ -26,14 +27,14 @@ export async function initialise(){
  const h=document.createElement('section');
  h.className='bed-toolbar';h.setAttribute('aria-label','Plant a native bed');
  h.innerHTML=`<div class="bed-top"><small class="bed-label">Aotearoa · bed study</small><div class="bed-actions">
- <button id="bed-paint" aria-pressed="false" type="button">Paint</button><button id="bed-reset" type="button" aria-label="Reset garden view">Reset</button><button id="bed-undo" type="button">Undo</button><button id="bed-compare" aria-expanded="false" type="button">Compare</button>
+ <button id="bed-paint" aria-pressed="false" type="button">Paint</button><button id="bed-reset" type="button" aria-label="Reset garden view">Focus</button><button id="bed-model" type="button" aria-pressed="false">Model</button><button id="bed-undo" type="button">Undo</button><button id="bed-compare" aria-expanded="false" type="button">Compare</button>
  <a href="${base}" target="_blank" rel="noopener noreferrer">Full site ↗</a></div></div>
  <p id="bed-hint" aria-live="polite"></p>
  <div class="bed-dock"><div class="bed-group" aria-label="Planting mix">
  <button type="button" class="bed-mix" id="mix-coast" aria-pressed="true" style="--mix:#4b6447">Coastal</button>
  <button type="button" class="bed-mix" id="mix-fern" aria-pressed="false" style="--mix:#7a875b">Fern glade</button></div>
  <label class="bed-season"><input type="range" id="bed-season" aria-label="Planting season" min="0" max="11.95" step=".05"><span id="bed-season-note"></span></label>
- <div class="bed-group" aria-label="Garden age"><button id="bed-new" type="button" aria-pressed="true">New</button><button id="bed-five" type="button" aria-pressed="false">5 years</button></div></div>`;
+ <div class="bed-group" aria-label="Garden age and layout"><button id="bed-shuffle" type="button" aria-label="Reshuffle planting" title="Reshuffle this bed">Shuffle</button><button id="bed-new" type="button" aria-pressed="true">New</button><button id="bed-five" type="button" aria-pressed="false">5 years</button></div></div>`;
  document.body.append(h);
  const compare=document.createElement('section');
  compare.className='bed-compare';compare.hidden=true;compare.setAttribute('aria-labelledby','bed-comparison-title');
@@ -49,13 +50,15 @@ export async function initialise(){
  $('bed-season').oninput=e=>setMonth(e.target.value);
  $('bed-new').onclick=()=>year(1);$('bed-five').onclick=()=>year(5);
  $('bed-undo').onclick=()=>$('btn-undo').click();
- let painting=false;
+ $('bed-shuffle').onclick=()=>{if(s.reshuffleBed(bed.id))$('bed-hint').textContent='Layout reshuffled · Undo to restore';};
+ let painting=false,naturalPose=null;
  const canvas=document.querySelector('#canvas-wrap canvas');
  function mode(next){
   painting=next;s.setTool(next?'paint-mix':'orbit');document.documentElement.toggleAttribute('data-bed-paint',next);
   $('bed-paint').setAttribute('aria-pressed',String(next));$('bed-hint').textContent=next?'Brush across the soil to plant':'Drag to look around · Pinch or scroll to zoom';
  }
  $('bed-paint').onclick=()=>mode(!painting);$('bed-reset').onclick=frame;
+ $('bed-model').onclick=()=>{const b=$('bed-model'), enabled=s.setBedModel(!presentation);if(!presentation)naturalPose=[...s.camera.position.toArray(),...s.controls.target.toArray()];presentation=enabled;b.setAttribute('aria-pressed',String(enabled));if(presentation)frame();else if(naturalPose)snap(naturalPose);};
  if(canvas){
   canvas.tabIndex=0;canvas.setAttribute('aria-label','Interactive garden view. Use arrow keys to turn and plus or minus to zoom.');
   canvas.addEventListener('keydown',e=>{
