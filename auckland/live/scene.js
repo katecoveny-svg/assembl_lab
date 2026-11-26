@@ -455,7 +455,7 @@ export async function createWorld(canvas, { phone = false, capture = false, time
       s.x = s.fx + (s.tx - s.fx) * e; s.z = s.fz + (s.tz - s.fz) * e; s.y = s.fy + (s.ty - s.fy) * e;
       list.push({ id: s.id, mode: s.mode, x: s.x, y: s.y, z: s.z, heading: s.h, colour: s.colour });
     }
-    fleet.update(list, selectedId, camera.position.distanceTo(controls.target)); beacons.update(list, selectedId);
+    fleet.update(list, selectedId, camera.position.distanceTo(controls.target)); beacons.update(list, selectedId, camera.position.distanceTo(controls.target) < 150);
   }
   // nearest vehicle to a screen point (pixels), for taps
   const v3 = new T.Vector3();
@@ -464,7 +464,7 @@ export async function createWorld(canvas, { phone = false, capture = false, time
     for (const v of list) { v3.set(v.x, v.y + 12, v.z).project(camera); if (v3.z > 1) continue; const d = Math.hypot((v3.x * 0.5 + 0.5) * w - px, (-v3.y * 0.5 + 0.5) * h - py); if (d < bd) { bd = d; best = v.id; } }
     return best;
   }
-  function screenOf(id) { const s = state.get(id); if (!s) return null; v3.set(s.x, s.y + 20, s.z).project(camera); if (v3.z > 1) return null; return [(v3.x * 0.5 + 0.5) * canvas.clientWidth, (-v3.y * 0.5 + 0.5) * canvas.clientHeight]; }
+  function screenOf(id, lift = 20) { const s = state.get(id); if (!s) return null; v3.set(s.x, s.y + lift, s.z).project(camera); if (v3.z > 1) return null; return [(v3.x * 0.5 + 0.5) * canvas.clientWidth, (-v3.y * 0.5 + 0.5) * canvas.clientHeight]; }
 
   // ---------------------------------------------------------------- loop
   let running = true, last = 0, frames = 0, onFrame = null;

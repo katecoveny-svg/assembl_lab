@@ -173,16 +173,16 @@ export function createBeacons(scene, max = 1600, phone = false) {
       void main(){ vC=color; vK=kind; vS=sel; vec4 mv=modelViewMatrix*vec4(position,1.0); float d=-mv.z; vFade=smoothstep(250.0,700.0,d) * mix(.84,.23,smoothstep(1350.0,3650.0,d));
         vFade=max(vFade, sel); gl_Position=projectionMatrix*mv; gl_PointSize=uSize*uPR*(1.0+0.6*sel)*mix(1.0,0.66,smoothstep(1800.0,6500.0,d)); }`,
     fragmentShader: `varying vec3 vC; varying float vK; varying float vS; varying float vFade;
-      void main(){ vec2 p=gl_PointCoord*2.0-1.0; float r = vK<0.5 ? length(p) : (vK<1.5 ? max(abs(p.x),abs(p.y))*1.05 : (abs(p.x)+abs(p.y))*0.85);
+      void main(){ if(vK<0.0) discard; vec2 p=gl_PointCoord*2.0-1.0; float r = vK<0.5 ? length(p) : (vK<1.5 ? max(abs(p.x),abs(p.y))*1.05 : (abs(p.x)+abs(p.y))*0.85);
         if(r>1.0) discard; float ring=smoothstep(0.74,0.82,r); vec3 c=mix(vC, vec3(0.1,0.12,0.14), ring*0.8); float a=(1.0-smoothstep(0.92,1.0,r))*vFade; gl_FragColor=vec4(c,a); }`,
   });
   const pts = new T.Points(g, mat); pts.frustumCulled = false; pts.renderOrder = 10; scene.add(pts);
   const c = new T.Color();
   return {
     points: pts, material: mat,
-    update(list, selectedId) {
+    update(list, selectedId, suppressSelected = false) {
       const n = Math.min(max, list.length);
-      for (let i = 0; i < n; i++) { const v = list[i]; pos.set([v.x, v.y + (v.mode === 'train' ? 16 : v.mode === 'ferry' ? 18 : 14), v.z], i * 3); c.set(v.colour); col.set([c.r, c.g, c.b], i * 3); kind[i] = v.mode === 'bus' ? 0 : v.mode === 'train' ? 1 : 2; sel[i] = v.id === selectedId ? 1 : 0; }
+      for (let i = 0; i < n; i++) { const v = list[i]; pos.set([v.x, v.y + (v.mode === 'train' ? 16 : v.mode === 'ferry' ? 18 : 14), v.z], i * 3); c.set(v.colour); col.set([c.r, c.g, c.b], i * 3); kind[i] = suppressSelected && v.id === selectedId ? -1 : v.mode === 'bus' ? 0 : v.mode === 'train' ? 1 : 2; sel[i] = v.id === selectedId ? 1 : 0; }
       g.setDrawRange(0, n); for (const k of ['position', 'color', 'kind', 'sel']) g.attributes[k].needsUpdate = true;
     },
   };

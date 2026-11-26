@@ -449,10 +449,11 @@ function wireUi() {
       flyIn.title = subject?.kind === 'ferry' ? 'Fly from Waitematā Harbour to the ferry’s latest reported position' : subject ? 'Fly from Waitematā Harbour to the selected stop or ferry terminal' : 'Fly closer to the Auckland waterfront';
     }
     if (S.sel?.kind !== 'vehicle') { label.hidden = true; return; }
-    const p = S.world.screenOf(S.sel.id), v = S.positions?.vehicles.find((x) => x.id === S.sel.id);
+    const p = S.world.screenOf(S.sel.id, S.closeUpBus ? 6 : 20), v = S.positions?.vehicles.find((x) => x.id === S.sel.id);
     if (S.closeUpBus && (!v || S.posSource !== 'live' || S.posError || !X.timestampFresh(v.ts, Math.round(Date.now()/1000)))) S.world.unfollow();
     if (!p || !v) { label.hidden = true; return; }
     const { r, st } = vehicleInfo(v); label.hidden = false; label.style.left = p[0] + 'px'; label.style.top = p[1] + 'px';
-    label.innerHTML = `${esc(r?.short || v.routeId)}<small>${esc(st.status === 'unknown' ? (v.speedKmh != null ? v.speedKmh + ' km/h' : '') : st.label)}</small>`;
+    const caption = `${esc(r?.short || v.routeId)}<small>${esc(st.status === 'unknown' ? (v.speedKmh != null ? v.speedKmh + ' km/h' : '') : st.label)}</small>`;
+    if (label.innerHTML !== caption) label.innerHTML = caption;
   };
 }
