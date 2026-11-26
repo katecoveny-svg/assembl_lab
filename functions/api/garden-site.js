@@ -1,8 +1,10 @@
 // Narrow server-side access to the public LINZ layers. The credential never reaches a browser.
+import { getJSON } from "../../api/_feeds/util.js";
+import { arcQueryUrl } from "../../api/_feeds/site.js";
 import { fetchAddress } from "../../api/_feeds/address.js";
 import { toNZTM } from "../../roof-solar/linz/nztm.js";
 
-const ARC = "https://services.arcgis.com/xdsHIIxuCWByZiCB/arcgis/rest/services/";
+const ARC = "https://services.arcgis.com/xdsHIIxuCWByZiCB/arcgis/rest/services";
 const TYPES = {
   parcel: ["50772", "LINZ_NZ_Primary_Parcels", "id,parcel_intent,calc_area"],
   buildings: ["101290", "LINZ_NZ_Building_Outlines", "building_id"],
@@ -30,7 +32,7 @@ function contains(e,n,g) {
     insideRing(e,n,outer) && !holes.some(r=>insideRing(e,n,r)));
 }
 async function layer(kind, point, key) {
-  const [id, name, fields]=TYPES[kind], {e,n}=point;
+  const [id, name, fields]=TYPES[kind], {e,n,lat,lon}=point;
   const radius=kind==="parcel" ? .75 : 27;
   const bbox=[e-radius,n-radius,e+radius,n+radius].map(x=>x.toFixed(2));
   if (key) {
@@ -45,10 +47,15 @@ async function layer(kind, point, key) {
       }) && (kind!=="parcel"||features.some(f=>contains(e,n,f.geometry)))) return {features,via:"lds-wfs"};
     } catch { /* Never surface a keyed upstream URL, even on failure. */ }
   }
-  const search = new URLSearchParams({ geometry:kind==="parcel"?[e,n].join(","):bbox.join(","),
-    geometryType:kind==="parcel"?"esriGeometryPoint":"esriGeometryEnvelope",
-    spatialRel:"esriSpatialRelIntersects",inSR:"2193",outSR:"2193",outFields:fields,returnGeometry:"true",f:"geojson"});
-  return {features:await read(ARC+name+"/FeatureServer/0/query?"+search),via:"linz-public"};
+  // Use the same WGS84 ArcGIS request as the production Site feed, then register in NZTM.
+  const geo=await getJSON(arcQueryUrl(ARC,name,{lat,lon,distance:kind==="buildings"?38:undefined,outFields:fields,geometry:true}));
+  if(!Array.isArray(geo.features)||geo.error) throw Error("Unexpected LINZ public response");
+  const ring=r=>r.map(([lng,la])=>{const q=toNZTM(la,lng);return [q.e,q.n]});
+  const features=geo.features.filter(f=>["Polygon","MultiPolygon"].includes(f.geometry?.type)).map(f=>{
+    const {type,coordinates}=f.geometry;
+    return {geometry:{type,coordinates:type==="Polygon"?coordinates.map(ring):coordinates.map(p=>p.map(ring))},properties:f.properties};
+  });
+  return {features,via:"linz-public"};
 }
 const postcode = /^[1-9]\d{3}$/;
 export async function onRequest({request,env}) {
@@ -80,7 +87,7 @@ export async function onRequest({request,env}) {
   }
   const {lat,lon}=body||{};
   if(!Number.isFinite(lat)||!Number.isFinite(lon)||lat< -47.6||lat> -33.8||lon<166||lon>179.99) return reply({error:"Choose a New Zealand address within the available map coverage."},400);
-  const point=toNZTM(lat,lon);
+  const point={lat,lon,...toNZTM(lat,lon)};
   const [p,b]=await Promise.allSettled([layer("parcel",point,env?.LINZ_API_KEY),layer("buildings",point,env?.LINZ_API_KEY)]);
   if(p.status!=="fulfilled") return reply({error:"LINZ parcel data didn’t load. Try again in a moment."},502);
   const parcel=p.value.features.filter(f=>contains(point.e,point.n,f.geometry)).sort((a,b)=>{
