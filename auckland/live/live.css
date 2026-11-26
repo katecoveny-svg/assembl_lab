@@ -167,3 +167,9 @@ button.row { width: 100%; background: transparent; text-align: left; border: 0; 
 .follow-feature b,.follow-feature small { display:block; font-size:13px; }
 .follow-feature small { color:#3f5661; font-size:11px; margin-top:3px; }
 .follow-feature button,.follow-feature a,.actions a { display:inline-flex; align-items:center; border:0; border-radius:8px; text-decoration:none; padding:8px 10px; background:#183845; color:#fff; font-weight:600; font-size:13px; white-space:nowrap; cursor:pointer; }
+
+.demo-routes { margin:12px 0 16px; }
+.demo-routes > span { display:block; margin-bottom:5px; font-size:11px; color:#435963; }
+.demo-routes .chips { margin:0; }
+.demo-routes button { display:flex; flex-wrap:wrap; align-items:center; gap:4px 7px; min-height:36px; }
+.demo-routes small { font-size:10px; color:#435963; }

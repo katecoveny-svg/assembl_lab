@@ -114,16 +114,20 @@ function vehicleInfo(v) {
   const st = X.delayStatus(S.posSource === 'live' && !S.posError && X.timestampFresh(v.ts, Math.round(Date.now()/1000)) ? u : null, Math.round(Date.now() / 1000));
   return { r, u, st, mode: r?.mode || 'bus' };
 }
+function isWaterfrontFix(v) {
+  const {x,z} = X.toWorld(v.lat,v.lon);
+  return x>-2200 && x<-1000 && z>-650 && z<430;
+}
 function pushVehicles() {
   if (!S.positions) return;
   const counts = { bus: 0, train: 0, ferry: 0 }, out = [];
   for (const v of S.positions.vehicles) {
     if (!v.routeId) continue;
-    const { st, mode } = vehicleInfo(v); counts[mode]++;
+    const { r, st, mode } = vehicleInfo(v); counts[mode]++;
     if (S.mode !== 'all' && S.mode !== mode) continue;
     if (!X.inArea(v.lat, v.lon)) continue;
     const p = X.toWorld(v.lat, v.lon);
-    out.push({ id: v.id, mode, x: p.x, z: p.z, heading: v.bearing == null ? null : v.bearing * Math.PI / 180, colour: statusColour(st) });
+    out.push({ id: v.id, mode, x: p.x, z: p.z, heading: v.bearing == null ? null : v.bearing * Math.PI / 180, route: r?.short, colour: statusColour(st) });
   }
   for (const k of Object.keys(counts)) document.querySelector(`[data-count="${k}"]`).textContent = counts[k];
   S.counts = counts; S.world?.setVehicles(out);
@@ -161,7 +165,7 @@ async function select(sel, { fly = true, closeUp = false } = {}) { // a later ch
     else if (v?.routeId) { await ensureShapes(); if (S.sel !== sel) return; const r = S.index.routes.get(v.routeId); w?.showRoute(S.shapes[v.routeId], r?.color && r.color !== '000000' ? '#' + r.color : '#ffffff'); }
     w?.showStop(null); if (v && fly && X.inArea(v.lat, v.lon)) {
       const p = X.toWorld(v.lat, v.lon), ground = w?.heightAt(p.x,p.z) || 0, close = closeUp && freshMappedVehicle(v);
-      w?.flyTo([p.x, ground + (close ? 2 : 0), p.z], close ? 79 : 420, close ? 0.36 : 0.42, close && v.bearing != null ? v.bearing * Math.PI / 180 : null);
+      w?.flyTo([p.x, ground + (close ? 2 : 0), p.z], close ? 66 : 420, close ? 0.47 : 0.42, close && v.bearing != null ? v.bearing * Math.PI / 180 : null, close && vehicleInfo(v).mode === 'bus');
     }
   } else { w?.showRoute(null); w?.showStop(null); }
   const u = new URL(location.href); ['route', 'stop', 'vehicle'].forEach((k) => u.searchParams.delete(k));
@@ -171,6 +175,7 @@ async function select(sel, { fly = true, closeUp = false } = {}) { // a later ch
   history.replaceState(null, '', u);
   const other = new URL(u, location.href); other.searchParams.set('view', listOnly ? '3d' : 'list'); switchView.href = other.href;
   render();
+  if (phone && closeUp && w) setPanelSmall(true);
 }
 // A platform lookup must not turn off network-wide delays if that one stop fails.
 async function refreshDepartures(sel) {
@@ -276,10 +281,19 @@ function render() {
     const al = X.alertsFor(S.alerts, { routeIds: [sel.id] }, now); html += al.map(alertHtml).join('');
     const mapped = vs.filter(v=>freshMappedVehicle(v,now)).sort((a,b)=>b.ts-a.ts);
     const demo = qs.get('demo') === 'at';
-    const downtown = demo ? mapped.find(v=>{const {x,z}=X.toWorld(v.lat,v.lon);return x>-2200 && x<-1000 && z>-650 && z<430;}) : null;
+    const downtown = demo ? mapped.find(isWaterfrontFix) : null;
     if (mapped.length && r.mode === 'bus') {
       const candidate=downtown || mapped[0];
       html += `<section class="follow-feature"><div><b>${mapped.length} live ${mapped.length===1?'bus':'buses'} on the map</b><small>AT fix ${ago(candidate.ts)}${downtown ? ' · downtown demo' : ''}</small></div>${S.world ? `<button data-track="${esc(candidate.id)}">Follow a bus</button>` : `<a href="${esc(followHref(candidate.id))}">Follow a bus</a>`}</section>`;
+    }
+    if (demo && r.mode === 'bus') {
+      const alternatives = ['70','CTY','75'].map(short=>[...S.index.routes.values()].find(item=>item.short===short && item.mode==='bus')).filter(item=>item && item.id!==r.id);
+      if (!mapped.length) html += '<p class="note">No recent AT position for this route in the 3D area. Try another route below.</p>';
+      if (alternatives.length) html += `<div class="demo-routes" aria-label="Demo routes"><span>Try another route</span><div class="chips">${alternatives.map(item=>{
+        const fixes = (S.positions?.vehicles || []).filter(v=>v.routeId===item.id && freshMappedVehicle(v,now));
+        const city = fixes.filter(isWaterfrontFix).length;
+        return `<button type="button" data-route="${esc(item.id)}"><b>${item.short==='CTY'?'CityLink · CTY':esc(item.short)}</b><small>${city?city+' downtown':fixes.length?fixes.length+' live':'No live fix'}</small></button>`;
+      }).join('')}</div></div>`;
     }
     html += `<h3>Vehicles reported on this route · ${vs.length}</h3>`;
     html += vs.length ? `<ul class="rows">${vs.map((v) => { const { st } = vehicleInfo(v); return `<li><button type="button" class="row" data-vehicle="${esc(v.id)}"><span class="r"><i style="--c:${statusColour(st)}"></i></span><span class="h">${esc(S.atLive.state === 'on' ? st.label : v.speedKmh ? 'Moving, about ' + v.speedKmh + ' km/h' : v.speedKmh === 0 ? 'Stopped' : 'Speed not reported')}<small>${S.atLive.state === 'on' && v.speedKmh != null ? 'about ' + v.speedKmh + ' km/h · ' : ''}reported ${ago(v.ts)}${X.inArea(v.lat, v.lon) ? '' : ' · outside the 3D area'}</small></span><span class="w">›</span></button></li>`; }).join('')}</ul>` : `<p class="muted">No vehicle on this route is in the live feed right now.</p>`;
@@ -428,7 +442,11 @@ function wireUi() {
     }
     if (t.dataset.stop) { const stop=S.index.stops.get(t.dataset.stop); if (stop) { q.value=stop.name; void select({kind:'stop',id:stop.id}); } return; }
     if ('clear' in t.dataset) { q.value = ''; select(null); return; }
-    if (t.dataset.vehicle) select({ kind: 'vehicle', id: t.dataset.vehicle }); else if (t.dataset.route) select({ kind: 'route', id: t.dataset.route });
+    if (t.dataset.vehicle) select({ kind: 'vehicle', id: t.dataset.vehicle }); else if (t.dataset.route) {
+      const route = S.index.routes.get(t.dataset.route);
+      if (route && t.closest('.demo-routes')) q.value = route.short;
+      select({ kind: 'route', id: t.dataset.route });
+    }
   });
   // taps on the city pick the nearest vehicle marker
   let down = null;

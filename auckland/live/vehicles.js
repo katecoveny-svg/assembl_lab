@@ -23,12 +23,12 @@ const wheel = (r, w, at) => { const g = new T.CylinderGeometry(r, r, w, 14); g.r
 // Forward is -z (north at bearing 0). y = 0 is the road, rail or water surface.
 export function busGeometry(detail = false) { // a representative 12 m low-floor city bus, not an operator model
   const P = [
-    part(rbox(2.5, 2.75, 11.9, 0.2), '#e8eae7', { at: [0, 1.73, 0], rough: 0.34 }),
-    part(box(2.522, 0.77, 10.6), detail ? '#293437' : '#1a2228', { at: [0, 2.23, 0.35], rough: detail ? 0.34 : 0.12 }),
+    part(rbox(2.5, 2.75, 11.9, 0.2), detail ? '#344b61' : '#e8eae7', { at: [0, 1.73, 0], rough: 0.34 }),
+    part(box(2.522, 0.77, 10.6), detail ? '#141d25' : '#1a2228', { at: [0, 2.23, 0.35], rough: detail ? 0.34 : 0.12 }),
     part(box(2.28, 1.55, 0.08), '#1a2228', { at: [0, 1.95, -5.95], rough: 0.06 }), // windscreen
-    part(box(1.7, 0.26, 0.06), '#f6b73c', { at: [0, 3.0, -5.95], rough: 0.3 }), // destination sign (lit amber; no text)
-    part(box(2.54, 0.22, 11.4), '#c3c7cc', { at: [0, 1.32, 0], band: 1, rough: 0.3 }), // status band
-    part(box(2.0, 0.32, 3.8), '#cfd2cf', { at: [0, 3.25, 1.6], rough: 0.5 }), // roof air-con pod
+    part(box(1.7, 0.26, 0.06), detail ? '#13191c' : '#f6b73c', { at: [0, 3.0, -5.95], rough: 0.3 }), // destination sign (lit amber; no text)
+    part(box(2.54, detail ? .045 : .22, 11.4), '#c3c7cc', { at: [0, 1.32, 0], band: 1, rough: 0.3 }), // status band
+    part(rbox(2.0, 0.32, 3.8, .10), detail ? '#bac0c2' : '#cfd2cf', { at: [0, 3.25, 1.6], rough: 0.5 }), // roof air-con pod
     part(box(2.4, 0.42, 0.1), '#2b2e31', { at: [0, 0.62, -5.96], rough: 0.6 }), // bumper
     part(box(0.34, 0.16, 0.06), '#fff6dc', { at: [0.85, 0.95, -5.97], rough: 0.1 }), part(box(0.34, 0.16, 0.06), '#fff6dc', { at: [-0.85, 0.95, -5.97], rough: 0.1 }),
     wheel(0.5, 0.32, [1.12, 0.5, -3.7]), wheel(0.5, 0.32, [-1.12, 0.5, -3.7]), wheel(0.5, 0.32, [1.12, 0.5, 2.9]), wheel(0.5, 0.32, [-1.12, 0.5, 2.9]),
@@ -36,9 +36,19 @@ export function busGeometry(detail = false) { // a representative 12 m low-floor
   if (!detail) return mergeGeometries(P);
   for (const side of [-1,1]) {
     const x = side * 1.270;
-    for (const z of [-3.9,-2.38,-.86,.66,2.18,3.70,5.0]) {
-      P.push(part(box(.035,.68,1.35),'#283c44',{at:[x,2.24,z],rough:.12}));
-      P.push(part(box(.05,.025,1.38),'#858d8e',{at:[x,1.902,z],rough:.5}));
+    // Sculpted sill and separate access panels, without copying official logos or fleet marks.
+    for (const [z, width] of [[-2.22,1.7],[.05,2.05],[4.58,1.72]]) {
+      P.push(part(rbox(.055,.58,width,.025),'#576474',{at:[side*1.23,.94,z],rough:.52}));
+      P.push(part(box(.036,.049,.14),'#202a31',{at:[side*1.272,1.13,z-.47],rough:.45}));
+    }
+    for (const z of [-3.7,2.9]) {
+      const rim = new T.CylinderGeometry(.28,.29,.036,20); rim.rotateZ(Math.PI/2);
+      const hub = new T.CylinderGeometry(.12,.14,.043,14); hub.rotateZ(Math.PI/2);
+      P.push(part(rim,'#899091',{at:[side*1.29,.5,z],rough:.38}),part(hub,'#363e43',{at:[side*1.316,.5,z],rough:.5}));
+    }
+    for (const z of (side < 0 ? [-2.97,-1.49,2.28,3.70,5.0] : [-3.9,-2.38,-.86,.66,2.18,3.70,5.0])) {
+      P.push(part(box(.035,.68,1.35),'#253846',{at:[x,2.24,z],rough:.17}));
+      P.push(part(box(.05,.025,1.38),'#535f69',{at:[x,1.902,z],rough:.46}));
     }
     P.push(part(rbox(.13,.24,.42,.055),'#242c30',{at:[side*1.40,2.18,-5.1],rough:.43}));
     P.push(part(box(.12,.045,.14),'#3b4143',{at:[side*1.30,2.18,-5.1],rough:.48}));
@@ -53,7 +63,33 @@ export function busGeometry(detail = false) { // a representative 12 m low-floor
   }
   for (let i=0;i<7;i++) P.push(part(box(1.65,.035,.047),'#6c7374',{at:[0,3.425,1+i*.23],rough:.53}));
   P.push(part(box(1.95,1.01,.065),'#24333b',{at:[0,2.27,5.94],rough:.18}));
+  P.push(part(box(1.22,.28,.05),'#111719',{at:[0,2.23,5.985],rough:.48}));
+  for (const x of [-.65,.65]) P.push(part(box(.32,.035,.07),'#f4e8cc',{at:[x,1.03,-6.0],rough:.21}));
+  for (let row=0;row<5;row++) P.push(part(box(1.46,.035,.05),'#47515a',{at:[0,.78+row*.052,5.96],rough:.59}));
   return mergeGeometries(P);
+}
+
+// Two small signs on the single close-up bus. Route only: the feed does not identify the vehicle's display or direction.
+function makeBusSigns(scene) {
+  const group = new T.Group(); group.name = 'fleet_bus_route_signs'; group.visible = false;
+  const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  const map = new T.CanvasTexture(canvas); map.colorSpace = T.SRGBColorSpace;
+  const mat = new T.MeshBasicMaterial({map,toneMapped:false});
+  for (const [w,h,y,z,front] of [[1.65,.235,3,-6.004,true],[1.16,.25,2.23,6.015,false]]) {
+    const sign = new T.Mesh(new T.PlaneGeometry(w,h),mat);
+    sign.position.set(0,y,z); if (front) sign.rotation.y = Math.PI;
+    group.add(sign);
+  }
+  scene.add(group);
+  return {group, set(route) {
+    const label = typeof route === 'string' && /^[A-Z0-9 -]{1,10}$/i.test(route) ? route.toUpperCase() : '';
+    if (group.userData.route === label) return;
+    group.userData.route = label;
+    ctx.fillStyle='#111719'; ctx.fillRect(0,0,256,64);
+    ctx.fillStyle='#ffd077'; ctx.font='bold 49px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(label,128,34,240); map.needsUpdate=true;
+  }};
 }
 export function trainGeometry() { // a three-car electric multiple unit, about 72 m
   const P = [];
@@ -133,7 +169,7 @@ export function createFleet(scene, { max = { bus: 1400, train: 80, ferry: 60 } }
     m.instanceColor = new T.InstancedBufferAttribute(new Float32Array(max[k] * 3), 3); m.name = 'fleet_' + k; scene.add(m); meshes[k] = m;
   }
   // A single near-detail instance. Never multiply the close-up geometry by the whole live fleet.
-  let closeBus = null;
+  let closeBus = null, signs = null;
   const dummy = new T.Object3D(), col = new T.Color();
   return {
     meshes, material: mat,
@@ -147,15 +183,18 @@ export function createFleet(scene, { max = { bus: 1400, train: 80, ferry: 60 } }
           closeBus = new T.InstancedMesh(busGeometry(true), mat, 1);
           closeBus.instanceColor = new T.InstancedBufferAttribute(new Float32Array(3), 3);
           closeBus.frustumCulled = false; closeBus.castShadow = closeBus.receiveShadow = true;
-          closeBus.name = 'fleet_bus_closeup'; scene.add(closeBus);
+          closeBus.name = 'fleet_bus_closeup'; scene.add(closeBus); signs = makeBusSigns(scene);
         }
         const m = high ? closeBus : meshes[v.mode]; if (!m || (!high && n[v.mode] >= m.instanceMatrix.count)) continue;
         dummy.position.set(v.x, v.y, v.z); dummy.rotation.set(0, -v.heading, 0); dummy.updateMatrix();
         const slot = high ? 0 : n[v.mode]++;
         m.setMatrixAt(slot, dummy.matrix); m.setColorAt(slot, col.set(v.colour));
-        if (high) { featured = true; m.instanceMatrix.needsUpdate = m.instanceColor.needsUpdate = true; }
+        if (high) {
+          featured = true; m.instanceMatrix.needsUpdate = m.instanceColor.needsUpdate = true;
+          signs.group.position.copy(dummy.position); signs.group.rotation.copy(dummy.rotation); signs.set(v.route);
+        }
       }
-      if (closeBus) closeBus.count = featured ? 1 : 0;
+      if (closeBus) { closeBus.count = featured ? 1 : 0; signs.group.visible = featured && !!signs.group.userData.route; }
       for (const k of Object.keys(meshes)) { meshes[k].count = n[k]; meshes[k].instanceMatrix.needsUpdate = true; if (meshes[k].instanceColor) meshes[k].instanceColor.needsUpdate = true; }
     },
     setNight(f) { mat.userData.uNight.value = f; },

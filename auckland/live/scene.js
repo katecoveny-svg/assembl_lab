@@ -3,6 +3,7 @@
 import * as T from 'three';
 import { cameraPose, flightPose } from './camera-flight.mjs';
 import { createFerryBuilding } from './ferry-building.js';
+import { createBusSightlines, busCameraPose } from './bus-sightline.mjs';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { MapControls } from 'three/addons/controls/MapControls.js';
 import { Sky } from 'three/addons/objects/Sky.js';
@@ -245,6 +246,7 @@ export async function createWorld(canvas, { phone = false, capture = false, time
   const WALLS = ['#a29989', '#a78e6b', '#865c4a', '#c2bbb1', '#858e91', '#8f8674', '#afa497', '#697176'].map((c) => new T.Color(c));
   const TOWERS = ['#556775', '#6d8792', '#a49b8b', '#414f59', '#808d87', '#ada799'].map((c) => new T.Color(c));
   const ROOF = ['#7d7b77', '#8f8b84', '#5f6163', '#9a968e', '#6c625a'].map((c) => new T.Color(c));
+  const sight = createBusSightlines();
   const P = [], N = [], C = [], F = [], I = []; let vtx = 0, nb = 0, sourceIndex = 0;
   function pushV(x, y, z, nx, ny, nz, c, fu, fv, seed) { P.push(x, y, z); N.push(nx, ny, nz); C.push(c.r, c.g, c.b); F.push(fu, fv, seed); return vtx++; }
   for (let k = 0; k < words.length;) {
@@ -260,6 +262,7 @@ export async function createWorld(canvas, { phone = false, capture = false, time
     // Ferry Building: OSM's footprint and tower are each mapped here (cross-checked in the orthophoto).
     const bx = pts.reduce((a,q) => a+q[0],0)/n, bz = pts.reduce((a,q) => a+q[1],0)/n;
     const ferry = Math.abs(bx+1756) < 2 && Math.abs(bz+382) < 3 && (h === 19 || h === 26);
+    sight.add(pts,g+mh-2,g+h+(ferry && detailedFerry ? 22 : 0));
     if (ferry && detailedFerry) continue; // replace only the mapped shell and tower
     const facadeWall = ferry ? new T.Color('#b9935d') : wall;
     const facadeRoof = ferry ? new T.Color('#434039') : roof;
@@ -399,7 +402,7 @@ export async function createWorld(canvas, { phone = false, capture = false, time
     city: { t: [-2150, 45, 315], p: [-1450, 420, -690] },
     overview: { t: [-900, 0, 1500], p: [5200, 9000, -9500] },
   };
-  let fly = null, follow = null, cinematic = null;
+  let fly = null, follow = null, cinematic = null, busFollow = false, nextSightCheck = 0;
   const stopFlight = () => {
     if (cinematic) { camera.fov = canvas.clientWidth < canvas.clientHeight ? 55 : 42; camera.updateProjectionMatrix(); }
     cinematic = null; fly = null;
@@ -414,10 +417,10 @@ export async function createWorld(canvas, { phone = false, capture = false, time
       to: cameraPose(v.t,v.p,canvas.clientWidth < canvas.clientHeight ? 55 : 42),
     };
   }
-  controls.addEventListener('start',stopFlight);
+  controls.addEventListener('start',()=>{ stopFlight(); busFollow = false; });
   reducedMotion.addEventListener('change', () => { if (reducedMotion.matches) stopFlight(); });
   function setView(v) { stopFlight(); controls.target.set(...v.t); camera.position.set(...v.p); controls.update(); }
-  function flyTo(t, dist = 900, pitch = 0.5, bearing = null) {
+  function flyTo(t, dist = 900, pitch = 0.5, bearing = null, bus = false) {
     stopFlight();
     const to = new T.Vector3(t[0], t[1] ?? 0, t[2]), off = camera.position.clone().sub(controls.target); off.y = 0; if (off.lengthSq() < 1) off.set(0.6, 0, -1);
     if (Number.isFinite(bearing)) {
@@ -426,8 +429,10 @@ export async function createWorld(canvas, { phone = false, capture = false, time
       off.set(-Math.sin(angle),0,Math.cos(angle));
     }
     off.normalize().multiplyScalar(Math.cos(pitch) * dist); off.y = Math.sin(pitch) * dist;
-    if (reducedMotion.matches) { fly = null; controls.target.copy(to); camera.position.copy(to).add(off); controls.update(); return; }
-    fly = { t0: performance.now(), dur: 1400, fromT: controls.target.clone(), fromP: camera.position.clone(), toT: to, toP: to.clone().add(off) };
+    busFollow = bus; nextSightCheck = performance.now()+1700;
+    const toP = bus ? new T.Vector3(...busCameraPose(to.toArray(),Math.atan2(-off.x,off.z),dist,pitch,sight)) : to.clone().add(off);
+    if (reducedMotion.matches) { fly = null; controls.target.copy(to); camera.position.copy(toP); controls.update(); return; }
+    fly = { t0: performance.now(), dur: 1400, fromT: controls.target.clone(), fromP: camera.position.clone(), toT: to, toP };
   }
   let inset = 0;
   function resize() { const w = canvas.clientWidth, h = canvas.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h; if (inset) camera.setViewOffset(w, h, 0, inset / 2, w, h); else camera.clearViewOffset(); camera.fov = w < h ? 55 : 42; camera.updateProjectionMatrix(); lineMat.resolution.set(w, h); beacons.material.uniforms.uPR.value = renderer.getPixelRatio(); }
@@ -453,7 +458,7 @@ export async function createWorld(canvas, { phone = false, capture = false, time
     for (const s of state.values()) {
       const k = Math.min(1, (now - s.t0) / 2000), e = k * k * (3 - 2 * k);
       s.x = s.fx + (s.tx - s.fx) * e; s.z = s.fz + (s.tz - s.fz) * e; s.y = s.fy + (s.ty - s.fy) * e;
-      list.push({ id: s.id, mode: s.mode, x: s.x, y: s.y, z: s.z, heading: s.h, colour: s.colour });
+      list.push({ id: s.id, mode: s.mode, x: s.x, y: s.y, z: s.z, heading: s.h, colour: s.colour, route: s.route });
     }
     fleet.update(list, selectedId, camera.position.distanceTo(controls.target)); beacons.update(list, selectedId, camera.position.distanceTo(controls.target) < 150);
   }
@@ -482,7 +487,25 @@ export async function createWorld(canvas, { phone = false, capture = false, time
       if (k >= 1) cinematic = null;
     }
     stepVehicles(t);
-    if (follow && !fly && !cinematic) { const s = state.get(follow); if (s) { const d = new T.Vector3(s.x, s.y, s.z).sub(controls.target); controls.target.add(d.multiplyScalar(0.08)); camera.position.add(d); } }
+    if (follow && !fly && !cinematic) {
+      const s = state.get(follow);
+      if (s) {
+        const point=[s.x,s.y+(busFollow?1.8:0),s.z];
+        const d = new T.Vector3(...point).sub(controls.target);
+        controls.target.add(d.multiplyScalar(reducedMotion.matches ? 1 : 0.08)); camera.position.add(d);
+        if(busFollow && t>=nextSightCheck) {
+          nextSightCheck=t+600;
+          if(!sight.clear(camera.position.toArray(),point)) {
+            const pose=busCameraPose(point,s.h+.34,phone?64:66,.47,sight);
+            const p=new T.Vector3(...pose);
+            if(camera.position.distanceTo(p)>2) {
+              // Cut away from an occluding façade rather than tweening through solid geometry.
+              camera.position.copy(p); controls.target.set(...point);
+            }
+          }
+        }
+      }
+    }
     controls.update();
     // the sun's shadow box follows what the camera is looking at
     const dir = sun.userData.dir || new T.Vector3(0, 1, 0); sun.target.position.copy(controls.target); sun.position.copy(controls.target).addScaledVector(dir, 6000);
@@ -527,7 +550,7 @@ export async function createWorld(canvas, { phone = false, capture = false, time
     renderer, scene, camera, controls, heightAt, isLand, setTime, setVehicles, pick, screenOf, showRoute, showStop, flyTo, flyCinematic, stopFlight, views, setView,
     get flying() { return !!cinematic; },
     get sun() { return sunState; }, get frames() { return frames; }, set onFrame(f) { onFrame = f; },
-    select(id) { selectedId = id; follow = id; },
+    select(id) { selectedId = id; follow = id; busFollow = false; },
     unfollow() { follow = null; },
     setInset(px) { inset = Math.max(0, Math.round(px)); resize(); }, // keep the middle of the view above a bottom sheet
     stats: () => ({ landmarkTris: detailedFerry?.userData.triangles || 0, landmarkBatches: detailedFerry?.children.length || 0, aerial: !!hasAerial.value, aerialDetail: aerialDetailReady, reflecting: reflected.value > 0, buildings: nb, groundVerts: gGeo.attributes.position.count, buildingTris: I.length / 3, drawCalls: renderer.info.render.calls, sun: sunNow }),
