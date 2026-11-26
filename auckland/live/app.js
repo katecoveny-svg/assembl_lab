@@ -22,7 +22,7 @@ if (/^\d{1,2}:\d\d$/.test(qs.get('time') || '')) {
   skyMs = X.gtfsTimeToEpoch(today, `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`) * 1000; skyNote = ` · sky set to ${qs.get('time')} by the page address, not now`;
 }
 
-let nearController, stopRun = 0, locationRun = 0;
+let nearController, stopRun = 0, locationRun = 0, shapesRequest;
 let savedStops = []; try { savedStops = readSavedStops(localStorage); } catch {}
 const S = { index: null, shapes: null, positions: null, posSource: 'live', posError: null, updates: new Map(), alerts: [], atLive: { state: 'checking' },
   mode: 'all', sel: null, arrivals: null, weather: null, world: null };
@@ -47,14 +47,21 @@ if (!listOnly) try {
 wireUi(); render(); fitInset();
 function fitInset() { if (S.world) S.world.setInset(phone && innerWidth < 900 ? $('#panel').getBoundingClientRect().height : 0); }
 addEventListener('resize', fitInset); new ResizeObserver(fitInset).observe($('#panel'));
-await Promise.all([loadPositions(), loadAtLive(), loadWeather()]);
-setInterval(loadPositions, 15000);
+const startupSelection = locationRun;
+void loadAtLive();
+void loadWeather();
+const firstPositions = loadPositions();
+const vehicleLink = qs.has('vehicle');
+if (!vehicleLink) deepLink(); // A route or stop can open before optional data and live fixes.
+function pollPositions() { setTimeout(() => { void loadPositions().finally(pollPositions); }, 15000); }
+void firstPositions.then(pollPositions);
 setInterval(() => S.atLive.state === 'on' ? loadAtLive() : null, 20000);
 setInterval(() => S.atLive.state !== 'on' ? loadAtLive() : null, 120000);
 setInterval(() => { if (!skyNote && S.world) S.world.setTime(Date.now(), S.weather?.cloudPct ?? null); }, 5 * 60000);
 setInterval(renderTruth, 5000);
 setInterval(() => { if (!document.hidden && S.sel?.kind === 'stop') void refreshDepartures(S.sel); }, 45000);
-deepLink();
+await firstPositions;
+if (vehicleLink && locationRun === startupSelection) deepLink(); // Never override a newer user selection.
 window.liveReady = true;
 
 // ------------------------------------------------------------------------------------------------ data
@@ -68,7 +75,10 @@ async function loadPositions() {
     S.positions = X.parsePositions(await getJSON(POSITIONS_URL)); S.posSource = 'live'; S.posError = null;
   } catch (e) {
     S.posError = e.message;
-    if (!S.positions || S.posSource === 'sample') { const j = await getJSON(DATA + 'sample-positions.json'); S.positions = X.parsePositions(j); S.posSource = 'sample'; S.sampleAt = j.sample?.savedAt; }
+    if (!S.positions || S.posSource === 'sample') {
+      try { const j = await getJSON(DATA + 'sample-positions.json'); S.positions = X.parsePositions(j); S.posSource = 'sample'; S.sampleAt = j.sample?.savedAt; }
+      catch { /* Both sources are unavailable, but search and route choices still work. */ }
+    }
   }
   pushVehicles(); render();
 }
@@ -153,7 +163,11 @@ async function select(sel, { fly = true, closeUp = false } = {}) { // a later ch
   ++locationRun; ++stopRun; S.sel = sel; S.closeUpBus = closeUp; S.arrivals = null; setPanelSmall(false);
   const w = S.world;
   if (w) { w.select(sel?.kind === 'vehicle' ? sel.id : null); if (sel?.kind !== 'vehicle') w.unfollow(); }
-  if (sel?.kind === 'route') { await ensureShapes(); if (S.sel !== sel) return; const r = S.index.routes.get(sel.id); w?.showRoute(S.shapes[sel.id], r?.color && r.color !== '000000' ? '#' + r.color : '#ffffff'); w?.showStop(null); fitRoute(sel.id); }
+  if (sel?.kind === 'route') {
+    w?.showRoute(null); w?.showStop(null);
+    render(); // The route and Follow action do not depend on the optional planned line.
+    if (w) { await ensureShapes(); if (S.sel !== sel) return; const r = S.index.routes.get(sel.id); w.showRoute(S.shapes?.[sel.id], r?.color && r.color !== '000000' ? '#' + r.color : '#ffffff'); fitRoute(sel.id); }
+  }
   else if (sel?.kind === 'stop') {
     const s = S.index.stops.get(sel.id); w?.showRoute(null); const p = X.toWorld(s.lat, s.lon); w?.showStop(p.x, p.z); if (fly && X.inArea(s.lat, s.lon)) w?.flyTo([p.x, 0, p.z], 700, 0.55);
     render(); S.arrivals = { loading: true }; render();
@@ -162,7 +176,7 @@ async function select(sel, { fly = true, closeUp = false } = {}) { // a later ch
   } else if (sel?.kind === 'vehicle') {
     const v = S.positions?.vehicles.find((x) => x.id === sel.id);
     if (closeUp) w?.showRoute(null);
-    else if (v?.routeId) { await ensureShapes(); if (S.sel !== sel) return; const r = S.index.routes.get(v.routeId); w?.showRoute(S.shapes[v.routeId], r?.color && r.color !== '000000' ? '#' + r.color : '#ffffff'); }
+    else if (w && v?.routeId) { await ensureShapes(); if (S.sel !== sel) return; const r = S.index.routes.get(v.routeId); w?.showRoute(S.shapes?.[v.routeId], r?.color && r.color !== '000000' ? '#' + r.color : '#ffffff'); }
     w?.showStop(null); if (v && fly && X.inArea(v.lat, v.lon)) {
       const p = X.toWorld(v.lat, v.lon), ground = w?.heightAt(p.x,p.z) || 0, close = closeUp && freshMappedVehicle(v);
       w?.flyTo([p.x, ground + (close ? 2 : 0), p.z], close ? 66 : 420, close ? 0.47 : 0.42, close && v.bearing != null ? v.bearing * Math.PI / 180 : null, close && vehicleInfo(v).mode === 'bus');
@@ -193,7 +207,13 @@ async function refreshDepartures(sel) {
   render();
 }
 
-async function ensureShapes() { if (!S.shapes) S.shapes = (await (await fetch(DATA + 'shapes.json')).json()).shapes; }
+function ensureShapes() {
+  if (S.shapes) return Promise.resolve();
+  return shapesRequest ??= getJSON(DATA + 'shapes.json')
+    .then(j => { S.shapes = j.shapes; })
+    .catch(() => { /* The planned line is optional. */ })
+    .finally(() => { shapesRequest = null; });
+}
 function fitRoute(id) {
   const enc = S.shapes?.[id]; if (!enc?.length || !S.world) return;
   let x = 0, z = 0, minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9;
@@ -218,6 +238,7 @@ function deepLink() {
 function statusPill(st) { return `<span class="pill"><i style="--c:${statusColour(st)}"></i>${esc(st.label)}</span>`; }
 function delayNote() {
   if (S.atLive.state === 'on') return '';
+  if (S.atLive.state === 'checking') return '<p class="note">Checking AT delays and service alerts…</p>';
   return `<p class="note">Late or on time, and live arrival times, switch on when Auckland Transport's trip-updates feed is connected to this page. Until then vehicles show grey: delay not known. Nothing here is guessed.</p>`;
 }
 function render() {
@@ -288,15 +309,15 @@ function render() {
     }
     if (demo && r.mode === 'bus') {
       const alternatives = ['70','CTY','75'].map(short=>[...S.index.routes.values()].find(item=>item.short===short && item.mode==='bus')).filter(item=>item && item.id!==r.id);
-      if (!mapped.length) html += '<p class="note">No recent AT position for this route in the 3D area. Try another route below.</p>';
+      if (!mapped.length && (S.positions || S.posError)) html += '<p class="note">No recent AT position for this route in the 3D area. Try another route below.</p>';
       if (alternatives.length) html += `<div class="demo-routes" aria-label="Demo routes"><span>Try another route</span><div class="chips">${alternatives.map(item=>{
         const fixes = (S.positions?.vehicles || []).filter(v=>v.routeId===item.id && freshMappedVehicle(v,now));
         const city = fixes.filter(isWaterfrontFix).length;
-        return `<button type="button" data-route="${esc(item.id)}"><b>${item.short==='CTY'?'CityLink · CTY':esc(item.short)}</b><small>${city?city+' downtown':fixes.length?fixes.length+' live':'No live fix'}</small></button>`;
+        return `<button type="button" data-route="${esc(item.id)}"><b>${item.short==='CTY'?'CityLink · CTY':esc(item.short)}</b><small>${city?city+' downtown':fixes.length?fixes.length+' live':S.positions||S.posError?'No live fix':'Checking…'}</small></button>`;
       }).join('')}</div></div>`;
     }
     html += `<h3>Vehicles reported on this route · ${vs.length}</h3>`;
-    html += vs.length ? `<ul class="rows">${vs.map((v) => { const { st } = vehicleInfo(v); return `<li><button type="button" class="row" data-vehicle="${esc(v.id)}"><span class="r"><i style="--c:${statusColour(st)}"></i></span><span class="h">${esc(S.atLive.state === 'on' ? st.label : v.speedKmh ? 'Moving, about ' + v.speedKmh + ' km/h' : v.speedKmh === 0 ? 'Stopped' : 'Speed not reported')}<small>${S.atLive.state === 'on' && v.speedKmh != null ? 'about ' + v.speedKmh + ' km/h · ' : ''}reported ${ago(v.ts)}${X.inArea(v.lat, v.lon) ? '' : ' · outside the 3D area'}</small></span><span class="w">›</span></button></li>`; }).join('')}</ul>` : `<p class="muted">No vehicle on this route is in the live feed right now.</p>`;
+    html += !S.positions && !S.posError ? '<p class="muted">Checking Auckland Transport for live positions…</p>' : vs.length ? `<ul class="rows">${vs.map((v) => { const { st } = vehicleInfo(v); return `<li><button type="button" class="row" data-vehicle="${esc(v.id)}"><span class="r"><i style="--c:${statusColour(st)}"></i></span><span class="h">${esc(S.atLive.state === 'on' ? st.label : v.speedKmh ? 'Moving, about ' + v.speedKmh + ' km/h' : v.speedKmh === 0 ? 'Stopped' : 'Speed not reported')}<small>${S.atLive.state === 'on' && v.speedKmh != null ? 'about ' + v.speedKmh + ' km/h · ' : ''}reported ${ago(v.ts)}${X.inArea(v.lat, v.lon) ? '' : ' · outside the 3D area'}</small></span><span class="w">›</span></button></li>`; }).join('')}</ul>` : `<p class="muted">No vehicle on this route is in the live feed right now.</p>`;
     html += delayNote() + `<div class="actions"><button class="ghost" data-clear>Close</button></div>`;
   } else if (sel.kind === 'stop') {
     const s = S.index.stops.get(sel.id);
@@ -338,15 +359,15 @@ function fmtTime(iso) { const t = Date.parse(iso); return Number.isFinite(t) ? n
 function renderTruth() {
   const p = S.positions, sun = S.world?.sun;
   const current = p && !S.posError && X.timestampFresh(p.newestFix, Math.round(Date.now() / 1000));
-  const pos = !p ? 'Positions: loading' : S.posSource === 'sample' ? `Positions: SAVED SAMPLE from ${fmtTime(S.sampleAt)}, not live` : `Positions: Auckland Transport, ${current ? 'live' : 'stale or unavailable'}, newest fix ${X.nzClock(p.newestFix)} (${ago(p.newestFix)})`;
-  const del = S.atLive.state === 'on' ? `Delays and alerts: AT trip updates ${ago(S.atLive.at)}` : `Delays: not connected yet`;
+  const pos = !p ? (S.posError ? 'Positions: unavailable' : 'Positions: loading') : S.posSource === 'sample' ? `Positions: SAVED SAMPLE from ${fmtTime(S.sampleAt)}, not live` : `Positions: Auckland Transport, ${current ? 'live' : 'stale or unavailable'}, newest fix ${X.nzClock(p.newestFix)} (${ago(p.newestFix)})`;
+  const del = S.atLive.state === 'on' ? `Delays and alerts: AT trip updates ${ago(S.atLive.at)}` : S.atLive.state === 'checking' ? 'Delays: checking' : 'Delays: unavailable';
   const sunTxt = sun ? (sun.elevation > 0 ? ` · sun ${Math.round(sun.elevation)}° up` : ' · sun down') : '';
-  const short = !p ? 'Loading' : S.posSource === 'sample' ? `SAVED SAMPLE ${fmtTime(S.sampleAt)}, not live` : `${current ? 'Live' : 'Stale or unavailable'} · newest fix ${X.nzClock(p.newestFix)} (${ago(p.newestFix)})`;
+  const short = !p ? (S.posError ? 'Positions unavailable' : 'Loading') : S.posSource === 'sample' ? `SAVED SAMPLE ${fmtTime(S.sampleAt)}, not live` : `${current ? 'Live' : 'Stale or unavailable'} · newest fix ${X.nzClock(p.newestFix)} (${ago(p.newestFix)})`;
   const src = $('#source-detail'), content = sourcesHtml(pos, del) + esc(sunTxt + skyNote);
   if (src.innerHTML !== content && !src.contains(document.activeElement)) src.innerHTML = content;
   const live = $('#truth-live');
   live.dataset.state = S.posSource === 'sample' ? 'sample' : current ? 'current' : 'other';
-  live.textContent = short + (S.atLive.state === 'on' ? '' : ' · no delay feed');
+  live.textContent = short + (S.atLive.state === 'on' ? '' : S.atLive.state === 'checking' ? ' · checking delays' : ' · no delay feed');
 }
 function gtfsSpan() { const f = (d) => d && /^\d{8}$/.test(d) ? new Intl.DateTimeFormat('en-NZ', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' }).format(Date.UTC(+d.slice(0, 4), +d.slice(4, 6) - 1, +d.slice(6, 8))) : ''; return S.gtfs?.feedStart ? `${f(S.gtfs.feedStart)} to ${f(S.gtfs.feedEnd)}` : ''; }
 function sourcesHtml(pos, del) {
