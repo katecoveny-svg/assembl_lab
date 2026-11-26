@@ -1,3 +1,17 @@
+import {tourSeconds,tourKeys} from './tour-score.js?v=9741e33a49';
+
+function tourTravel(t){
+ const position=t*(tourKeys.length-1),i=Math.floor(position);
+ const a=tourKeys[i][0],b=tourKeys[Math.min(i+1,tourKeys.length-1)][0];
+ return (a+(b-a)*(position-i))/10000;
+}
+function cameraDining(progress){
+ const target=progress*10000;
+ let low=0,high=tourKeys.length-1;
+ while(high-low>1){const middle=(low+high)>>1;if(tourKeys[middle][0]<=target)low=middle;else high=middle}
+ const [x,a]=tourKeys[low],[y,b]=tourKeys[high];
+ return (a+(b-a)*Math.max(0,Math.min(1,(target-x)/Math.max(1,y-x))))/10000;
+}
 import {walkInput} from './house-walk.js?v=29559704e7';
 import {installExplore} from './explore.js?v=832259faaa';
 import {lab} from './lab.js?v=27eec3907d';
@@ -102,9 +116,9 @@ function frame(now){id=0;if(!world||!visible||document.hidden)return;const delta
  if(dirty||(active&&now-prev>=(1000/30-.6))){if(active)time+=delta;
  if(touring&&!paused){
   tourTime+=delta;
-  const t=Math.min(1,tourTime/(cinema?32:27));
+  const t=Math.min(1,tourTime/(cinema?tourSeconds:27));
   // Give the visitor half the walk inside, after crossing the open slider.
-  const phase=cinema?(t<.52?.76*t/.52:.76+.24*(t-.52)/.48):t*t*(3-2*t)*.55+t*.45;
+  const phase=cinema?tourTravel(t):t*t*(3-2*t)*.55+t*.45;
   p=tourFrom+(1-tourFrom)*phase;
   if(t===1)stopTour();
  }
@@ -116,7 +130,7 @@ function frame(now){id=0;if(!world||!visible||document.hidden)return;const delta
  furnishInterior();
  const guided=!room&&!detail&&!exploring&&!garden?.active&&!settings.has('match');
  const lift=cinema?0:liftAt(p);if(cinema)journey.toggleAttribute('data-walking',p>.21);prev=now;
- try{world.draw(p,time,Math.max(0,1-(time-gustAt)/3.6),lift,guided,cinema&&guided?easeBetween(p,.93,1):0)}
+ try{world.draw(p,time,Math.max(0,1-(time-gustAt)/3.6),lift,guided,cinema&&guided?cameraDining(p):0)}
  catch{staticMode('render failed');return}
  titleFrame(p,lift);if(settings.has('profile')){if(lastPaint&&now-lastPaint<250)intervals.push(now-lastPaint);if(intervals.length>500)intervals.shift();lastPaint=now}dirty=false;vista.dataset.position=p.toFixed(3)}
  if(active||roomMove)id=requestAnimationFrame(frame)}
@@ -153,7 +167,7 @@ reduced.addEventListener('change',()=>{paused=reduced.matches;if(paused)stopTour
 document.addEventListener('click',e=>{let a=e.target.closest('a');if(a?.closest('#lab,#architecture'))event(a.target==='_blank'?'demo_launch':'brief_selected',a.href);if(a?.href.startsWith('mailto:'))event('contact_open',a.hash||'email')});
 async function start(signal){
  if(settings.get('renderer')==='still')throw new Error('Still view requested');
- const {openPavilion}=await import('./world.js?v=e717689868');signal.throwIfAborted();
+ const {openPavilion}=await import('./world.js?v=164a5b2f47');signal.throwIfAborted();
  const force=preferWebGL||settings.get('renderer')==='webgl';
  let candidate,drawnP,drawnDetail;
  async function firstFrame(webgl){

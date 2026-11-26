@@ -1,8 +1,9 @@
+import {profiles} from './design-profiles.js?v=1484423fe1';
 import {houseWalk} from './house-walk.js?v=29559704e7';
 import {bedroom} from './bedroom.js';
 import {deckGarden} from './deck-garden.js';
 import {dressedDeck,deckFixings} from './coastal-finish.js';
-import {fitKitchen} from './kitchen.js?v=99920e4182';
+import {fitKitchen} from './kitchen.js?v=ad18805e89';
 import {plantPohutukawa} from './pohutukawa.js?v=b772133fb9';
 import * as T from './vendor/three.webgpu.min.js';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
@@ -190,7 +191,15 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  for(let i=0;i<23;i++)box(-7.04+i*.09,1.48,2.025,.049,2.97,.09,dark);
  // Purpose-made cabinetry, recessed lights, curtain folds and furniture establish scale.
  // One softly lit pendant over the breakfast table leaves the view from the new doorway clear.
- box(-2.12,2.67,.49,.01,.58,.01,metal);cylinder(-2.12,2.32,.49,.053,.178,.135,cedar);cylinder(-2.12,2.249,.49,.155,.155,.010,glow);
+ // Slip-cast pendant. The same elevation defines the outside and the returned ceramic lip.
+ const shadeHeight=.27,shadeBase=2.14,outer=[];
+ for(let i=1;i<31;i++)outer.push(new T.Vector2(.19*profiles.pendant[i],shadeHeight*(i-1)/29));
+ const inner=outer.slice().reverse().map(pt=>new T.Vector2(Math.max(.006,pt.x-.005),pt.y+.003));
+ const shadeProfile=[...outer,...inner,outer[0]];
+ const glaze=mat(0xe7d8bc,.33,null,{side:T.DoubleSide});mesh(new T.LatheGeometry(shadeProfile,64),glaze,-2.12,shadeBase,.49);
+ cylinder(-2.12,shadeBase+.055,.49,.137,.137,.008,glow);
+ cylinder(-2.12,2.43,.49,.022,.024,.045,metal);
+ box(-2.12,2.71,.49,.008,.52,.008,metal);
  const [glazeNormal,basketWeave]=await Promise.all(['studio-glaze-normal.webp','studio-wool.webp'].map(surface));
  for(const map of [glazeNormal,basketWeave]){map.wrapS=map.wrapT=T.RepeatWrapping;map.anisotropy=4}
  basketWeave.colorSpace=T.SRGBColorSpace;
@@ -382,7 +391,7 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  const targets=[v(-1.2,1.1,.48),v(.32,1.08,.21),v(-.65,1.2,1.08),v(-.58,1.28,1.05),v(2.85,1.24,-.32),match?v(4.28,1.27,-1.25):v(4.08,1.14,-.78)];
  const camPath=new T.CatmullRomCurve3(positions,false,'centripetal'),aimPath=new T.CatmullRomCurve3(targets,false,'centripetal');
  let garden=null;
- async function gardenBed(){const {createGardenBed}=await import("./garden-bed.js?v=d90ebe5088");return garden??=createGardenBed(scene,camera,ground)}
+ async function gardenBed(){const {createGardenBed}=await import("./garden-bed.js?v=315be6137c");return garden??=createGardenBed(scene,camera,ground,windTime)}
  let explorePose=null,detail=null,indoors=false;
  const displacement=v(),direction=v(),stepRight=v(),next=v();
  const obstacles=[[-3.84,-.66,-2.1,-1.22],[-3.22,-1.02,.18,.80],[-4.04,-3.74,-2.1,.63],[-4.04,-3.74,1.59,2.04],[-7.03,-4.78,-1.19,.63],[-7.03,-4.95,-2.06,-1.49],[-.79,1.04,-1.69,-.10],[2.02,4.83,-1.88,-.73],[2.66,4.64,-.41,.79],[5.26,6.48,-.35,.91]];
@@ -423,8 +432,8 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
    if(camera.aspect<1.24){const f=Math.max(0,1.24-camera.aspect);cp.z+=17.8*f*(1-p)**1.5;cp.x+=4.9*f*(1-p);aim.x+=.65*f}
    camera.fov=match?42-3*p:42+14*p*p;if(guided&&p>.76)camera.fov=T.MathUtils.lerp(56,camera.aspect<1?69:51,T.MathUtils.smoothstep(p,.76,1));camera.updateProjectionMatrix();
    if(benchPass>0){
-    cp.lerp(v(-2.75,1.34,-.39),benchPass);aim.lerp(v(-1.55,1.16,-1.83),benchPass);
-    camera.fov=T.MathUtils.lerp(camera.fov,camera.aspect<1?57:43,benchPass);
+    cp.lerp(v(1.34,1.48,1.64),benchPass);aim.lerp(v(-2.10,1.26,.35),benchPass);
+    camera.fov=T.MathUtils.lerp(camera.fov,camera.aspect<1?69:54,benchPass);
    }
    if(detail==='kitchen'){cp.set(-.28,1.39,1.64);aim.set(-2.40,1.10,-.95);camera.fov=camera.aspect<1?69:51}
    if(detail==='bedroom'){cp.set(-4.17,1.33,-1.24);aim.set(-6.22,.83,.18);camera.fov=camera.aspect<1?70:56}
