@@ -177,7 +177,11 @@
     "pavilion/assets/waiheke-journey-mobile.mp4": "agency-home/pavilion/assets/waiheke-journey-mobile.mp4",
     "pavilion/assets/native-garden.webp": "agency-home/pavilion/assets/native-garden.webp",
     "pavilion/waterfront.js": "agency-home/pavilion/waterfront.js",
-    "pavilion/assets/waterfront-survey.webp": "agency-home/pavilion/assets/waterfront-survey.webp",
-    "pavilion/waterfront.css": "agency-home/pavilion/waterfront.css"
+    "pavilion/waterfront.css": "agency-home/pavilion/waterfront.css",
+    "pavilion/city-view.html": "agency-home/pavilion/city-view.html",
+    "pavilion/city-view.js": "agency-home/pavilion/city-view.js",
+    "pavilion/assets/ferry-quay-front.webp": "agency-home/pavilion/assets/ferry-quay-front.webp",
+    "pavilion/assets/quay-glazing.webp": "agency-home/pavilion/assets/quay-glazing.webp",
+    "auckland/3d/skytower-parts.json": "agency-home/pavilion/assets/skytower-parts.json"
   }
 }

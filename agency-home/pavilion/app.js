@@ -1,4 +1,4 @@
-import {installExplore} from './explore.js';
+import {installExplore} from './explore.js?v=832259faaa';
 import {lab} from './lab.js?v=27eec3907d';
 const $=s=>document.querySelector(s);
 const asset=name=>'/pavilion/assets/'+name;
@@ -152,7 +152,7 @@ reduced.addEventListener('change',()=>{paused=reduced.matches;if(paused)stopTour
 document.addEventListener('click',e=>{let a=e.target.closest('a');if(a?.closest('#lab,#architecture'))event(a.target==='_blank'?'demo_launch':'brief_selected',a.href);if(a?.href.startsWith('mailto:'))event('contact_open',a.hash||'email')});
 async function start(signal){
  if(settings.get('renderer')==='still')throw new Error('Still view requested');
- const {openPavilion}=await import('./world.js?v=5ba72ad963');signal.throwIfAborted();
+ const {openPavilion}=await import('./world.js?v=5e6314c886');signal.throwIfAborted();
  const force=preferWebGL||settings.get('renderer')==='webgl';
  let candidate,drawnP,drawnDetail;
  async function firstFrame(webgl){

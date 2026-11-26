@@ -407,10 +407,11 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
    if(explorePose){
     const {yaw,pitch,travel}=explorePose;
     if(!indoors){
-     const offset=cp.clone().sub(aim),sphere=new T.Spherical().setFromVector3(offset);
-     sphere.theta+=yaw*.69;sphere.phi=T.MathUtils.clamp(sphere.phi-pitch,.52,1.67);
-     sphere.radius*=1-travel*.68;cp.copy(aim).add(offset.setFromSpherical(sphere));
-     cp.y=Math.max(cp.y,ground(cp.x,cp.z)+.98);
+     // Look from the path. Orbiting the entire camera around the house can put it inside the trees.
+     const view=aim.clone().sub(cp),distance=view.length(),sphere=new T.Spherical().setFromVector3(view);
+     sphere.theta+=T.MathUtils.clamp(yaw,-.42,.42);
+     sphere.phi=T.MathUtils.clamp(sphere.phi-pitch,.75,1.95);
+     view.setFromSpherical(sphere).normalize();cp.addScaledVector(view,travel*.8);aim.copy(cp).addScaledVector(view,distance);
     }else{
      const dir=aim.clone().sub(cp).normalize(),sphere=new T.Spherical().setFromVector3(dir);
      sphere.theta+=yaw;sphere.phi=T.MathUtils.clamp(sphere.phi-pitch,.5,2.55);dir.setFromSpherical(sphere);
