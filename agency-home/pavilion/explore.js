@@ -47,7 +47,7 @@ export function installExplore(vista,options) {
     if(Math.abs(dx)<5)return;
     glance.armed=true;surface.setPointerCapture(e.pointerId);
    }
-   glanceYaw=glance.yaw-dx*.006;glancePitch=clamp(glance.pitch+dy*.0018,-.13,.16);
+   glanceYaw=options.inside()?glance.yaw-dx*.006:clamp(glance.yaw-dx*.003,-.42,.42);glancePitch=clamp(glance.pitch+dy*.0018,-.13,.16);
    options.setCamera({yaw:glanceYaw,pitch:glancePitch,travel:0});options.repaint();return;
   }
   const previous=pointers.get(e.pointerId);if(!active||!previous)return;
@@ -63,7 +63,7 @@ export function installExplore(vista,options) {
  },{passive:false});
  vista.addEventListener('keydown',e=>{
   if(!active&&document.documentElement.classList.contains('agency-landing')&&e.target===vista&&options.available()&&['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){
-   glanceYaw+=e.key==='ArrowLeft'?.14:e.key==='ArrowRight'?-.14:0;
+   glanceYaw=turn(glanceYaw+(e.key==='ArrowLeft'?.14:e.key==='ArrowRight'?-.14:0));
    glancePitch=clamp(glancePitch+(e.key==='ArrowUp'?.05:e.key==='ArrowDown'?-.05:0),-.3,.3);
    options.setCamera({yaw:glanceYaw,pitch:glancePitch,travel:0});options.repaint();e.preventDefault();return;
   }
