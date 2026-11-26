@@ -1,6 +1,7 @@
 // Narrow server-side access to the public LINZ layers. The credential never reaches a browser.
 import { getJSON } from "../../api/_feeds/util.js";
 import { arcQueryUrl } from "../../api/_feeds/site.js";
+import { readRoads, ROAD_LAYER } from "../../api/_feeds/linz-roads.js";
 import { fetchAddress } from "../../api/_feeds/address.js";
 import { toNZTM } from "../../roof-solar/linz/nztm.js";
 
@@ -33,15 +34,15 @@ function contains(e,n,g) {
   return (g.type==="Polygon" ? [g.coordinates] : g.coordinates).some(([outer,...holes]) =>
     insideRing(e,n,outer) && !holes.some(r=>insideRing(e,n,r)));
 }
-async function layer(kind, point, key) {
+async function layer(kind, point, key, context=false) {
   const [id, name, fields]=TYPES[kind], {e,n,lat,lon}=point;
   const atPoint=kind!=="buildings";
-  const radius=atPoint ? .75 : 27;
+  const radius=atPoint ? .75 : context ? 135 : 27;
   if (key?.trim()) {
     try {
-      // LDS WFS uses native NZGD2000 lat/long order in CQL filters; ask for NZTM metres on output.
+      // LDS WFS uses the layer’s native CRS axis order in CQL filters; request NZTM on output.
       const dy=radius/111320,dx=dy/Math.cos(lat*Math.PI/180);
-      const extent=[lat-dy,lon-dx,lat+dy,lon+dx].map(x=>x.toFixed(7)).join(",");
+      const extent=(kind==="buildings"?[n-radius,e-radius,n+radius,e+radius]:[lat-dy,lon-dx,lat+dy,lon+dx]).map(x=>x.toFixed(7)).join(",");
       const search = new URLSearchParams({service:"WFS",version:"2.0.0",request:"GetFeature",typeNames:"layer-"+id,
         outputFormat:"json",srsName:"EPSG:2193",cql_filter:"bbox("+(kind==="property"?"geom":"shape")+","+extent+")",count:"40"});
       const features=await read("https://data.linz.govt.nz/services;key="+encodeURIComponent(key.trim())+"/wfs?"+search);
@@ -82,7 +83,7 @@ async function layer(kind, point, key) {
     }
   }
   // Use the same WGS84 ArcGIS request as the production Site feed, then register in NZTM.
-  const geo=await getJSON(arcQueryUrl(ARC,name,{lat,lon,distance:kind==="buildings"?38:undefined,outFields:fields,geometry:true}));
+  const geo=await getJSON(arcQueryUrl(ARC,name,{lat,lon,distance:kind==="buildings"?(context?150:38):undefined,outFields:fields,geometry:true}));
   if(!Array.isArray(geo.features)||geo.error) throw Error("Unexpected LINZ public response");
   return {features:projectFeatures(geo.features),via:"linz-public"};
 }
@@ -124,24 +125,28 @@ export async function onRequest({request,env}) {
   const {lat,lon}=body||{};
   if(!Number.isFinite(lat)||!Number.isFinite(lon)||lat< -47.6||lat> -33.8||lon<166||lon>179.99) return reply({error:"Choose a New Zealand address within the available map coverage."},400);
   const point={lat,lon,...toNZTM(lat,lon)};
-  const useProperty=body.mode==="property"||body.includeProperty===true;
+  const context=body.mode==="context", roadsOnly=body.mode==="roads";
+  const useProperty=body.mode==="property"||body.includeProperty===true||context;
+  const roads=context||roadsOnly?readRoads(point).catch(()=>({status:"unavailable",lines:[],layer:ROAD_LAYER,via:null})):null;
   const property=useProperty?layer("property",point,env?.LINZ_API_KEY).then(r=>({
     status:"available", via:r.via,
     outlines:r.features.filter(f=>contains(point.e,point.n,f.geometry)).slice(0,8).map(f=>f.geometry),
     layer:122657,
   })).catch(()=>({status:"unavailable",via:null,outlines:[],layer:122657})):null;
+  if(roadsOnly) return reply({roads:await roads,crs:"EPSG:2193"});
   if(body.mode==="property") return reply({property:await property,crs:"EPSG:2193"});
-  const [p,b]=await Promise.allSettled([layer("parcel",point,env?.LINZ_API_KEY),layer("buildings",point,env?.LINZ_API_KEY)]);
-  if(p.status!=="fulfilled") return reply({error:"LINZ parcel data didn’t load. Try again in a moment."},502);
-  const parcel=p.value.features.filter(f=>contains(point.e,point.n,f.geometry)).sort((a,b)=>{
+  const [p,b]=await Promise.allSettled([layer("parcel",point,env?.LINZ_API_KEY),layer("buildings",point,env?.LINZ_API_KEY,context)]);
+  if(p.status!=="fulfilled"&&!context) return reply({error:"LINZ parcel data didn’t load. Try again in a moment."},502);
+  const parcel=(p.value?.features||[]).filter(f=>contains(point.e,point.n,f.geometry)).sort((a,b)=>{
     const score=f=>/road|hydro/i.test(f.properties?.parcel_intent||"")?1:0;
     return score(a)-score(b)||(Number(a.properties?.calc_area)||Infinity)-(Number(b.properties?.calc_area)||Infinity);
   })[0];
   return reply({
     parcel:parcel?.geometry??null,
     ...(useProperty?{property:await property}:{}),
-    buildings:b.status==="fulfilled"?b.value.features.slice(0,40).map(f=>f.geometry):null,
-    via:{parcel:p.value.via,buildings:b.status==="fulfilled"?b.value.via:null},
+    ...(context?{roads:await roads,parcelStatus:p.status==="fulfilled"?"available":"unavailable"}:{}),
+    buildings:b.status==="fulfilled"?b.value.features.slice(0,context?100:40).map(f=>f.geometry):null,
+    via:{parcel:p.value?.via??null,buildings:b.status==="fulfilled"?b.value.via:null},
     crs:"EPSG:2193"
   });
 }

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {onRequest} from "../../functions/api/garden-site.js";
-import {toNZTM} from "../../roof-solar/linz/nztm.js";
+import {toNZTM,fromNZTM} from "../../roof-solar/linz/nztm.js";
 
 const location={lat:-36.85,lon:174.76}, {e,n}=toNZTM(location.lat,location.lon);
 const fakeKey="key-for-unit-test";
@@ -65,4 +65,21 @@ test("property-only lookup falls back to the same public LINZ layer, never to pa
  });
  const r=await request({...location,mode:"property"});
  assert.deepEqual((await r.json()).property,{status:"available",via:"linz-public",outlines:[],layer:122657});
+});
+
+test("one-address context includes clipped, named roads even if another source times out",async t=>{
+ t.mock.method(globalThis,"fetch",async raw=>{
+  const u=new URL(raw);
+  if(u.pathname.includes("LINZ_NZ_Primary_Parcels"))return new Response("",{status:503});
+  if(u.pathname.includes("LINZ_NZ_Addresses_Roads")){
+   const positions=[[-510,20],[-10,20],[510,20]].map(([x,y])=>{const p=fromNZTM(e+x,n+y);return [p.lon,p.lat];});
+   return collection([{type:"Feature",geometry:{type:"LineString",coordinates:positions},properties:{full_road_name:"Example Lane"}}]);
+  }
+  return collection([]);
+ });
+ const r=await request({...location,mode:"context"}), j=await r.json();
+ assert.equal(r.status,200);assert.equal(j.parcelStatus,"unavailable");
+ assert.equal(j.roads.layer,123110);assert.equal(j.roads.lines[0].name,"Example Lane");
+ assert.equal(j.roads.lines[0].distanceM,20);
+ for(const path of j.roads.lines[0].geometry.coordinates)for(const p of path)assert(Math.abs(p[0]-e)<=180.01&&Math.abs(p[1]-n)<=180.01);
 });

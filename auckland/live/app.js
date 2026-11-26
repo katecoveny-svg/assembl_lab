@@ -21,6 +21,7 @@ if (/^\d{1,2}:\d\d$/.test(qs.get('time') || '')) {
   skyMs = X.gtfsTimeToEpoch(today, `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`) * 1000; skyNote = ` · sky set to ${qs.get('time')} by the page address, not now`;
 }
 
+let nearController;
 const S = { index: null, shapes: null, positions: null, posSource: 'live', posError: null, updates: new Map(), alerts: [], atLive: { state: 'checking' },
   mode: 'all', sel: null, arrivals: null, weather: null, world: null };
 
@@ -116,9 +117,23 @@ function pushVehicles() {
   S.counts = counts; S.world?.setVehicles(out);
 }
 
+// Roads around a selected static stop are visual context, not a trip, directions or legal access.
+async function streetsNear(sel,stop) {
+  const ctl=nearController=new AbortController();
+  try{
+    const reply=await fetch('/api/garden-site',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({mode:'roads',lat:stop.lat,lon:stop.lon}),signal:AbortSignal.any([ctl.signal,AbortSignal.timeout(8000)])});
+    if(!reply.ok||S.sel!==sel)return;
+    const {roads}=await reply.json();
+    if(S.sel!==sel||ctl.signal.aborted||roads?.status!=='available')return;
+    S.nearStreetNames=[...new Set(roads.lines.filter(r=>r.distanceM<=140).map(r=>r.name))].slice(0,3);
+    render();
+  }catch{ /* transport remains usable when the streets layer cannot answer */ }
+}
 // ------------------------------------------------------------------------------------------------ selection
 async function select(sel, { fly = true } = {}) { // a later choice always wins over a slower earlier one (S.sel !== sel checks)
   S.world?.stopFlight();
+  nearController?.abort(); S.nearStreetNames=[];
   S.sel = sel; S.arrivals = null; setPanelSmall(false);
   const w = S.world;
   if (w) { w.select(sel?.kind === 'vehicle' ? sel.id : null); if (sel?.kind !== 'vehicle') w.unfollow(); }
@@ -126,6 +141,7 @@ async function select(sel, { fly = true } = {}) { // a later choice always wins 
   else if (sel?.kind === 'stop') {
     const s = S.index.stops.get(sel.id); w?.showRoute(null); const p = X.toWorld(s.lat, s.lon); w?.showStop(p.x, p.z); if (fly && X.inArea(s.lat, s.lon)) w?.flyTo([p.x, 0, p.z], 700, 0.55);
     render(); S.arrivals = { loading: true }; render();
+    if(X.inArea(s.lat,s.lon))void streetsNear(sel,s);
     const ids = (s.children?.length ? s.children : [s.id]).slice(0, 6);
     if (S.atLive.state === 'on') {
       const j = await loadAtLive(ids); if (S.sel !== sel) return;
@@ -221,6 +237,7 @@ function render() {
     const s = S.index.stops.get(sel.id);
     html += `<p class="muted">${s.modes.includes('ferry') ? 'Ferry terminal' : s.modes.includes('train') ? 'Train station' : 'Stop'}${s.code ? ` · ${esc(s.code)}` : ''}</p><h2>${esc(s.name)}</h2>`;
     html += `<div class="chips">${s.routes.map((id) => S.index.routes.get(id)).filter(Boolean).sort((a, b) => a.short.localeCompare(b.short, 'en', { numeric: true })).map((r) => `<button data-route="${esc(r.id)}">${esc(r.short)}</button>`).join('')}</div>`;
+    if(S.nearStreetNames?.length)html += `<p class="muted" data-linz-streets>Nearby streets: ${S.nearStreetNames.map(esc).join(' · ')} <small><a href="https://data.linz.govt.nz/layer/123110-nz-addresses-roads/" target="_blank" rel="noopener noreferrer" title="LINZ NZ Addresses: Roads, CC BY 4.0">LINZ</a></small></p>`;
     const ids = s.children?.length ? [s.id, ...s.children] : [s.id];
     html += X.alertsFor(S.alerts, { routeIds: [], stopIds: ids }, now).map(alertHtml).join('');
     html += `<h3>Next arriving</h3>` + arrivalsHtml(s);
