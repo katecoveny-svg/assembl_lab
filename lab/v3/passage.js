@@ -19,27 +19,26 @@ function paint(){
  const blend=media.matches?Number(progress>=.5):Math.max(0,Math.min(1,(progress-.29)/.36));
  passage.style.setProperty('--wipe',((1-blend*blend*(3-2*blend))*100)+'%');
  const index=progress<.49?0:1;
- document.querySelector('#plate-kicker').textContent=index?'Architectural film / Waiheke':'Waitematā Harbour';
- document.querySelector('#plate-title').textContent=index?'Catch the light.':surfaces[0].classList.contains('ready')?'Drag the boat.':'At water level.';
- link.textContent=index?'Open Planting & Architecture Studio ↗':'Explore the tide ↗';
- link.href=index?'/nz-planting-studio/':harbour;
+ document.querySelector('#plate-kicker').textContent=index?'Waitematā Harbour':'Architectural film / Waiheke';
+ document.querySelector('#plate-title').textContent=index?(surfaces[1].classList.contains('ready')?'Drag the boat.':'At water level.'):'Catch the light.';
+ link.textContent=index?'Explore the tide ↗':'Open full-screen 3D ↗';
+ link.href=index?harbour:'/waiheke-hero/';
  const visible=rect.top<innerHeight*.93&&rect.bottom>0&&!document.hidden;
- const quietHarbour=media.matches&&index===0;
- const next=visible&&(!paused||quietHarbour)&&!navigator.connection?.saveData?index:-1;
+ const next=visible&&!paused&&!navigator.connection?.saveData?index:-1;
  if(active!==next){
    teardown();active=next;
    if(next===0){
+    import('/waiheke-hero/waiheke-hero.js?v=waiheke-3d').then(({mountWaihekeHero})=>{
+     if(active!==0)return;
+     waihekeApi=mountWaihekeHero(surfaces[0]);
+     if(waihekeApi)surfaces[0].classList.add('ready');
+    }).catch(err=>console.warn('Waiheke 3D hero load:',err));
+   }else if(next===1){
     const item=document.createElement('iframe');frame=item;
     item.tabIndex=0;item.title='Waitematā Harbour. Drag the boat, or focus it and use the arrow keys.';
     item.src=harbour+'?view=harbour&plate=1';
-    surfaces[0].append(item);
-    timeout=setTimeout(()=>{if(frame===item&&!surfaces[0].classList.contains('ready')){item.remove();frame=null}},35000);
-   }else if(next===1){
-    import('/waiheke-hero/waiheke-hero.js').then(({mountWaihekeHero})=>{
-     if(active!==1)return;
-     waihekeApi=mountWaihekeHero(surfaces[1]);
-     if(waihekeApi)surfaces[1].classList.add('ready');
-    }).catch(err=>console.warn('Waiheke 3D hero load:',err));
+    surfaces[1].append(item);
+    timeout=setTimeout(()=>{if(frame===item&&!surfaces[1].classList.contains('ready')){item.remove();frame=null}},35000);
    }
  }
 }
