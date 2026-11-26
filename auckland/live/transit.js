@@ -182,12 +182,27 @@ export function arrivalsForStop(stopTrips, updates, nowSec, { limit = 8, routes 
 
 // ------------------------------------------------------------------------------------------------ static index (from the bake)
 // routes.json {routes:[{id, short, type, color, agency, heads}]}; stops.json {stops:[[id, code, name, lat, lon, locType, parent, routeIdx[]]]}
-export function buildIndex(routesJson, stopsJson) {
+export function buildIndex(routesJson, stopsJson, supplemental = []) {
   const routes = new Map(), stops = new Map(), byShort = new Map();
   const list = routesJson?.routes || [];
-  list.forEach((r) => { const o = { ...r, mode: modeOf(r.type) }; routes.set(r.id, o); (byShort.get(r.short.toLowerCase()) || byShort.set(r.short.toLowerCase(), []).get(r.short.toLowerCase())).push(o); });
+  function addRoute(r) {
+    const previous = routes.get(r.id), o = { ...previous, ...r, mode: modeOf(r.type) };
+    routes.set(r.id, o);
+    const key = String(r.short).toLowerCase();
+    if (!byShort.has(key)) byShort.set(key, []);
+    const choices = byShort.get(key), old = choices.findIndex(x => x.id === r.id);
+    if (old === -1) choices.push(o); else choices[old] = o;
+  }
+  list.forEach(r => addRoute({ ...r, school: r.school || /^S\d{2,4}-\d+$/.test(r.id) }));
+  for (const r of supplemental) addRoute({ ...r, ...routes.get(r.id), school: r.school, timetable: r.timetable, stopCodes: r.stopCodes });
   const rows = stopsJson?.stops || [];
   rows.forEach((s) => stops.set(s[0], { id: s[0], code: s[1], name: s[2], lat: s[3], lon: s[4], station: s[5] === 1, parent: s[6] >= 0 ? rows[s[6]][0] : null, routes: (s[7] || []).map((i) => list[i]?.id).filter(Boolean) }));
+  const codes = new Map([...stops.values()].filter(s => s.code).map(s => [String(s.code), s]));
+  for (const r of routes.values()) {
+    if (!r.stopCodes) continue;
+    r.timetableStops = r.stopCodes.flatMap(code => { const s = codes.get(code); return s ? [s] : []; });
+    for (const s of r.timetableStops) if (!s.routes.includes(r.id)) s.routes.push(r.id);
+  }
   for (const s of stops.values()) if (s.parent && stops.get(s.parent)) { const p = stops.get(s.parent); (p.children ||= []).push(s.id); for (const r of s.routes) if (!p.routes.includes(r)) p.routes.push(r); }
   for (const s of stops.values()) s.modes = [...new Set(s.routes.map((id) => routes.get(id)?.mode).filter(Boolean))];
   return { routes, stops, byShort };
@@ -202,7 +217,7 @@ export function search(index, q, limit = 12) {
   const out = [], words = n.split(" "), alias = ALIASES[n], weakOk = words.some((w) => w.length > 1);
   for (const r of index.routes.values()) {
     const s = norm(r.short); let score = 0;
-    if (s === n) score = 100; else if (s.startsWith(n)) score = 70 - (s.length - n.length);
+    if (s === n || norm(r.id) === n || (r.school && n === "s" + s)) score = 100; else if (s.startsWith(n)) score = 70 - (s.length - n.length);
     else if (n.length > 2 && words.every((w) => norm(r.heads.join(" ")).includes(w))) score = 25;
     if (score) out.push({ kind: "route", id: r.id, score: score + (r.mode !== "bus" ? 3 : 0), route: r });
   }
@@ -218,6 +233,49 @@ export function search(index, q, limit = 12) {
     out.push({ kind: s.modes.includes("ferry") && !s.modes.includes("bus") ? "ferry" : s.modes.includes("train") ? "station" : "stop", id: s.id, score, stop: s });
   }
   return out.sort((a, b) => b.score - a.score || (a.route?.short || a.stop?.name || "").localeCompare(b.route?.short || b.stop?.name || "")).slice(0, limit);
+}
+
+// Query precedence keeps the number on a bus route separate from the public feed vehicle ID.
+export function searchTransport(index, raw, { vehicles = [], liveFeed = false, nowSec, limit = 10 } = {}) {
+  const input = String(raw || "").trim();
+  if (!input) return [];
+  const prefixed = /^(school\s+bus|bus|train|ferry|route|stop|vehicle|fleet)\s+(?:id\s+)?(.+)$/i.exec(input);
+  const intent = prefixed?.[1].toLowerCase().replace(/\s+/g, " "), q = prefixed?.[2].trim() || input;
+  const normalized = norm(q);
+  if (!normalized) return [];
+  const idKey = str => String(str || "").trim().toLowerCase().replace(/^#/, "");
+  const onlyVehicle = intent === "vehicle" || intent === "fleet" || input.startsWith("#");
+  const staticItems = onlyVehicle ? [] : search(index, q, 60).filter(entry => {
+    if (intent === "route") return entry.kind === "route";
+    if (intent === "stop") return entry.kind !== "route";
+    if (intent === "school bus") return entry.kind === "route" && entry.route.school;
+    if (["bus","train","ferry"].includes(intent)) return entry.kind === "route" ? entry.route.mode === intent : entry.stop.modes.includes(intent);
+    return true;
+  });
+  const idSearch = onlyVehicle || /^[a-z0-9-]+$/i.test(q);
+  const seen = new Set();
+  const matches = !idSearch || ["route","stop","school bus"].includes(intent) ? [] : vehicles.flatMap(v => {
+    const r = index.routes.get(v.routeId);
+    if (!v.routeId || !v.id || idKey(v.id) !== idKey(q) || seen.has(v.id) ||
+        (["bus","train","ferry"].includes(intent) && (r?.mode || "bus") !== intent)) return [];
+    seen.add(v.id);
+    return [{ kind:"vehicle", id:v.id, vehicle:v, route:r, live: liveFeed && timestampFresh(v.ts, nowSec), score:onlyVehicle ? 130 : 89 }];
+  });
+  return [...staticItems, ...matches].sort((a,b) => b.score - a.score).slice(0,limit);
+}
+
+// Other school services can appear in the live feed without an entry in the public static
+// archive. Index exact AT IDs, without guessing a destination, schedule or route geometry.
+export function addLiveSchoolRoutes(index, vehicles) {
+  for (const v of vehicles) {
+    if (typeof v.routeId !== "string") continue;
+    const m = /^S(\d{2,4})-\d+$/.exec(v.routeId);
+    if (!m || index.routes.has(v.routeId)) continue;
+    const route = { id: v.routeId, short: m[1], type: 3, mode: "bus", school: true, heads: [] };
+    index.routes.set(route.id, route);
+    if (!index.byShort.has(route.short)) index.byShort.set(route.short, []);
+    index.byShort.get(route.short).push(route);
+  }
 }
 
 // Without trip updates we can still say which vehicles are out on the routes that serve a stop, and how far away they are
