@@ -175,6 +175,9 @@
     "pavilion/assets/upholstery-yarn.webp": "agency-home/pavilion/assets/upholstery-yarn.webp",
     "pavilion/assets/waiheke-journey.mp4": "agency-home/pavilion/assets/waiheke-journey.mp4",
     "pavilion/assets/waiheke-journey-mobile.mp4": "agency-home/pavilion/assets/waiheke-journey-mobile.mp4",
-    "pavilion/assets/native-garden.webp": "agency-home/pavilion/assets/native-garden.webp"
+    "pavilion/assets/native-garden.webp": "agency-home/pavilion/assets/native-garden.webp",
+    "pavilion/waterfront.js": "agency-home/pavilion/waterfront.js",
+    "pavilion/assets/waterfront-survey.webp": "agency-home/pavilion/assets/waterfront-survey.webp",
+    "pavilion/waterfront.css": "agency-home/pavilion/waterfront.css"
   }
 }
