@@ -1,0 +1,6 @@
+# Drop a Plan site context
+The live Drop a Plan route uses the already deployed Three.js engine; it does not import a second renderer. The adapter references the exports of twin-BpICUfHW.js specifically. If recompiling the parent viewer in Vite, either integrate the maintained TypeScript into that viewer or include an explicit matching adapter migration and browser proof. Do not quietly point these aliases to another build. The exact served asset and model/ground behavior are intentional.
+
+Rebuild with Node 22 and esbuild available: run the bridge-build.mjs file in this folder. If esbuild lives in the canonical twin Vite workspace instead, supply its absolute entry path as ESBUILD_MODULE. The script writes only twins/drop/linz-context.mjs. Site context source lives in linzSiteContext.ts and live-bridge.ts. The served-three-adapter.mjs and index.html include in twins/drop/ are maintained alongside it.
+
+The same-origin endpoint takes mode=context plus numeric lat/lon; it never receives the model file. The bridge waits for the existing viewer to register ground for that point. It uses the same model-space frame and marks road centreline, roof outline, and property boundaries separately. Cadastral boundary already drawn by the native viewer is never duplicated. None of these sources is a legal access determination or survey.
