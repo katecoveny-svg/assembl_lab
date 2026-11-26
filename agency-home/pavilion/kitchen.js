@@ -134,8 +134,13 @@ export function fitKitchen(scene,oak,stone,glazeNormal){
    const curve=new T.CatmullRomCurve3([v(-span/2,.472,z),v(-span*.43,.491,z),v(0,.481,z),v(span*.43,.491,z),v(span/2,.472,z)]);
    piece(new T.TubeGeometry(curve,10,.0044,5),rush,0,0,0);
   }
-  for(const sx of [-1,1])for(const sz of [-1,1])limb([sx*.159,.069,sz*.145],[sx*.126,.452,sz*.107],.014,.022);
-  for(const sx of [-1,1])limb([sx*.136,.46,.108],[sx*.175,.747,.097],.016,.013);
+  for(const sx of [-1,1])for(const sz of [-1])limb([sx*.159,.069,sz*.145],[sx*.126,.452,sz*.107],.014,.022);
+  // Rear stiles rise continuously from the floor and bury their tenons in the curved crest.
+  for(const sx of [-1,1]){
+   const t=.173/.2255;
+   const points=[v(sx*.159,.065,.145),v(sx*.13,.445,.107),v(sx*.148,.602,.097),v(sx*.173,.772-.035*t*t,.172-.125*t*t)];
+   piece(new T.TubeGeometry(new T.CatmullRomCurve3(points),14,.016,12),oakSeat,0,0,0);
+  }
   const back=new T.BoxGeometry(.451,.072,.032,30,3,1),bp=back.attributes.position;
   for(let i=0;i<bp.count;i++){
    const sx=bp.getX(i),u=sx/.2255,sy=bp.getY(i);
@@ -145,7 +150,7 @@ export function fitKitchen(scene,oak,stone,glazeNormal){
   chair.position.set(x,0,z);chair.rotation.y=rotation;chair.updateWorldMatrix(true,true);
   for(const o of parts)add(o.geometry.applyMatrix4(o.matrixWorld),o.material,0,0,0)
  }
- diningChair(-2.93,.48,-Math.PI/2);diningChair(-1.31,.49,Math.PI/2);
+ diningChair(-2.99,.48,-Math.PI/2);diningChair(-1.25,.49,Math.PI/2);
  // A narrow rail, hand-thrown bowls and upright cutting boards keep the worktop clear.
  box(-2.855,1.544,-1.833,.57,.023,.23,.006,oak);
  for(const [ix,iz] of [[-2.83,-1.79],[-2.61,-1.81]])for(let i=0;i<2;i++)

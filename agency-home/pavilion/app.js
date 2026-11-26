@@ -1,3 +1,4 @@
+import {walkInput} from './house-walk.js?v=29559704e7';
 import {installExplore} from './explore.js?v=832259faaa';
 import {lab} from './lab.js?v=27eec3907d';
 const $=s=>document.querySelector(s);
@@ -134,7 +135,7 @@ $('#trace').onclick=()=>{trace=!trace;$('.tracing').hidden=!trace;$('#trace').se
 function motionLabel(){$('#pause').setAttribute('aria-pressed',String(paused));$('#pause').textContent=paused?'Resume motion':'Pause motion'}
 $('#pause').onclick=()=>{stopTour();paused=!paused;motionLabel();dirty=true;wake()};
 $('#gust').onclick=()=>{gustAt=time;dirty=true;wake();event('pavilion_gust',true)};
-function staticMode(reason){
+function staticMode(reason){if(walkButton){walking.leave();walkButton.hidden=true}
  finishGarden();garden=null;gardenButton.hidden=true;stopTour();if(roomMove){p=roomMove.to;roomMove=null}
  const failed=world;world=null;window.pavilionStatus=undefined;
  if(failed?.backend==='WebGPU')preferWebGL=true;
@@ -152,7 +153,7 @@ reduced.addEventListener('change',()=>{paused=reduced.matches;if(paused)stopTour
 document.addEventListener('click',e=>{let a=e.target.closest('a');if(a?.closest('#lab,#architecture'))event(a.target==='_blank'?'demo_launch':'brief_selected',a.href);if(a?.href.startsWith('mailto:'))event('contact_open',a.hash||'email')});
 async function start(signal){
  if(settings.get('renderer')==='still')throw new Error('Still view requested');
- const {openPavilion}=await import('./world.js?v=5e6314c886');signal.throwIfAborted();
+ const {openPavilion}=await import('./world.js?v=23d21bc570');signal.throwIfAborted();
  const force=preferWebGL||settings.get('renderer')==='webgl';
  let candidate,drawnP,drawnDetail;
  async function firstFrame(webgl){
@@ -175,14 +176,14 @@ async function start(signal){
   candidate=await firstFrame(true);
  }
  const renderer=candidate.renderer;
- world=candidate;handover();if(drawnP!==p||drawnDetail!==detail){world.setDetail(detail);world.draw(p,0,0,liftAt(p))}
+ world=candidate;if(cinema)walkButton.hidden=false;handover();if(drawnP!==p||drawnDetail!==detail){world.setDetail(detail);world.draw(p,0,0,liftAt(p))}
  const lost=()=>{if(world===candidate)staticMode('context lost')};
  renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();lost()},{once:true});
  renderer.backend.device?.lost.then(lost);
  vista.dataset.ready='true';vista.dataset.renderer=world.backend;journey.classList.remove('still');
  document.documentElement.classList.remove('no-js');$('#backend').textContent=world.backend;
  $('.scene-controls').hidden=false;gardenButton.hidden=false;enter.hidden=true;note.textContent='';motionLabel();free.ready();sync();
- window.pavilionStatus=()=>({touring,finishesReady:world.finishesReady(),exploring,detail,roofLift:liftAt(p),garden:garden?{active:garden.active,planted:garden.count()}:null,backend:world.backend,draw:world.renderer.info.render,position:p,paused,visible,triangles:Math.round(world.triangleCount),pose:world.pose(),intervals});
+ window.pavilionStatus=()=>({treesReady:world.treesReady(),windTime:time,walking:world.walker.pose,touring,finishesReady:world.finishesReady(),exploring,detail,roofLift:liftAt(p),garden:garden?{active:garden.active,planted:garden.count()}:null,backend:world.backend,draw:world.renderer.info.render,position:p,paused,visible,triangles:Math.round(world.triangleCount),pose:world.pose(),intervals});
  requestAnimationFrame(()=>{if(world!==candidate)return;
   candidate.refine().then(()=>{if(world===candidate){dirty=true;wake()}}).catch(()=>{});
  });
@@ -231,8 +232,15 @@ gardenButton.onclick=async()=>{
 $('#garden-done').onclick=()=>finishGarden(true);
 $('#garden-reset').onclick=()=>{garden?.reset();planted(0);repaintGarden();vista.focus({preventScroll:true})};
 
+const walkButton=$('#walk-house');
+const walking=walkInput({button:walkButton,surface:$('#gpu'),stage:journey,pad:$('#walk-pad'),
+ start(){if(!world||!cinema)return false;stopTour();free.releaseGlance();world.walker.start();p=.76;detail=null;world.setDetail(null);setRoom(null);manual=p;roomMove=null;dirty=true;wake();return true},
+ stop(){world?.walker.stop();dirty=true;wake()},
+ look(dx,dy){world?.walker.look(dx,dy);dirty=true;wake()},
+ move(forward,right,dt){world?.walker.move(forward,right,dt);dirty=true;wake()}
+});
 const free=installExplore(vista,{
- available:()=>!!world&&!garden?.active,paused:()=>paused,
+ available:()=>!!world&&!garden?.active&&!walking.active(),paused:()=>paused,
  togglePause(){paused=!paused;motionLabel();dirty=true;wake()},
  lock(value){stopTour();roomMove=null;exploring=value;if(value&&trace){trace=false;$('.tracing').hidden=true;$('#trace').setAttribute('aria-pressed','false')}},
  inside:()=>world?.inside(),step:(f,r)=>world?.step(f,r),resetWalk:()=>world?.resetWalk(),setCamera(view){world?.setExplore(view)},repaint(){dirty=true;wake()}
@@ -332,14 +340,15 @@ if(cinema){
   const loading = supported && (!!pending || (!automaticTried && !conserve));
   filmMotion.hidden = !supported || (!world && loading);
   filmMotion.disabled=!!pending&&!world;
-  filmMotion.textContent=world?(touring?'Pause walk':p>.98?'Walk again':'Continue walk'):conserve&&!automaticTried?'Load interactive model':'Retry 3D';
-  hint.textContent=world?'Drag to look around':loading?'Loading the house…':'Still view';
+  filmMotion.textContent=world?(touring?'Pause tour':p>.98?'Replay tour':'Resume tour'):conserve&&!automaticTried?'Load interactive model':'Retry 3D';
+  hint.textContent=world?(walking.active()?'First-person walk':'Drag to look around'):loading?'Loading the house…':'Still view';
  }
  syncMedium=status;
  handover=status;
  filmMotion.onclick=()=>{
   if(!world){loadWorld();status();return}
   if(touring){stopTour();return}
+  walking.leave();
   free.releaseGlance();setRoom(null);detail=null;world.setDetail(null);if(p>.98)p=0;paused=false;startTour();
  };
  const refresh=new MutationObserver(status);

@@ -182,6 +182,8 @@
     "pavilion/city-view.js": "agency-home/pavilion/city-view.js",
     "pavilion/assets/ferry-quay-front.webp": "agency-home/pavilion/assets/ferry-quay-front.webp",
     "pavilion/assets/quay-glazing.webp": "agency-home/pavilion/assets/quay-glazing.webp",
-    "auckland/3d/skytower-parts.json": "agency-home/pavilion/assets/skytower-parts.json"
+    "auckland/3d/skytower-parts.json": "agency-home/pavilion/assets/skytower-parts.json",
+    "pavilion/house-walk.js": "agency-home/pavilion/house-walk.js",
+    "pavilion/assets/soffit-lining.webp": "agency-home/pavilion/assets/soffit-lining.webp"
   }
 }

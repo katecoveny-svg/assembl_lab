@@ -18,7 +18,7 @@ function specimen(seed,wood,leaves,foreground=false) {
  // Continuous taper, eccentric rings and grain measured along the limb. Ends meet inside their parent.
  function limb(points,r0,r1){
   const curve=new T.CatmullRomCurve3(points,false,'centripetal');
-  const rings=r0>.16?25:6,sides=r0>.16?23:6,frames=curve.computeFrenetFrames(rings,false);
+  const rings=r0<.011?1:r0>.16?25:6,sides=r0<.011?3:r0>.16?23:6,frames=curve.computeFrenetFrames(rings,false);
   const start=trunk.length/3,len=curve.getLength(),phase=between(0,6.28);
   for(let i=0;i<=rings;i++){
    const f=i/rings,c=curve.getPointAt(f),r=T.MathUtils.lerp(r0,r1,f);
@@ -75,12 +75,16 @@ function specimen(seed,wood,leaves,foreground=false) {
    for(let j=0;j<13;j++){
     const t=between(.22,1),p=curve.getPoint(t),az=heading+between(-2.1,2.1);
     const shoot=point(Math.cos(az),between(.15,1.24),Math.sin(az)).normalize();
-    if(j%3===0)terminals.push(p.clone().addScaledVector(shoot,.45).toArray());
+
     if(foreground){
      const size=between(.36,.63);
+     const tip=p.clone().addScaledVector(shoot,size);
+     // The petioles and flowers share a physical stem all the way back to the woody branch.
+     limb([p,p.clone().lerp(tip,.5),tip],.008,.0025);
+     if(j%3===0)terminals.push(tip.toArray());
      for(let n=1;n<=6;n++)leafPair(p.clone().addScaledVector(shoot,size*n/6),az+n*.57);
      if(j%3===0)spray(p,shoot,size*.83);
-    }else {spray(p,shoot,between(.46,.82));spray(p.clone().addScaledVector(shoot,.27),point(shoot.x+.45,between(.15,1.1),shoot.z-.35),between(.44,.70));}
+    }else {if(j%3===0)terminals.push(p.clone().addScaledVector(shoot,.23).toArray());spray(p,shoot,between(.46,.82));spray(p.clone().addScaledVector(shoot,.27),point(shoot.x+.45,between(.15,1.1),shoot.z-.35),between(.44,.70));}
    }
   }
  }
@@ -103,7 +107,7 @@ function specimen(seed,wood,leaves,foreground=false) {
  }
  group.add(floweringSprays(terminals));return group;
 }
-export async function plantPohutukawa(scene,ground,load,small){
+export async function plantPohutukawa(scene,ground,load,small,windTime){
  const [bark,bump,sprigs]=await Promise.all(['pohutukawa-bark.webp','pohutukawa-bark-n.webp','pohutukawa-sprays.webp'].map(load));
  bark.colorSpace=sprigs.colorSpace=T.SRGBColorSpace;
  for(const m of [bark,bump]){m.wrapS=m.wrapT=T.RepeatWrapping;m.anisotropy=4}
@@ -111,6 +115,23 @@ export async function plantPohutukawa(scene,ground,load,small){
  const wood=new T.MeshStandardMaterial({map:bark,vertexColors:true,normalMap:bump,normalScale:new T.Vector2(.85,.85),roughness:.94,side:T.DoubleSide});
  const leaf=new T.MeshStandardMaterial({map:sprigs,alphaTest:.37,side:T.DoubleSide,roughness:.76,vertexColors:true});
  const variants=[257,501,791].map((s,i)=>specimen(s,wood,leaf,i===0));
+ // Every surface (including the terminal flowers) samples the same continuous
+ // displacement field. Roots are stationary and forks cannot separate in wind.
+ const n=T.TSL,local=n.positionLocal;
+ const height=local.y.sub(.48).max(0);
+ const phase=windTime.mul(.91).add(local.x.mul(.37)).add(local.z.mul(.24));
+ const sway=height.mul(height).mul(.0028).mul(phase.sin().add(phase.mul(1.79).sin().mul(.23)));
+ const bend=local.add(n.vec3(sway,sway.mul(.035),sway.mul(.43)));
+ const dynamic=new Map();
+ for(const group of variants)group.traverse(o=>{
+  if(!o.isMesh||!o.material)return;
+  if(!dynamic.has(o.material)){
+   const src=o.material;
+   const m=new T.MeshStandardNodeMaterial({color:src.color,map:src.map,normalMap:src.normalMap,normalScale:src.normalScale,alphaTest:src.alphaTest,roughness:src.roughness,vertexColors:src.vertexColors,side:src.side});
+   m.positionNode=bend;dynamic.set(o.material,m);
+  }
+  o.material=dynamic.get(o.material);
+ });
  const sites=[[-12.4,1.85,1.12,-.48],[-23.5,6.0,.77,1.9],[-19.5,-4.8,.7,2.62],[15,-6,.69,2.03],[9.1,-11.2,.61,-.82],[-16,-11.4,.64,-1.2],[18,-3.3,.67,1.6],[-9,-19,.54,.73],[-1.8,-11.4,.43,2.4]];
  for(const [i,[x,z,s,yaw]] of sites.entries()){
   if(small&&i>4)continue;
