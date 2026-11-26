@@ -1,6 +1,6 @@
 // Original Pavilion planting. Dimensions are scene metres. Site Scatter inspired the ground brush.
 import * as T from './vendor/three.webgpu.min.js';
-import {stampSweep,revealNear} from './garden-sampling.js';
+import {stampSweep} from './garden-sampling.js';
 
 const TAU=Math.PI*2, centre={x:8.64,z:-.35}, radius=.62;
 function randomSource(seed){
@@ -104,16 +104,31 @@ export function createGardenBed(scene,camera,grade){
  detritus.receiveShadow=true;group.add(detritus);
  const rows=[],batches=[],material=new T.MeshStandardMaterial({vertexColors:true,side:T.DoubleSide,roughness:.78});
  for(let kind=0;kind<3;kind++){
-  const batch=new T.InstancedMesh(specimen(kind,6749+kind),material,[6,19,34][kind]);
+  const batch=new T.InstancedMesh(specimen(kind,6749+kind),material,[30,90,180][kind]);
   batch.count=0;batch.frustumCulled=false;batch.castShadow=true;batch.receiveShadow=true;group.add(batch);batches.push(batch);
-  for(let attempt=0,placed=0;attempt<2200&&placed<batch.instanceMatrix.count;attempt++){
-   const x=centre.x+(rng()-.5)*1.83,z=centre.z+(rng()-.5)*4.39,p=ground({x,z});
-   if(!p||Math.abs(x-centre.x)>.82||rows.some(r=>Math.hypot(x-r.p.x,z-r.p.z)<(r.kind===0?.35:r.kind===1?.19:.14)+(kind===0?.29:kind===1?.091:0)))continue;
-   const obj=new T.Object3D();obj.position.copy(p);obj.position.y-=.012;
-   obj.rotation.y=rng()*TAU;obj.scale.setScalar(.76+rng()*.38);obj.updateMatrix();
-   rows.push({p,kind,matrix:obj.matrix,seen:false});placed++;
-  }
  }
+ // Each stroke scatters new instances at its actual hit positions in world metres.
+ let brush='mix',previous=null,undoStack=[];
+ const spacing=[.46,.25,.15],counts=()=>batches.map((_,i)=>rows.filter(r=>r.kind===i).length);
+ function dab(point){
+  if(!point)return false;
+  if(brush==='erase'){
+   const old=rows.length;
+   for(let i=rows.length-1;i>=0;i--)if(rows[i].p.distanceTo(point)<radius)rows.splice(i,1);
+   return old!==rows.length;
+  }
+  const used=counts();let changed=false;
+  for(let j=0;j<10;j++){
+   const random=rng(),kind=brush==='mix'?(random<.12?0:random<.49?1:2):Number(brush);
+   if(used[kind]>=batches[kind].instanceMatrix.count)continue;
+   const a=rng()*TAU,r=j===0?0:radius*Math.sqrt(rng()),pos=ground({x:point.x+Math.cos(a)*r,z:point.z+Math.sin(a)*r});
+   if(!pos||rows.some(row=>row.p.distanceTo(pos)<(spacing[kind]+spacing[row.kind])*.5))continue;
+   const obj=new T.Object3D();obj.position.copy(pos);obj.position.y-=.012;obj.rotation.y=rng()*TAU;obj.scale.setScalar(.72+rng()*.44);obj.updateMatrix();
+   rows.push({p:pos,kind,matrix:obj.matrix,born:performance.now()});used[kind]++;changed=true;
+  }
+  return changed;
+ }
+ function remember(){if(previous){undoStack.push(previous);if(undoStack.length>25)undoStack.shift();previous=null}}
  const ringPositions=new Float32Array(65*3),ringGeo=new T.BufferGeometry();
  ringGeo.setAttribute('position',new T.BufferAttribute(ringPositions,3));
  const ring=new T.Line(ringGeo,new T.LineBasicMaterial({color:0xfbf6f6,transparent:true,opacity:.91}));
@@ -124,10 +139,23 @@ export function createGardenBed(scene,camera,grade){
   for(let i=0;i<=64;i++){const a=i/64*TAU,x=point.x+radius*Math.cos(a),z=point.z+radius*Math.sin(a);ringPositions.set([x,grade(x,z)+.081,z],i*3)}
   ringGeo.attributes.position.needsUpdate=true;
  }
- function refresh(){
+ const sprout=new T.Matrix4(),scale=new T.Vector3(),motion=matchMedia('(prefers-reduced-motion: reduce)');
+ let animation=0,requestPaint=null;
+ function refresh(animate=false){
+  cancelAnimationFrame(animation);animation=0;
+  const now=performance.now();let growing=false;
   batches.forEach(b=>b.count=0);
-  for(const row of rows)if(row.seen){const b=batches[row.kind];b.setMatrixAt(b.count++,row.matrix)}
+  for(const row of rows){
+   const batch=batches[row.kind],t=animate&&!motion.matches?Math.min(1,(now-row.born)/320):1;
+   if(t<1){
+    growing=true;
+    const h=1-(1-t)**3;
+    sprout.copy(row.matrix).scale(scale.set(.49+.51*h,.14+.86*h,.49+.51*h));
+    batch.setMatrixAt(batch.count++,sprout);
+   }else batch.setMatrixAt(batch.count++,row.matrix);
+  }
   batches.forEach(b=>b.instanceMatrix.needsUpdate=true);
+  if(growing&&active)animation=requestAnimationFrame(()=>{refresh(true);requestPaint?.()});
  }
  function count(){return batches.reduce((a,b)=>a+b.count,0)}
  function hit(e,rect){
@@ -135,13 +163,14 @@ export function createGardenBed(scene,camera,grade){
   ray.setFromCamera(ndc,camera);return ray.intersectObject(soil,false)[0]?.point??null;
  }
  function activate({surface,vista,repaint,announce,close}){
-  active=true;group.visible=true;controller=new AbortController();
+  active=true;requestPaint=repaint;group.visible=true;controller=new AbortController();
   const listen=(el,type,fn)=>el.addEventListener(type,fn,{signal:controller.signal});
   let stroke=null;
   function plant(from,to){
-   if(stampSweep(from,to,ground,p=>revealNear(rows,p,radius))){refresh();repaint()}
+   const before=previous??rows.slice();
+   if(stampSweep(from,to,ground,dab,.21)){previous=before;refresh(true);repaint()}
   }
-  function finish(){if(stroke)announce(count());stroke=null}
+  function finish(){if(stroke){remember();announce(count())}stroke=null}
   function get(e){return hit(e,surface.getBoundingClientRect())}
   listen(surface,'pointerdown',e=>{
    if(!e.isPrimary){finish();return}
@@ -176,14 +205,16 @@ export function createGardenBed(scene,camera,grade){
     const a=selected??ground(centre),side=e.key==='ArrowRight'||e.key==='ArrowLeft';
     const p=ground({x:a.x+(side?.068:.20)*dir,z:a.z+(side?-.24:.068)*dir});
     if(p)updateRing(p);
-   }else if(e.key===' '||e.key==='Enter'){plant(null,selected);announce(count())}else return;
+   }else if(e.key===' '||e.key==='Enter'){plant(null,selected);remember();announce(count())}else return;
    e.preventDefault();repaint();
   });
   updateRing(ground(centre));announce(count());
  }
  return {activate,get active(){return active},count,
   frame(cp,aim){const narrow=camera.aspect<1;cp.set(narrow?13.6:12.85,narrow?2.08:1.78,1.43);aim.set(8.47,-.64,-.31);camera.fov=narrow?55:47},
-  reset(){rows.forEach(r=>r.seen=false);refresh();updateRing(ground(centre))},
-  leave(){controller?.abort();active=false;ring.visible=false;group.visible=count()>0}
+  brush(value){if(['mix','0','1','2','erase'].includes(value))brush=value},
+  undo(){const old=undoStack.pop();if(old){rows.splice(0,rows.length,...old);refresh()}},
+  reset(){if(rows.length){previous=rows.slice();rows.length=0;remember();refresh()}updateRing(ground(centre))},
+  leave(){remember();controller?.abort();active=false;requestPaint=null;refresh();ring.visible=false;group.visible=count()>0}
  };
 }

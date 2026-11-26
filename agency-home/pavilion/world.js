@@ -9,7 +9,7 @@ import {GLTFLoader} from './vendor/GLTFLoader.js';
 import {HDRLoader} from './vendor/HDRLoader.js';
 import {RoundedBoxGeometry} from './vendor/RoundedBoxGeometry.js';
 import {finePanicles} from './panicles.js';
-import {furnishRoom,placeLoungeChair} from './interior.js?v=1f22eb3e10';
+import {furnishRoom,placeLoungeChair} from './interior.js?v=29cd4d4f5e';
 import {buildCoast,addSedges,plantArrivalBorder,grade,plantable,pathX} from './landscape.js?v=a2969bdf0c';
 import {buildBoards} from './metric.js';
 import {houseParts} from './house-parts.js';
@@ -32,7 +32,12 @@ export async function openPavilion(host,asset,forceGL=false,signal){
  const refinements=[];
  const furnishings=[];
  const loadHeadland=place=>furnishings.push(async()=>place(await glLoader.loadAsync(asset('gulf-terrain.glb'))));
- furnishings.push(async()=>placeLoungeChair(scene,await glLoader.loadAsync(asset('mid_century_lounge_chair.glb'))));
+ const movable={};
+ furnishings.push(async()=>{
+  const chair=placeLoungeChair(scene,await glLoader.loadAsync(asset('mid_century_lounge_chair.glb')));
+  const group=new T.Group();group.name='Lounge chair';group.add(chair);scene.add(group);movable.chair=group;
+  if(chairShadow)group.attach(chairShadow);
+ });
  const flatNormals=new Map();
  function surface(name){
   if(name==='studio-glaze-normal.webp'||!/(?:-normal|-n)\.webp$/.test(name))return texLoader.loadAsync(asset(name));
@@ -214,7 +219,7 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  const weave=new T.MeshPhysicalMaterial({map:yarn,normalMap:yarnNormal,normalScale:new T.Vector2(.70,.70),roughness:.96,roughnessMap:yarnRough,sheen:.37,sheenRoughness:.79,sheenColor:0xd5bf9c});
  const slabStone=new T.MeshPhysicalMaterial({color:0xf4eee4,map:chipColor,normalMap:chipNormal,normalScale:new T.Vector2(.51,.51),roughnessMap:chipRough,roughness:.83,clearcoat:.14,clearcoatRoughness:.43});
  const limestone=mat(0xc6c4b6,.74,plaster,{normalMap:concreteN,normalScale:new T.Vector2(.11,.11)});
- furnishRoom({scene,mesh,box,cylinder,cloth:weave,oak,plaster:lime,metal,limestone,print,linenBump:fabricN,evalFloor,slabStone,basketWeave});
+ Object.assign(movable,furnishRoom({scene,mesh,box,cylinder,cloth:weave,oak,plaster:lime,metal,limestone,print,linenBump:fabricN,evalFloor,slabStone,basketWeave}));
  bedroom({mesh,box,cylinder,oak,cloth,metal,limestone,glow,basketWeave});
  fitKitchen(scene,oak,slabStone,glazeNormal);
  {
@@ -286,8 +291,9 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  const roofStudy=new T.Group();scene.add(roofStudy);buildBoards(roofParts,roofStudy,glass);
 
  const contactCanvas=document.createElement('canvas');contactCanvas.width=contactCanvas.height=128;const cc=contactCanvas.getContext('2d'),gradient=cc.createRadialGradient(64,64,1,64,64,64);gradient.addColorStop(0,'rgba(28,25,20,.67)');gradient.addColorStop(.55,'rgba(28,25,20,.36)');gradient.addColorStop(1,'rgba(28,25,20,0)');cc.fillStyle=gradient;cc.fillRect(0,0,128,128);const contactMap=new T.CanvasTexture(contactCanvas);
+ let chairShadow;
  for(const [x,z,w,d,yy] of [[3.42,-1.34,2.65,1.02,.069],[3.64,.19,1.83,.99,.094],[5.88,.26,1.09,1.04,.092]]){
- const sh=mesh(new T.PlaneGeometry(w,d),new T.MeshBasicMaterial({map:contactMap,transparent:true,depthWrite:false}),x,yy,z);sh.rotation.x=-Math.PI/2;sh.castShadow=false}
+ const sh=mesh(new T.PlaneGeometry(w,d),new T.MeshBasicMaterial({map:contactMap,transparent:true,depthWrite:false}),x,yy,z);sh.rotation.x=-Math.PI/2;sh.castShadow=false;sh.userData.contact=true;if(x===5.88)chairShadow=sh;else (x===3.42?movable.sofa:movable.coffee).attach(sh)}
  const ground=grade;
  buildCoast({scene,mesh,mat,map:pasture,normal:pastureN,grit,rockTex,rockN,rand,range,loadHeadland,ripple,landcover,seaPhoto});
  const windTime=T.TSL.uniform(0),gustStrength=T.TSL.uniform(0);
@@ -376,11 +382,14 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
  const targets=[v(-1.2,1.1,.48),v(.32,1.08,.21),v(-.65,1.2,1.08),v(-.58,1.28,1.05),v(2.85,1.24,-.32),match?v(4.28,1.27,-1.25):v(4.08,1.14,-.78)];
  const camPath=new T.CatmullRomCurve3(positions,false,'centripetal'),aimPath=new T.CatmullRomCurve3(targets,false,'centripetal');
  let garden=null;
- async function gardenBed(){const {createGardenBed}=await import("./garden-bed.js");return garden??=createGardenBed(scene,camera,ground)}
+ async function gardenBed(){const {createGardenBed}=await import("./garden-bed.js?v=d90ebe5088");return garden??=createGardenBed(scene,camera,ground)}
  let explorePose=null,detail=null,indoors=false;
  const displacement=v(),direction=v(),stepRight=v(),next=v();
  const obstacles=[[-3.84,-.66,-2.1,-1.22],[-3.22,-1.02,.18,.80],[-4.04,-3.74,-2.1,.63],[-4.04,-3.74,1.59,2.04],[-7.03,-4.78,-1.19,.63],[-7.03,-4.95,-2.06,-1.49],[-.79,1.04,-1.69,-.10],[2.02,4.83,-1.88,-.73],[2.66,4.64,-.41,.79],[5.26,6.48,-.35,.91]];
  const walker=houseWalk(obstacles);
+ let layout;
+ async function furniture(){const {arrangeRoom}=await import('./arrange-room.js?v=3d0fd8db73');return layout??=arrangeRoom(camera,movable,obstacles)}
+
  function canStand(x,z){return x> -6.87&&x<6.85&&z> -1.83&&z<1.81&&!obstacles.some(([x0,x1,z0,z1])=>x>x0&&x<x1&&z>z0&&z<z1)}
  function step(forward,right){if(!indoors||!explorePose)return;camera.getWorldDirection(direction);direction.y=0;direction.normalize();
   stepRight.set(-direction.z,0,direction.x);next.copy(camera.position).addScaledVector(direction,forward*.16).addScaledVector(stepRight,right*.16);
@@ -408,6 +417,7 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
     aim.set(cp.x+3.8*Math.sin(yaw),cp.y-.34,cp.z+3.8*Math.cos(yaw));
    }
    // Lift only the existing canopy, its lining and seams. Both still cast shadows on the rooms.
+   if(layout?.active)roofLift=1;
    roofStudy.position.set(0,roofLift*3.2,-roofLift*2.1);
    if(roofLift){cp.lerp(v(13.4,10.1,18.9),roofLift);aim.lerp(v(.1,2.65,0),roofLift)}
    if(camera.aspect<1.24){const f=Math.max(0,1.24-camera.aspect);cp.z+=17.8*f*(1-p)**1.5;cp.x+=4.9*f*(1-p);aim.x+=.65*f}
@@ -440,13 +450,14 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
     }
    }
 
+   if(layout?.active){layout.frame(cp,aim);camera.updateProjectionMatrix()}
    if(walker.pose){walker.frame(cp,aim);camera.fov=camera.aspect<1?69:59;camera.updateProjectionMatrix()}
    camera.position.copy(cp);camera.lookAt(aim);
    for(const {o,placements,windFactor} of wind){for(let i=0;i<placements.length;i++){const [x,y,z,s,a]=placements[i];const front=Math.exp(-Math.pow((time%6.8)*3.9-x*.52-z*.34-4.5,2)/13);const wave=.26*Math.sin(time*1.18+x*.51+z*.35)+.11*Math.sin(time*2.07-z*.19)+gust*(.22+1.1*front)*Math.sin(time*2.51-x*.33);
      tmp.position.set(x,y,z);tmp.scale.setScalar(s);tmp.rotation.set(wave*windFactor*.47,a,wave*windFactor,'ZXY');tmp.updateMatrix();o.setMatrixAt(i,tmp.matrix)}o.instanceMatrix.needsUpdate=true}
    renderer.render(scene,camera)
  }
- size();return {treesReady:()=>treesReady,walker,backend,draw,size,refine,refineFinishes,finishesReady:()=>finishesReady,refinePlanting,step,gardenBed,furnishLivingRoom,inside:()=>indoors,resetWalk:()=>displacement.set(0,0,0),setDetail(value){detail=value;displacement.set(0,0,0)},setExplore(view){explorePose=view;if(!view)displacement.set(0,0,0)},renderer,triangleCount,pose:()=>({position:camera.position.toArray(),quaternion:camera.quaternion.toArray(),fov:camera.fov,aspect:camera.aspect})}
+ size();return {furniture,treesReady:()=>treesReady,walker,backend,draw,size,refine,refineFinishes,finishesReady:()=>finishesReady,refinePlanting,step,gardenBed,furnishLivingRoom,inside:()=>indoors,resetWalk:()=>displacement.set(0,0,0),setDetail(value){detail=value;displacement.set(0,0,0)},setExplore(view){explorePose=view;if(!view)displacement.set(0,0,0)},renderer,triangleCount,pose:()=>({position:camera.position.toArray(),quaternion:camera.quaternion.toArray(),fov:camera.fov,aspect:camera.aspect})}
  } catch(error) {
    if(initialized)renderer.dispose();
    throw error;

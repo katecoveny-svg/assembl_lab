@@ -7,7 +7,7 @@ export function placeLoungeChair(scene,chair){
  const o=chair.scene.clone(true);const bb=new T.Box3().setFromObject(o),sz3=bb.getSize(new T.Vector3()),factor=.83/sz3.y;
  o.traverse(n=>{if(!n.isMesh)return;n.material=n.material.clone();const m=n.material;
  if(m.metalness>.38){m.roughness=.32}else{m.roughness=.49;m.envMapIntensity=.89}n.castShadow=n.receiveShadow=true});
- o.scale.setScalar(factor);o.rotation.y=-1.84;o.position.set(5.88,.070-bb.min.y*factor,.26);scene.add(o);
+ o.scale.setScalar(factor);o.rotation.y=-1.84;o.position.set(5.88,.070-bb.min.y*factor,.26);scene.add(o);return o;
 }
 
 export function furnishRoom({scene,mesh,box,cylinder,cloth,oak,plaster,metal,limestone,print,linenBump,evalFloor,slabStone,basketWeave}){
@@ -15,7 +15,14 @@ export function furnishRoom({scene,mesh,box,cylinder,cloth,oak,plaster,metal,lim
  const v=(x,y,z)=>new T.Vector3(x,y,z);
  function rounded(x,y,z,w,h,d,r,m){return mesh(new RoundedBoxGeometry(w,h,d,4,r),m,x,y,z)}
  const sx=3.42,sz=-1.32;
+ function set(name,from){
+  const parts=scene.children.slice(from),group=new T.Group();group.name=name;
+  for(const part of parts)group.add(part);
+  scene.add(group);return group;
+ }
+ const sofaStart=scene.children.length;
  linenSofa({mesh,cylinder,cloth,oak});
+ const sofa=set('Sofa',sofaStart);
 
  const rugMaterial=new T.MeshStandardNodeMaterial({roughness:.98,normalMap:cloth.normalMap,normalScale:new T.Vector2(.51,.51)});
  const uv=T.TSL.uv(), metres=T.TSL.positionWorld.xz;
@@ -27,6 +34,7 @@ export function furnishRoom({scene,mesh,box,cylinder,cloth,oak,plaster,metal,lim
  // A low stone table has a radiused racetrack edge and two broad quarried feet.
  const shape=new T.Shape(),w=.75,d=.36,r=.24;
  shape.moveTo(-w+r,-d);shape.lineTo(w-r,-d);shape.quadraticCurveTo(w,-d,w,-d+r);shape.lineTo(w,d-r);shape.quadraticCurveTo(w,d,w-r,d);shape.lineTo(-w+r,d);shape.quadraticCurveTo(-w,d,-w,d-r);shape.lineTo(-w,-d+r);shape.quadraticCurveTo(-w,-d,-w+r,-d);
+ const tableStart=scene.children.length;
  const topGeo=new T.ExtrudeGeometry(shape,{depth:.055,bevelEnabled:true,bevelSize:.013,bevelThickness:.006,bevelSegments:3,curveSegments:24});
  topGeo.rotateX(-Math.PI/2);
  const table=mesh(topGeo,slabStone,3.64,.370,.19);table.rotation.y=-.14;
@@ -38,6 +46,7 @@ export function furnishRoom({scene,mesh,box,cylinder,cloth,oak,plaster,metal,lim
  const bowl=mesh(new T.LatheGeometry([[0,0],[.045,0],[.052,.012],[.083,.027],[.132,.052],[.143,.066],[.144,.073],[.137,.075],[.125,.064],[.070,.036],[0,.019]].map(([x,y])=>new T.Vector2(x,y)),80),ceramic,3.92,.437,.20);
  const cover=rounded(3.39,.456,.23,.292,.039,.218,.003,neutral);cover.rotation.y=.14;
  const paper=rounded(3.389,.455,.23,.282,.027,.216,.002,new T.MeshStandardMaterial({color:0xe3ddd0,roughness:.92}));paper.rotation.y=.14;
+ const coffee=set("Coffee table",tableStart);
  // A framed public 16A drawing is an in-room link in the visual story.
  const mount=new T.MeshStandardMaterial({color:0xe9e4d7,roughness:.97});
  const fz=-.63,fy=1.63,fw=.94,fh=1.20,fx=7.039;
@@ -47,5 +56,5 @@ export function furnishRoom({scene,mesh,box,cylinder,cloth,oak,plaster,metal,lim
  for(const x of [1.78,5.56])box(x,1.65,-2.047,.116,1.57,.151,plaster);
  for(const y of [.887,2.423])box(3.67,y,-2.047,3.91,.085,.151,plaster);
  box(3.67,.91,-2.001,3.83,.039,.218,oak);
- return {sx,sz};
+ return {sofa,coffee};
 }

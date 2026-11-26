@@ -17,6 +17,7 @@
     "index.html": "agency-home/index.html",
     "llms.txt": "agency-home/preserved/llms.txt",
     "pavilion/app.js": "agency-home/pavilion/app.js",
+    "pavilion/arrange-room.js": "agency-home/pavilion/arrange-room.js",
     "pavilion/assets/16a-model-to-site-poster.webp": "agency-home/pavilion/assets/16a-model-to-site-poster.webp",
     "pavilion/assets/16a-poster.webp": "agency-home/pavilion/assets/16a-poster.webp",
     "pavilion/assets/16c-cutaway-phone.webp": "agency-home/pavilion/assets/16c-cutaway-phone.webp",
