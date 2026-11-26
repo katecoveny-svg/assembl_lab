@@ -173,8 +173,8 @@ export async function createWorld(canvas, { phone = false, capture = false, time
   const ground = new T.Mesh(gGeo, gMat); ground.receiveShadow = true; ground.name = 'ground_LINZ_heights_OSM_landcover'; scene.add(ground);
 
   // ---------------------------------------------------------------- the sea
-  const wn = waterNormals(128); wn.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-  const wMat = new T.MeshStandardMaterial({ color: '#244848', roughness: 0.23, metalness: 0.0, normalMap: wn, normalScale: new T.Vector2(0.19, 0.19), envMapIntensity: 1.0 });
+  const wn = waterNormals(phone ? 128 : 192); wn.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  const wMat = new T.MeshStandardMaterial({ color: '#305958', roughness: 0.25, metalness: 0.0, normalMap: wn, normalScale: new T.Vector2(0.19, 0.19), envMapIntensity: 1.0 });
   wMat.userData.t = { value: 0 };
   // One quarter-resolution, throttled planar sampling pass; no extra pass on phones.
   const reflection = (phone || !renderer.extensions.has('EXT_color_buffer_float')) ? null : new Reflector(new T.PlaneGeometry(1, 1), { textureWidth: 480, textureHeight: 270, multisample: 0, clipBias: 0.002 });
@@ -200,10 +200,14 @@ export async function createWorld(canvas, { phone = false, capture = false, time
         vec3 n1 = texture2D(normalMap, wa).xyz * 2.0 - 1.0, n2 = texture2D(normalMap, wb).xyz * 2.0 - 1.0, n3 = texture2D(normalMap, wc).xyz * 2.0 - 1.0;
         // The broad, directional swell reads separately from wind-driven capillary detail.
         vec2 p = vWPos.xz;
-        vec2 ds = vec2(.88,.475), dc = vec2(-.31,.951);
-        vec2 swell = ds * cos(dot(ds,p)*.21-uT*.97)*.018 + dc * cos(dot(dc,p)*.39-uT*1.36)*.016;
-        vec3 mapN = normalize(vec3((n1.xy*.8 + n2.xy*.43 + n3.xy*.56) * normalScale + swell, 1.0));
-        float fadeN = 1.0 - smoothstep(720.0, 3500.0, length(vViewPosition));
+        const vec2 ds = vec2(.88,.475), dc = vec2(-.31,.951), dr = vec2(.49,.872);
+        float shoreView = 1.0-smoothstep(330.0, 1900.0, length(vViewPosition));
+        float breakup = .75+.25*sin(dot(p,vec2(.0038,.0075))-uT*.071);
+        vec2 swell = ds * cos(dot(ds,p)*.16-uT*.89)*.028
+                   + dc * cos(dot(dc,p)*.31-uT*1.31)*.018
+                   + dr * cos(dot(dr,p)*.61-uT*1.94)*.011*breakup;
+        vec3 mapN = normalize(vec3((n1.xy*.72 + n2.xy*(.34+.23*shoreView) + n3.xy*.52) * normalScale + swell, 1.0));
+        float fadeN = 1.0 - smoothstep(570.0, 3900.0, length(vViewPosition));
         mapN = normalize(mix(vec3(0.0, 0.0, 1.0), mapN, 0.08 + 0.92 * fadeN)); // far water calms to a mirror instead of shimmering stripes
         normal = normalize(tbn * mapN);`)
       .replace('#include <color_fragment>', `#include <color_fragment>
@@ -219,6 +223,10 @@ export async function createWorld(canvas, { phone = false, capture = false, time
         float currentBand = sin(vWPos.x*.021 + vWPos.z*.014 + sin(vWPos.z*.008 + uT*.06)*1.2);
         diffuseColor.rgb = mix(diffuseColor.rgb*(.95+.06*currentBand), diffuseColor.rgb*vec3(1.13,1.23,1.12), coast*.54);
       `);
+    s.fragmentShader = s.fragmentShader.replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+      float waterVariability = .5+.5*sin(dot(vWPos.xz,vec2(.032,.016)) + sin(vWPos.z*.018)-uT*.29);
+      roughnessFactor = mix(.19,.31,waterVariability) + .05*smoothstep(650.,3200.,length(vViewPosition));
+    `);
     if (reflection) s.fragmentShader = s.fragmentShader.replace('#include <opaque_fragment>', `
       vec4 mc = uMirrorMatrix * vec4(vWPos,1.0);
       vec2 reflUV = mc.xy / max(0.00001, mc.w) + mapN.xy * vec2(0.24, 0.14);
@@ -227,7 +235,7 @@ export async function createWorld(canvas, { phone = false, capture = false, time
       float edge = smoothstep(0.0,0.035,reflUV.x) * (1.0-smoothstep(0.965,1.0,reflUV.x)) * smoothstep(0.0,0.035,reflUV.y) * (1.0-smoothstep(0.965,1.0,reflUV.y));
       if (uReflect > 0.0 && edge > 0.0) {
         vec3 localReflection = texture2D(uMirror, clamp(reflUV,vec2(0.003),vec2(0.997))).rgb;
-        outgoingLight = mix(outgoingLight, localReflection * vec3(.62,.72,.70), min(.42,fresnel*.72) * uReflect * edge);
+        outgoingLight = mix(outgoingLight, localReflection * vec3(.62,.72,.70), min(.52,fresnel*.82) * uReflect * edge);
       }
       #include <opaque_fragment>`);
   };
@@ -320,13 +328,18 @@ export async function createWorld(canvas, { phone = false, capture = false, time
         float cap = smoothstep(.75,.86,f.y) * wx;
         float facing = pow(1.0-abs(dot(normalize(vNormal),normalize(vViewPosition))),2.0);
         vec3 glassFalloff = mix(vec3(.64,.70,.74),vec3(1.07,1.13,1.19),smoothstep(.32,.84,f.y));
-        vec3 paneColor = streetGlass * tint * mix(vec3(1.0),glassFalloff,aa*.86) * (1.0 + (pane-0.5)*0.26*aa + facing*.2);
+        float skyView = abs(normalize(vViewPosition).y);
+        vec3 reflectedSky = mix(vec3(.115,.135,.14),vec3(.205,.25,.30),smoothstep(.12,.64,skyView+facing*.35));
+        vec3 paneColor = mix(streetGlass * tint * mix(vec3(1.0),glassFalloff,aa*.86),reflectedSky,(.15+.48*facing)*glassTower);
+        paneColor *= 1.0+(pane-.5)*.23*aa;
         paneColor *= 1.0 - .23*(1.0-pier)*aa;
         vec3 sillColor = diffuseColor.rgb * (1.22 + .10*bSeed);
         float skirt = isWall * (1.0-smoothstep(1.5,4.4,vFac.y));
         diffuseColor.rgb *= mix(1.0,.78,skirt);
         diffuseColor.rgb = mix(diffuseColor.rgb,sillColor,cap*aa*isWall*.14);
         float grime = fbm(vec2(vFac.x * 0.4, vFac.y * 0.25) + bSeed * 31.0);
+        float joint = (1.-smoothstep(.016,.033,abs(fract(vFac.y*.5)-.5)))*aa*(1.-glassTower);
+        diffuseColor.rgb *= mix(1.,.87,joint*isWall);
         diffuseColor.rgb *= mix(0.88 + 0.2 * grime, 0.9 + 0.18 * fbm(vFac.xy * 0.15), 1.0 - isWall);
         diffuseColor.rgb *= mix(1.0, 0.55 + 0.45 * smoothstep(0.0, 4.0, vFac.y), isWall); // contact shade at the foot of walls
         diffuseColor.rgb = mix(diffuseColor.rgb, paneColor + diffuseColor.rgb * 0.08, win * 0.92);

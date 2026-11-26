@@ -173,3 +173,6 @@ button.row { width: 100%; background: transparent; text-align: left; border: 0; 
 .demo-routes .chips { margin:0; }
 .demo-routes button { display:flex; flex-wrap:wrap; align-items:center; gap:4px 7px; min-height:36px; }
 .demo-routes small { font-size:10px; color:#435963; }
+.school-stops {margin:.6rem 0 1rem}
+.school-stops summary {padding:.5rem 0;cursor:pointer;text-decoration:underline;text-underline-offset:.2em}
+.school-stops .rows {max-height:14rem;overflow:auto}

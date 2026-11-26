@@ -1,7 +1,8 @@
 // assembl lab · Auckland live: the page. Finds a route, stop or ferry terminal, shows where the vehicles are right now,
 // and (when the at-live function is switched on) whether they are late and what is coming next. Never invents a delay.
 import * as X from './transit.js';
-import { nearbyStops, readSavedStops, searchWords } from './passenger.js';
+import { nearbyStops, readSavedStops } from './passenger.js';
+import { SCHOOL_ROUTES, AT_SCHOOL_TIMETABLE } from './at-school-routes.js';
 import { statusColour } from './status.js';
 
 const POSITIONS_URL = 'https://wurwcrgxjjwqdaxqceey.supabase.co/functions/v1/bus-positions';
@@ -23,6 +24,7 @@ if (/^\d{1,2}:\d\d$/.test(qs.get('time') || '')) {
 }
 
 let nearController, stopRun = 0, locationRun = 0, shapesRequest;
+let refreshSearch = () => {}, schoolDetailRoute;
 let savedStops = []; try { savedStops = readSavedStops(localStorage); } catch {}
 const S = { index: null, shapes: null, positions: null, posSource: 'live', posError: null, updates: new Map(), alerts: [], atLive: { state: 'checking' },
   mode: 'all', sel: null, arrivals: null, weather: null, world: null };
@@ -30,7 +32,7 @@ const S = { index: null, shapes: null, positions: null, posSource: 'live', posEr
 // ------------------------------------------------------------------------------------------------ start
 const canvas = $('#scene');
 const [routesJson, stopsJson] = await Promise.all([fetch(DATA + 'routes.json').then((r) => r.json()), fetch(DATA + 'stops.json').then((r) => r.json())]);
-S.index = X.buildIndex(routesJson, stopsJson); S.gtfs = routesJson;
+S.index = X.buildIndex(routesJson, stopsJson, SCHOOL_ROUTES); S.gtfs = routesJson;
 const mode = qs.get('view');
 const listOnly = mode === 'list' || (mode !== '3d' && (phone || matchMedia('(prefers-reduced-motion: reduce)').matches));
 const switchView = $('#switch-view');
@@ -61,7 +63,7 @@ setInterval(() => { if (!skyNote && S.world) S.world.setTime(Date.now(), S.weath
 setInterval(renderTruth, 5000);
 setInterval(() => { if (!document.hidden && S.sel?.kind === 'stop') void refreshDepartures(S.sel); }, 45000);
 await firstPositions;
-if (vehicleLink && locationRun === startupSelection) deepLink(); // Never override a newer user selection.
+if ((vehicleLink || (qs.has('route')&&!S.sel)) && locationRun === startupSelection) deepLink(); // Never override a newer user selection.
 window.liveReady = true;
 
 // ------------------------------------------------------------------------------------------------ data
@@ -72,7 +74,7 @@ async function getJSON(url, ms = 9000) {
 async function loadPositions() {
   try {
     if (qs.has('sample')) throw new Error('sample asked for in the address');
-    S.positions = X.parsePositions(await getJSON(POSITIONS_URL)); S.posSource = 'live'; S.posError = null;
+    S.positions = X.parsePositions(await getJSON(POSITIONS_URL)); S.posSource = 'live'; S.posError = null; X.addLiveSchoolRoutes(S.index,S.positions.vehicles);
   } catch (e) {
     S.posError = e.message;
     if (!S.positions || S.posSource === 'sample') {
@@ -80,7 +82,7 @@ async function loadPositions() {
       catch { /* Both sources are unavailable, but search and route choices still work. */ }
     }
   }
-  pushVehicles(); render();
+  pushVehicles(); render(); refreshSearch();
 }
 async function loadAtLive(stopIds = null) {
   try {
@@ -183,9 +185,9 @@ async function select(sel, { fly = true, closeUp = false } = {}) { // a later ch
     }
   } else { w?.showRoute(null); w?.showStop(null); }
   const u = new URL(location.href); ['route', 'stop', 'vehicle'].forEach((k) => u.searchParams.delete(k));
-  if (sel?.kind === 'route') u.searchParams.set('route', S.index.routes.get(sel.id)?.short || sel.id);
+  if (sel?.kind === 'route') u.searchParams.set('route', S.index.routes.get(sel.id)?.school ? sel.id : S.index.routes.get(sel.id)?.short || sel.id);
   if (sel?.kind === 'stop') u.searchParams.set('stop', S.index.stops.get(sel.id)?.code || sel.id);
-  if (sel?.kind === 'vehicle' && closeUp) u.searchParams.set('vehicle',sel.id);
+  if (sel?.kind === 'vehicle') u.searchParams.set('vehicle',sel.id);
   history.replaceState(null, '', u);
   const other = new URL(u, location.href); other.searchParams.set('view', listOnly ? '3d' : 'list'); switchView.href = other.href;
   render();
@@ -225,12 +227,11 @@ function deepLink() {
   const target = id && S.positions?.vehicles.find(v=>v.id===id);
   if (id && freshMappedVehicle(target)) { void select({kind:'vehicle',id},{closeUp:true}); return; }
   if (id) {
-    const route = S.index.routes.get(target?.routeId);
-    if (route) { void select({kind:'route',id:route.id}); return; }
+    if (target) { void select({kind:'vehicle',id}); return; }
     const u=new URL(location.href);u.searchParams.delete('vehicle');history.replaceState(null,'',u);
     $('#q').placeholder='Bus no longer live. Search a route';
   }
-  if (r) { const m = S.index.byShort.get(r.toLowerCase())?.[0] || S.index.routes.get(r); if (m) select({ kind: 'route', id: m.id }); }
+  if (r) { const m = S.index.routes.get(r) || S.index.byShort.get(r.toLowerCase())?.[0] || X.searchTransport(S.index, 'route '+r, {limit:1})[0]?.route; if (m) select({ kind: 'route', id: m.id }); }
   else if (s) { const m = [...S.index.stops.values()].find((x) => x.code === s || x.id === s); if (m) select({ kind: 'stop', id: m.id }); }
 }
 
@@ -249,7 +250,7 @@ function render() {
   let html = '';
   if (!sel) {
     const c = S.counts || { bus: 0, train: 0, ferry: 0 };
-    html += `<h2>Routes and vehicles</h2><p>${S.posSource === 'sample' ? 'In this saved sample' : (!S.posError && X.timestampFresh(S.positions?.newestFix, now)) ? 'Latest live snapshot' : 'In the last available snapshot (not current)'}: <b>${c.bus}</b> buses, <b>${c.train}</b> trains and <b>${c.ferry}</b> ferries are out on trips across Auckland. Search a route, stop or ferry terminal, or tap a vehicle.</p>`;
+    html += `<h2>Routes and vehicles</h2><p>${S.posSource === 'sample' ? 'In this saved sample' : (!S.posError && X.timestampFresh(S.positions?.newestFix, now)) ? 'Latest live snapshot' : 'In the last available snapshot (not current)'}: <b>${c.bus}</b> buses, <b>${c.train}</b> trains and <b>${c.ferry}</b> ferries are out on trips across Auckland. Search a route number, stop or vehicle ID, or tap a vehicle.</p>`;
     if (S.atLive.state === 'on') {
       const tally = { 'on-time': 0, late: 0, early: 0, unknown: 0, cancelled: 0 };
       for (const v of S.positions.vehicles) if (v.routeId) tally[vehicleInfo(v).st.status]++;
@@ -282,7 +283,7 @@ function render() {
     if (!v) html += `<h2>Vehicle gone</h2><p class="muted">This vehicle is no longer in the live feed. It may have finished its trip.</p>`;
     else {
       const { r, u, st, mode } = vehicleInfo(v);
-      html += `<p class="muted">${MODE_WORD[mode]}</p><h2>${esc(r?.short || v.routeId)}</h2>${statusPill(st)}`;
+      html += `<p class="muted">${r?.school ? 'School bus' : MODE_WORD[mode]} · vehicle ${esc(v.id)}</p><h2>${esc(r?.short || v.routeId || v.id)}</h2>${statusPill(st)}`;
       html += `<dl class="facts">`;
       if (r?.heads?.length) html += `<dt>Route destinations</dt><dd>${r.heads.map(cleanHead).filter(Boolean).map(esc).join(' · ')}<br><small>Direction of this vehicle not confirmed</small></dd>`;
       html += `<dt>Speed</dt><dd>${v.speedKmh == null ? 'not reported' : 'about ' + v.speedKmh + ' km/h'}</dd>`;
@@ -298,7 +299,11 @@ function render() {
     }
   } else if (sel.kind === 'route') {
     const r = S.index.routes.get(sel.id), vs = S.positions?.vehicles.filter((v) => v.routeId === sel.id) || [];
-    html += `<p class="muted">${MODE_WORD[r.mode]} route</p><h2>${esc(r.short)}</h2><p>${r.heads.map((h) => esc(cleanHead(h))).join('<br>')}</p>`;
+    html += `<p class="muted">${r.school ? 'School bus route' : MODE_WORD[r.mode]+' route'}</p><h2>${esc(r.short)}</h2><p>${r.heads.map(h=>esc(cleanHead(h))).join('<br>')}</p>`;
+    if (r.school) {
+      html += `<p class="note">School buses normally run on school days only. <a href="${esc(r.timetable || AT_SCHOOL_TIMETABLE)}" target="_blank" rel="noopener noreferrer">Official AT school timetable ↗</a></p>`;
+      if(r.timetableStops?.length) html += `<details class="school-stops"><summary>Find a stop on this route</summary><ul class="rows">${r.timetableStops.map(s=>`<li><button class="row" data-stop="${esc(s.id)}"><span class="r">${esc(s.code)}</span><span class="h">${esc(s.name)}</span><span class="w">›</span></button></li>`).join('')}</ul></details>`;
+    }
     const al = X.alertsFor(S.alerts, { routeIds: [sel.id] }, now); html += al.map(alertHtml).join('');
     const mapped = vs.filter(v=>freshMappedVehicle(v,now)).sort((a,b)=>b.ts-a.ts);
     const demo = qs.get('demo') === 'at';
@@ -317,7 +322,7 @@ function render() {
       }).join('')}</div></div>`;
     }
     html += `<h3>Vehicles reported on this route · ${vs.length}</h3>`;
-    html += !S.positions && !S.posError ? '<p class="muted">Checking Auckland Transport for live positions…</p>' : vs.length ? `<ul class="rows">${vs.map((v) => { const { st } = vehicleInfo(v); return `<li><button type="button" class="row" data-vehicle="${esc(v.id)}"><span class="r"><i style="--c:${statusColour(st)}"></i></span><span class="h">${esc(S.atLive.state === 'on' ? st.label : v.speedKmh ? 'Moving, about ' + v.speedKmh + ' km/h' : v.speedKmh === 0 ? 'Stopped' : 'Speed not reported')}<small>${S.atLive.state === 'on' && v.speedKmh != null ? 'about ' + v.speedKmh + ' km/h · ' : ''}reported ${ago(v.ts)}${X.inArea(v.lat, v.lon) ? '' : ' · outside the 3D area'}</small></span><span class="w">›</span></button></li>`; }).join('')}</ul>` : `<p class="muted">No vehicle on this route is in the live feed right now.</p>`;
+    html += !S.positions && !S.posError ? '<p class="muted">Checking Auckland Transport for live positions…</p>' : vs.length ? `<ul class="rows">${vs.map((v) => { const { st } = vehicleInfo(v); return `<li><button type="button" class="row" data-vehicle="${esc(v.id)}"><span class="r"><i style="--c:${statusColour(st)}"></i></span><span class="h">${esc(S.atLive.state === 'on' ? st.label : v.speedKmh ? 'Moving, about ' + v.speedKmh + ' km/h' : v.speedKmh === 0 ? 'Stopped' : 'Speed not reported')}<small>${S.atLive.state === 'on' && v.speedKmh != null ? 'about ' + v.speedKmh + ' km/h · ' : ''}vehicle ${esc(v.id)} · ${S.posSource==='sample'?'saved sample, not live':freshMappedVehicle(v,now)?'live fix '+ago(v.ts):'last reported '+ago(v.ts)}${X.inArea(v.lat, v.lon) ? '' : ' · outside the 3D area'}</small></span><span class="w">›</span></button></li>`; }).join('')}</ul>` : `<p class="muted">${S.posError || S.posSource==='sample' ? 'Live positions are unavailable.' : 'No live position reported for this route right now.'}</p>`;
     html += delayNote() + `<div class="actions"><button class="ghost" data-clear>Close</button></div>`;
   } else if (sel.kind === 'stop') {
     const s = S.index.stops.get(sel.id);
@@ -332,7 +337,10 @@ function render() {
   if (d.innerHTML !== html) {
     const active = d.contains(document.activeElement) ? document.activeElement : null;
     const identity = active ? [...active.attributes].filter(a=>a.name.startsWith('data-')).map(a=>[a.name,a.value]) : [];
+    const wasOpen = schoolDetailRoute===sel?.id && d.querySelector('.school-stops')?.open;
     d.innerHTML = html;
+    schoolDetailRoute=sel?.kind==='route'?sel.id:null;
+    if(wasOpen && d.querySelector('.school-stops'))d.querySelector('.school-stops').open=true;
     if (identity.length) [...d.querySelectorAll('button')].find(b=>identity.every(([k,v])=>b.getAttribute(k)===v))?.focus({ preventScroll: true });
   }
   renderTruth();
@@ -371,7 +379,7 @@ function renderTruth() {
 }
 function gtfsSpan() { const f = (d) => d && /^\d{8}$/.test(d) ? new Intl.DateTimeFormat('en-NZ', { timeZone: 'UTC', day: 'numeric', month: 'short', year: 'numeric' }).format(Date.UTC(+d.slice(0, 4), +d.slice(4, 6) - 1, +d.slice(6, 8))) : ''; return S.gtfs?.feedStart ? `${f(S.gtfs.feedStart)} to ${f(S.gtfs.feedEnd)}` : ''; }
 function sourcesHtml(pos, del) {
-  return `<b>Where this comes from.</b> ${esc(pos)}. ${esc(del)}${S.atLive.state === 'on' ? '' : ' (at-live is not switched on)'}. Routes, stops and route lines: Auckland Transport GTFS, timetable ${esc(gtfsSpan())}. Contains Auckland Transport data, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. <br><b>Static waterfront photography.</b> Auckland 0.075 m Urban Aerial Photos (2024–2025), Survey capture range: February 2024 to March 2025; exact flight days not supplied in these tiles’ metadata. Accessed 25 Nov 2026 from <a href="https://registry.opendata.aws/nz-imagery/">New Zealand Imagery</a>, licensed by Auckland Council for re-use under CC BY 4.0. A cropped, downsampled visual layer, not live imagery or measured façades.<br><b>Ferry Building detail.</b> Model aligned to the OSM footprint. Roof heights cross-checked with <a href="https://data.linz.govt.nz/">LINZ Data Service</a> Auckland Part 1 2024 LiDAR licensed by Auckland Council, CC BY 4.0. The façade is inferred, not surveyed. Masonry and terracotta textures adapted from <a href="https://commons.wikimedia.org/wiki/File:Auckland_Ferry_Terminal_from_Harbour.jpg">Alexander Klink’s 2006 photo</a>, <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.<br><b>Terrain and model.</b> Ground heights: LINZ 8 m DEM via AWS Terrain Tiles, CC BY 4.0 (underlying data © RSHL). Land, water, roads and buildings: © OpenStreetMap contributors, ODbL 1.0, via OpenFreeMap. Building heights are OSM heights or levels where mapped, otherwise a 5 m default. Weather: Open-Meteo, modelled. Vehicles are drawn in code at typical sizes; they are not the actual vehicle.`;
+  return `<b>Where this comes from.</b> ${esc(pos)}. ${esc(del)}${S.atLive.state === 'on' ? '' : ' (at-live is not switched on)'}. Routes, stops and route lines: Auckland Transport GTFS, timetable ${esc(gtfsSpan())}. School route 413 also uses the separate AT school timetable. Other school numbers may be indexed from exact live feed route IDs, without a schedule or route line. Contains Auckland Transport data, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. <br><b>Static waterfront photography.</b> Auckland 0.075 m Urban Aerial Photos (2024–2025), Survey capture range: February 2024 to March 2025; exact flight days not supplied in these tiles’ metadata. Accessed 25 Nov 2026 from <a href="https://registry.opendata.aws/nz-imagery/">New Zealand Imagery</a>, licensed by Auckland Council for re-use under CC BY 4.0. A cropped, downsampled visual layer, not live imagery or measured façades.<br><b>Ferry Building detail.</b> Model aligned to the OSM footprint. Roof heights cross-checked with <a href="https://data.linz.govt.nz/">LINZ Data Service</a> Auckland Part 1 2024 LiDAR licensed by Auckland Council, CC BY 4.0. The façade is inferred, not surveyed. Masonry and terracotta textures adapted from <a href="https://commons.wikimedia.org/wiki/File:Auckland_Ferry_Terminal_from_Harbour.jpg">Alexander Klink’s 2006 photo</a>, <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>.<br><b>Terrain and model.</b> Ground heights: LINZ 8 m DEM via AWS Terrain Tiles, CC BY 4.0 (underlying data © RSHL). Land, water, roads and buildings: © OpenStreetMap contributors, ODbL 1.0, via OpenFreeMap. Building heights are OSM heights or levels where mapped, otherwise a 5 m default. Weather: Open-Meteo, modelled. Vehicles are drawn in code at typical sizes; they are not the actual vehicle.`;
 }
 function fmtDate(iso) { const t = Date.parse(iso); return Number.isFinite(t) ? new Intl.DateTimeFormat('en-NZ', { timeZone: 'Pacific/Auckland', day: 'numeric', month: 'short', year: 'numeric' }).format(t) : ''; }
 
@@ -398,16 +406,21 @@ function wireUi() {
   };
   $('#saved-stops').onclick = () => { hideResults(); void select({kind:'saved'}); };
   const show = () => {
-    items = X.search(S.index, searchWords(q.value), 10); hi = -1; q.removeAttribute('aria-activedescendant');
+    items = X.searchTransport(S.index,q.value,{vehicles:S.positions?.vehicles,liveFeed:S.posSource==='live'&&!S.posError,nowSec:Math.round(Date.now()/1000)}); hi = -1; q.removeAttribute('aria-activedescendant');
     list.innerHTML = items.map((it, i) => it.kind === 'route'
-      ? `<li role="option" id="at-search-${i}" data-i="${i}"><span class="k">${MODE_WORD[it.route.mode]}</span><span><span class="t">${esc(it.route.short)}</span><span class="s">${esc(cleanHead(it.route.heads[0] || ''))}</span></span></li>`
-      : `<li role="option" id="at-search-${i}" data-i="${i}"><span class="k">${it.kind === 'ferry' ? 'Ferry' : it.kind === 'station' ? 'Station' : 'Stop'}</span><span><span class="t">${esc(it.stop.name)}</span><span class="s">${it.stop.code ? 'Stop ' + esc(it.stop.code) + ' · ' : ''}${it.stop.routes.length} routes</span></span></li>`).join('');
+      ? `<li role="option" id="at-search-${i}" data-i="${i}"><span class="k">${it.route.school?'School bus':MODE_WORD[it.route.mode]+' route'}</span><span><span class="t">${esc(it.route.short)}</span><span class="s">${esc(cleanHead(it.route.heads[0] || ''))}</span></span></li>`
+      : it.kind === 'vehicle'
+      ? `<li role="option" id="at-search-${i}" data-i="${i}"><span class="k">Vehicle ID</span><span><span class="t">${esc(it.id)}</span><span class="s">${it.route ? 'Route '+esc(it.route.short)+' · ' : ''}${it.live ? 'Live fix' : S.posSource==='sample' ? 'Saved sample, not live' : 'Last reported position'}</span></span></li>`
+      : `<li role="option" id="at-search-${i}" data-i="${i}"><span class="k">${it.kind === 'ferry'  ? 'Ferry' : it.kind === 'station' ? 'Station' : 'Stop'}</span><span><span class="t">${esc(it.stop.name)}</span><span class="s">${it.stop.code ? 'Stop ' + esc(it.stop.code) + ' · ' : ''}${it.stop.routes.length} routes</span></span></li>`).join('');
     empty.hidden = !q.value.trim() || !!items.length;
-    if (!empty.hidden) empty.innerHTML = 'No match in this timetable. Try a stop number or the official <a href="https://at.govt.nz/bus-train-ferry/timetables/school-bus-timetables" target="_blank" rel="noopener noreferrer">AT school bus timetables</a>.';
+    if (!empty.hidden) empty.innerHTML = /^(?:vehicle|fleet|#)/i.test(q.value.trim())
+      ? (!S.positions&&!S.posError ? 'Checking live vehicle IDs…' : 'No exact match for that ID in the available feed. The number on the vehicle may not match its AT feed ID.')
+      : `No match. Try a route like 413, a stop name or number, or “vehicle” followed by the ID shown in this app. <a href="${AT_SCHOOL_TIMETABLE}" target="_blank" rel="noopener noreferrer">AT school bus timetables</a>.`;
     list.hidden = !items.length; q.setAttribute('aria-expanded', String(!!items.length));
   };
+  refreshSearch = () => { if (document.activeElement===q && q.value && hi===-1) show(); };
   if (q.value) show();
-  const choose = (it) => { if (!it) return; hideResults(); setPanelSmall(false); q.blur(); q.value = it.kind === 'route' ? it.route.short : it.stop.name; select(it.kind === 'route' ? { kind: 'route', id: it.id } : { kind: 'stop', id: it.id }); };
+  const choose = (it) => { if (!it) return; hideResults(); setPanelSmall(false); q.blur(); q.value = it.kind === 'route' ? it.route.short : it.kind === 'vehicle' ? 'vehicle '+it.id : it.stop.name; void select({kind:it.kind === 'route' || it.kind === 'vehicle' ? it.kind : 'stop',id:it.id},{closeUp:it.kind==='vehicle'&&freshMappedVehicle(it.vehicle)}); };
   q.addEventListener('input', show); q.addEventListener('focus', () => q.value && show());
   q.addEventListener('keydown', (e) => {
     if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && items.length) { e.preventDefault(); hi = Math.max(0, Math.min(items.length - 1, hi + (e.key === 'ArrowDown' ? 1 : -1))); [...list.children].forEach((li, i) => li.setAttribute('aria-selected', String(i === hi))); q.setAttribute('aria-activedescendant','at-search-'+hi); list.children[hi]?.scrollIntoView({block:'nearest'}); }
