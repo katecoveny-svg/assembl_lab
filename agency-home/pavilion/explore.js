@@ -47,7 +47,7 @@ export function installExplore(vista,options) {
     if(Math.abs(dx)<5)return;
     glance.armed=true;surface.setPointerCapture(e.pointerId);
    }
-   glanceYaw=turn(glance.yaw-dx*.0045);glancePitch=clamp(glance.pitch+dy*.0018,-.13,.16);
+   glanceYaw=glance.yaw-dx*.006;glancePitch=clamp(glance.pitch+dy*.0018,-.13,.16);
    options.setCamera({yaw:glanceYaw,pitch:glancePitch,travel:0});options.repaint();return;
   }
   const previous=pointers.get(e.pointerId);if(!active||!previous)return;
@@ -62,6 +62,11 @@ export function installExplore(vista,options) {
   if(!active)return;e.preventDefault();const unit=e.deltaMode===1?16:e.deltaMode===2?vista.clientHeight:1;travel=clamp(travel-e.deltaY*unit*.00055,-.35,.35);update()
  },{passive:false});
  vista.addEventListener('keydown',e=>{
+  if(!active&&document.documentElement.classList.contains('agency-landing')&&e.target===vista&&options.available()&&['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){
+   glanceYaw+=e.key==='ArrowLeft'?.14:e.key==='ArrowRight'?-.14:0;
+   glancePitch=clamp(glancePitch+(e.key==='ArrowUp'?.05:e.key==='ArrowDown'?-.05:0),-.3,.3);
+   options.setCamera({yaw:glanceYaw,pitch:glancePitch,travel:0});options.repaint();e.preventDefault();return;
+  }
   if(!active)return;
   if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();leave();return}
   if(e.target!==vista||e.metaKey||e.ctrlKey||e.altKey)return;
