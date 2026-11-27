@@ -239,6 +239,17 @@ export function finishCoastalHouse(T, house, parts) {
     return o;
   }
   const takeOut=o=>{group.remove(o);o.geometry.dispose();};
+  // Retain the two existing teak frames, pivots and mattress dimensions. Round the
+  // three upholstery pieces on each and carry the interior's woven linen to the deck.
+  for(const lounger of group.children.filter(o=>o.isGroup && o.children[0]?.geometry?.parameters?.width===.76)){
+    lounger.traverse(o=>{
+      const p=o.geometry?.parameters;
+      if(!p || ![.70,.68,.46].includes(p.width) || p.height<.075 || p.height>.091)return;
+      o.geometry.dispose();
+      o.geometry=cushionGeometry(p.width,p.height,p.depth,.025);
+      o.material=fabric;grain(o,.115,.115);
+    });
+  }
   [wing,bedroomWindow,windowBack].forEach(takeOut);
   // Replace the solid bedroom front and opaque flat window with an opening in the same wall.
   const wx=-11,front=-8.30;
@@ -305,7 +316,10 @@ export function finishCoastalHouse(T, house, parts) {
     takeOut(glass);
   }
   // Oak-lined rear wall, low joinery and recessed shelves give the room a readable depth behind the glass.
-  backWall.material=newMaterial(0xb2a28d,.92,{map:plaster});endWall.material=plasterRoom;
+  backWall.material=innerFinish;endWall.material=innerFinish;
+  const endSize=endWall.geometry.parameters;
+  endWall.geometry.dispose();endWall.geometry=new T.Plane(endSize.width,endSize.height,18,12);
+  grain(endWall,1.34,1.26);
   const wallOak=oak.clone();wallOak.color.setHex(0xe1d2bd);wallOak.roughness=.79;
   grain(mesh(new T.Box(6.54,2.36,.14,24,12,1),wallOak,-1.63,1.25,-12.37),2.4,1.3,true);
   const gap=newMaterial(0x534133,.94);
@@ -379,16 +393,30 @@ export function finishCoastalHouse(T, house, parts) {
   coffee.scale.z=.76;mesh(new T.Cylinder(.22,.27,.315,36),oak,-2.72,.377,-9.58);
   vessel(-2.62,.586,-9.51,[[.068,0],[.072,.007],[.115,.022],[.132,.051],[.132,.056],[.124,.057],[.109,.035],[.064,.017],[.003,.017]],clay);
   // A pedestal table leaves the end seats usable. Chair backs physically join their rear legs.
-  cushion(-.05,.945,-10.6,1.83,.075,.88,.033,oak);
-  for(const x of [-.62,.52])box(x,.568,-10.6,.10,.68,.53,oak);
+  const tableOak=oak.clone();tableOak.color.setHex(0xc9b89f);tableOak.roughness=.64;
+  grain(cushion(-.05,.945,-10.6,1.83,.075,.88,.033,tableOak),1.65,.81);
+  for(const x of [-.62,.52])grain(box(x,.568,-10.6,.085,.68,.53,tableOak),1.3,.55,true);
+  vessel(-.15,.985,-10.62,[[.055,0],[.060,.008],[.112,.032],[.132,.049],[.135,.055],[.130,.057],[.108,.040],[.045,.014],[.002,.014]],clay);
+  function chairLeg(x,y,z,endX,endY,endZ){
+    const direction=group.position.clone().set(endX-x,endY-y,endZ-z);
+    const leg=mesh(new T.Cylinder(.021,.015,direction.length(),12),tableOak,(x+endX)/2,(y+endY)/2,(z+endZ)/2);
+    leg.quaternion.setFromUnitVectors(group.position.clone().set(0,1,0),direction.normalize());
+  }
   for(const side of [-1,1])for(const cx of [-.53,.43]){
     const z=-10.6+side*.66;
-    cushion(cx,.66,z,.42,.07,.41,.032,leather);
+    cushion(cx,.65,z,.42,.07,.41,.032,leather);
     for(const dx of [-.16,.16])for(const dz of [-.145,.145]){
-      const rear=dz*side>0,h=rear?.66:.42;
-      mesh(new T.Cylinder(.021,.017,h,10),oak,cx+dx,.23+h/2,z+dz);
+      const rear=dz*side>0;
+      chairLeg(cx+dx*1.13,.204,z+dz*1.17,cx+dx,rear?1.004:.625,z+dz+(rear?side*.032:0));
     }
-    cushion(cx,.857,z+side*.15,.397,.14,.061,.025,oak);
+    const rail=mesh(new T.Box(.407,.117,.034,16,4,1),tableOak,cx,1.008,z+side*.185);
+    const pos=rail.geometry.attributes.position;
+    for(let k=0;k<pos.count;k++){
+      const u=pos.getX(k)/.2035, h=pos.getY(k);
+      pos.setZ(k,pos.getZ(k)+side*(.036*(1-u*u)+.080*h));
+      pos.setY(k,h+.013*(1-u*u));
+    }
+    rail.geometry.computeVertexNormals();grain(rail,.7,.38);
   }
   // Integrate the visible area of the actual garden-facing glazing once per surface
   // vertex, with the curved cushions as local occluders. This supplies soft indoor

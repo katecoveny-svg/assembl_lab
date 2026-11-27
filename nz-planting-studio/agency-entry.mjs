@@ -14,6 +14,12 @@ controls.enableZoom=false; controls.enablePan=false;
 controls.minDistance=.25; controls.minPolarAngle=.31; controls.maxPolarAngle=Math.PI*.78;
 studio.setSunHour(9.65);
 studio.setTool('paint-mix');
+// The editor's translucent pool barrier guide crosses this room. The full editor
+// owns that technical overlay; the homepage presents the furnished building.
+if(studio.poolEngine?.nczGroup) {
+  studio.poolEngine.config.showF9Zone=false;
+  studio.poolEngine.nczGroup.visible=false;
+}
 
 const wrap=canvas.parentElement;
 const style=document.createElement('link');
