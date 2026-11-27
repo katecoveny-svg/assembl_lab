@@ -19,7 +19,7 @@ export function tideCard(asset){
   if(scene){scene.setActive(true);return}
   if(forced||(!manual&&navigator.connection?.saveData)){fallback('Published tide heights below');return}
   if(pending)return;
-  pending=import('./harbour.js?v=d48b713f56').then(m=>m.createHarbour(host)).then(water=>{
+  pending=import('./harbour.js?v=36c9e5002d').then(m=>m.createHarbour(host)).then(water=>{
    scene=water;scene.setHeight(selectedHeight);scene.pause(paused);scene.setActive(visible&&!document.hidden);
    host.dataset.renderer='procedural';host.dataset.interactive='true';byId('water-fallback').hidden=true;
    open.hidden=false;open.textContent=paused?'Resume waves':'Pause waves';
@@ -34,7 +34,7 @@ export function tideCard(asset){
   index=Math.max(0,Math.min(i,days[keys[day]].length-1));const [time,height,,zone,kind]=days[keys[day]][index];
   selectedHeight=Number(height);
   const staff=document.querySelector('.water-idle');staff.style.setProperty('--level',Math.min(95,Math.max(4,selectedHeight/4.5*100))+'%');staff.dataset.height=height+' m';const label=kind+' tide · '+time+' '+zone+' · '+height+' m';
-  byId('water-reading').textContent=label;slider.value=String(index);slider.setAttribute('aria-valuetext',label);
+  byId('gauge').textContent=kind+' tide · '+height+' m';byId('water-reading').textContent=label;slider.value=String(index);slider.setAttribute('aria-valuetext',label);
   showSelection();byId('tide-stops').querySelectorAll('button').forEach((b,j)=>b.setAttribute('aria-pressed',String(index===j)));
   const detail=byId('tide-date').textContent+' · '+label;byId('tides-context').textContent=detail;
   byId('brief-tides').querySelector('a[href^="mailto"]').href='mailto:assembl@assembl.co.nz?subject='+encodeURIComponent('A project like Waitematā Tides')+'&body='+encodeURIComponent('I was looking at the Auckland station 070 prediction for '+detail+'.')
@@ -64,6 +64,12 @@ export function tideCard(asset){
    const target=selectionChanged?selected:Object.hasOwn(days,today)?today:initial;
    const previousIndex=index;day=keys.indexOf(target);renderDay();
    if(selectionChanged)setEvent(previousIndex);
+   else if(target===today){
+    const clock=new Intl.DateTimeFormat('en-GB',{timeZone:'Pacific/Auckland',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date());
+    const upcoming=days[today].findIndex(e=>e[0]>=clock);
+    if(upcoming>=0)setEvent(upcoming);
+    else if(day<keys.length-1){day++;renderDay();}
+   }
    byId('tide-range').textContent='Published predictions · 2025–2029';
   }catch{/* The three embedded dates remain available. */}
  }

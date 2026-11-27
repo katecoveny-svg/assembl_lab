@@ -33,6 +33,13 @@ retry.onclick = () => { stage.scrollIntoView({block:'start',behavior:'instant'})
 window.addEventListener('message', e => {
   if (!frame || e.source !== frame.contentWindow || e.origin !== source.origin || e.data?.studio !== 'assembl-planting') return;
   if(e.data.type === 'unavailable'){recover();return;}
+  if(e.data.type === 'estimate'){
+    const out = controls.querySelector('[data-supply-estimate]');
+    if(out && typeof e.data.total === 'string' && /^\$[\d,.]+$/.test(e.data.total)){
+      out.textContent = 'Supply estimate '+e.data.total+' NZD incl. GST'; out.hidden = false;
+    }
+    return;
+  }
   if(e.data.type !== 'ready')return;
   clearTimeout(timeout); stage.dataset.ready = 'true'; controls.hidden = false;
   status.textContent = 'Brush across the soil to plant.'; consider();

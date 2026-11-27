@@ -11,7 +11,7 @@ import { Line2 } from 'three/addons/lines/Line2.js';
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { sunPosition, AREA, ORIGIN } from './transit.js';
-import { createFleet, createBeacons } from './vehicles.js';
+import { createFleet, createBeacons } from './vehicles.js?v=93cec4d968';
 
 const DATA = new URL('./data/', import.meta.url).href;
 const WM = AREA.maxX - AREA.minX, HM = AREA.maxY - AREA.minY, X0 = AREA.minX - ORIGIN.E, Z0 = ORIGIN.N - AREA.maxY; // world x, z of the north-west corner
@@ -560,6 +560,15 @@ export async function createWorld(canvas, { phone = false, capture = false, time
 
   const sunNow = setTime(timeMs ?? Date.now());
   return {
+    hasStreetView(v) {
+      const y=groundAt(v.x,v.z)+1.8, to=[v.x,y,v.z];
+      const heading=(v.heading||0)+1.84, distance=phone?28:21;
+      for(const delta of [0,.73,-.73,1.49,-1.49,Math.PI]){
+        const a=heading+delta;
+        if(sight.clear([v.x-Math.sin(a)*distance,y+.36*distance,v.z+Math.cos(a)*distance],to))return true;
+      }
+      return false;
+    },
     renderer, scene, camera, controls, heightAt, isLand, setTime, setVehicles, pick, screenOf, showRoute, showStop, flyTo, flyCinematic, stopFlight, views, setView,
     get flying() { return !!cinematic; },
     get sun() { return sunState; }, get frames() { return frames; }, set onFrame(f) { onFrame = f; },
