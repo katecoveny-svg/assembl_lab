@@ -544,3 +544,20 @@ lensButton.addEventListener('keydown',e=>{
 lensImage.addEventListener('load',()=>{if(lensPinned||lensHovered)moveLens(lensX,lensY)});
 
 new ResizeObserver(()=>{if(!world&&stillRoom)showRoomStill();syncLens()}).observe(vista);
+
+// A project link should open the roof view it names. Keep the running scene and
+// the visitor's renderer preference when they arrive from the homepage index.
+const roofLink=document.querySelector('[data-open-roof]');
+if(cinema && roofLink){
+ roofLink.addEventListener('click',event=>{
+  if(event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+  event.preventDefault();
+  const target=new URL(location.href);
+  target.searchParams.set('view','pavilion');target.searchParams.set('roof','lift');target.hash='pavilion';
+  if(target.href!==location.href)history.pushState(history.state,'',target);
+  setRoofInspection(true);
+  document.getElementById('pavilion').scrollIntoView({behavior:'instant'});
+  roofButton.focus({preventScroll:true});
+ });
+ if(settings.get('roof')==='lift')setRoofInspection(true);
+}

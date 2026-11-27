@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createWorld} from 'https://lab.assembl.co.nz/auckland/live/scene.js?v=dd0baa0eb7';
+import {createWorld} from 'https://lab.assembl.co.nz/auckland/live/scene.js?v=4f8baf28ac';
 import {subscribeReports} from './vehicle-reports.js?v=00fa4f7d40';
 const tell=(type,data={})=>parent.postMessage({city:type,...data},location.origin);
 const canvas=document.querySelector('canvas'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
