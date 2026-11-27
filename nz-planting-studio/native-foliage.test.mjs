@@ -15,7 +15,7 @@ class Color {
   constructor(hex) { [this.r,this.g,this.b]=(hex.slice(1).match(/../g)??[]).map(s=>Number.parseInt(s,16)/255); }
 }
 const three={Geometry,Attribute,Color};
-const taxa=['oioi','harakeke','platts_black','silver_spear','rengarenga','libertia','toetoe','red_tussock','carex_testacea','poa_cita','ponga','tikouka','nikau','pohutukawa','manuka','kowhai','koromiko','kakabeak','panakenake'];
+const taxa=['agapanthus','echinacea','oioi','harakeke','platts_black','silver_spear','rengarenga','libertia','toetoe','red_tussock','carex_testacea','poa_cita','ponga','tikouka','nikau','pohutukawa','manuka','kowhai','koromiko','kakabeak','panakenake'];
 const taxon=id=>({id,matureHeight:id==='panakenake'?.08:2.4,matureSpread:2,trunkColor:'#776655',flowerColor:'#ecccaa'});
 test('native plant specimen geometries are deterministic and carry rooted wind weights',()=> {
   for(const id of taxa){
@@ -54,4 +54,39 @@ test('mophead clusters are actual geometry and flower heads keep gentle wind wei
     assert(geo.index.length/3<(compact?6200:12500));
     assert(aTipness.buf.some(x=>x===0));
   }
+});
+
+test('seasonal bloom and wind deformation share the physical flower-to-stalk attachment',()=>{
+  const species=[
+    ['agapanthus',.68,.56,1600],['harakeke',2.1,1.7,2600],
+    ['rengarenga',.78,.76,1150],['libertia',.55,.5,950],['hydrangea',1.15,1.2,6200],
+  ];
+  for(const [id,matureHeight,matureSpread,budget] of species){
+    for(const compact of [false,true]){
+      const geo=makeNativeFoliage({...taxon(id),matureHeight,matureSpread},three,{compact});
+      const {position,aPartType,aTipness,aPetalOffset}=geo.sets;
+      assert.equal(aPetalOffset.buf.length,position.buf.length,id);
+      const stems=[], blossoms=new Map();
+      for(let i=0;i<aPartType.buf.length;i++){
+        const offset=aPetalOffset.buf.slice(i*3,i*3+3);
+        const p=position.buf.slice(i*3,i*3+3),wind=aTipness.buf[i];
+        if(offset.every(axis=>axis===0)){
+          stems.push([...p,wind]);
+          continue;
+        }
+        assert.equal(aPartType.buf[i],2,id);
+        assert(Math.hypot(...offset)<.065,id+' petals stay at centimetre scale');
+        const anchor=p.map((axis,j)=>axis-offset[j]);
+        const key=anchor.map(axis=>axis.toFixed(5)).join(',');
+        blossoms.set(key,[...anchor,wind]);
+      }
+      assert(blossoms.size>=12, id+' includes individually connected flowers');
+      for(const [x,y,z,w] of blossoms.values()){
+        const attached=stems.some(([sx,sy,sz,sw])=>Math.abs(sw-w)<.003 && Math.hypot(sx-x,sy-y,sz-z)<.005);
+        assert(attached,id+' petal wind and position follow a real stalk');
+      }
+      if(compact)assert(geo.index.length/3<budget,id+' touch budget');
+    }
+  }
+  assert.equal(makeNativeFoliage(taxon('toetoe'),three).sets.aPetalOffset,undefined);
 });
