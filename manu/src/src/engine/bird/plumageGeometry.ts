@@ -937,7 +937,7 @@ function addRestWing(b: Builder, rig: Rig, side: Side, rng: Rng) {
     return P.copy(pt).sub(best.p).dot(best.n);
   };
   const T = species.tail;
-  const ta = T.droop * DEG;
+  const ta = (W.foldedDroop ?? T.droop) * DEG;
   const tailDir = new THREE.Vector3(0, -Math.sin(ta), -Math.cos(ta));
   const tailUp = new THREE.Vector3(0, Math.cos(ta), -Math.sin(ta));
   const meet = loft.center(species.spine.tail, new THREE.Vector3()).addScaledVector(tailDir, T.length[1] * wingCross(loft, species)).addScaledVector(tailUp, 0.035);

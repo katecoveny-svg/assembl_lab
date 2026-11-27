@@ -7,7 +7,36 @@ const x = centre.x / bed.points.length, z = centre.z / bed.points.length;
 const compact = innerWidth < 640;
 const gy = studio.terrainEngine.getHeight(-5.5,-10.2);
 studio.setSunHour(9.65);
-studio.setCamera(compact ? -12 : -11.35, gy + (compact ? 3.00 : 2.50), compact ? 6 : 3.70, compact ? -1.70 : -5.25, gy + (compact ? 1.64 : 1.43), compact ? -9.8 : -9.45);
+// Move through foreground planting to the design view. Input takes the camera immediately.
+const endView = compact ? [-12, 3, 6, -1.7, 1.64, -9.8] : [-11.35, 2.5, 3.7, -5.25, 1.43, -9.45];
+const midView = compact ? [-10.8, 2.35, 3.9, -4.4, 1.54, -9.8] : [-10.6, 1.94, 2.65, -5.9, 1.51, -9.45];
+const startView = compact ? [-9.35, 1.56, 1.9, -6.1, 1.42, -9.2] : [-9.6, 1.25, 1.35, -6.5, 1.37, -9.0];
+function place(view) {
+  studio.setCamera(view[0], gy + view[1], view[2], view[3], gy + view[4], view[5]);
+}
+const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+const agencyHost = /^(www\.)?assembl\.co\.nz$|^[a-z0-9-]+\.assembl-home\.pages\.dev$/.test(new URL(parentOrigin).hostname);
+let approaching = agencyHost && !reduced.matches && !navigator.connection?.saveData;
+let inView = true, elapsed = 0, previous = 0, frame = 0;
+function endApproach() { approaching = false; cancelAnimationFrame(frame); frame = 0; }
+function advance(now) {
+  frame = 0;
+  if (!approaching || !inView || document.hidden) { previous = 0; return; }
+  if (previous) elapsed += Math.min(now - previous, 100);
+  previous = now;
+  const t = Math.min(1, elapsed / 7200);
+  const u = t * t * (3 - 2 * t);
+  place(startView.map((n, i) => n * (1-u)**2 + 2 * midView[i] * (1-u)*u + endView[i]*u*u));
+  if (t < 1) frame=requestAnimationFrame(advance); else endApproach();
+}
+function resumeApproach() {
+  if (approaching && !frame && inView && !document.hidden) { previous=0; frame=requestAnimationFrame(advance); }
+}
+place(approaching ? startView : endView);
+for (const event of ['pointerdown','keydown','wheel']) window.addEventListener(event,endApproach,{capture:true,passive:true,once:true});
+document.addEventListener('visibilitychange',resumeApproach);
+reduced.addEventListener('change',()=>{if(reduced.matches && approaching){endApproach();place(endView);}});
+resumeApproach();
 studio.setTool('paint-mix');
 studio.controls.enableZoom = false;
 studio.controls.enableRotate = true;
@@ -44,7 +73,8 @@ canvas.addEventListener('keydown', e => {
 canvas.addEventListener('wheel', e => e.stopImmediatePropagation(), {capture:true, passive:true});
 window.addEventListener('message', e => {
   if (e.source !== parent || e.origin !== parentOrigin || e.data?.studio !== 'assembl-planting') return;
-  if (e.data.type === 'visibility') { document.documentElement.toggleAttribute('data-garden-idle', !e.data.visible); return; }
+  if (e.data.type === 'visibility') { inView = !!e.data.visible; document.documentElement.toggleAttribute('data-garden-idle', !inView); if(inView)resumeApproach(); return; }
+  endApproach();
   if (e.data.type === 'mix') {
     const choice = {coast:0, fern:1, flowers:4}[e.data.value];
     if (choice !== undefined) document.querySelectorAll('#cards-rail .card')[choice]?.click();

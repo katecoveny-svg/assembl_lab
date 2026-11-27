@@ -73,3 +73,11 @@ Limits: one reference photograph per bird, in one pose (the tūī photograph is 
 three-quarter view, the kererū's has its neck stretched up, the hihi's tail is cocked); front and
 top views are checked by eye only (no reference outlines). The reference photographs and their
 masks are kept out of the repo.
+
+## Field-guide review, 27 November 2026
+
+The table above records the earlier single-reference silhouette check. Its overlap results apply to that version. The field-guide pass kept the published head, bill, wing, tail and tarsus measurements and reviewed resting poses against the eight species accounts and photographs on NZ Birds Online.
+
+The kererū has a fuller breast and a shorter exposed neck in a relaxed perch. The tūī has a shallower breast and a less vertical tail. The pīwakawaka holds its long tail above the perch with the rectrices partly spread. The korimako, tauhou, miromiro, toutouwai and hihi have individual shoulder angles, breast depths or leg exposure that distinguish their profiles. These are selected postures and visual interpretations. Toe reach uses each bird’s tarsus proportion and toe thickness follows its leg. The photographed references are for observation only.
+
+The new plate offers a common physical scale based on published species lengths as well as magnification for identification. The viewer fits the visible specimen using a profile view, with a scale bar specified for its plane. The mobile stage, expanded view and shared scale use the same geometry.

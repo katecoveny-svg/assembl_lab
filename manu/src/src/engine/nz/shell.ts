@@ -237,7 +237,7 @@ export function shell(m: Measures, d: ShellDef): Shell {
     bodyScale: sD,
     bill: { length: m.billF * k + billEmbed, radius: (d.billDepth * m.billF * k) / 2, droop: d.billDroop * m.billF * k },
     tail: { length: [d.tailShape[0] * m.tail * k, d.tailShape[1] * m.tail * k], width: d.tailWidth * m.tail * k, droop: d.tailDroop },
-    legs: { spread: MOUNTAIN_GEM.legs.spread * sW, toe: Math.min(d.toe * Th, 0.11), thick: 0.045 * Th },
+    legs: { spread: MOUNTAIN_GEM.legs.spread * sW, toe: d.toe * Th, thick: 0.045 * Th },
     eyeRadius: (d.eye * head) / 2,
     chord: m.wing * k,
     target: { torso: Lt, head, headH: Hh, depth: D, tarsus: Th, wing: m.wing * k, tail: m.tail * k, bill: m.billF * k },

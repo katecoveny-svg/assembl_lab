@@ -1,3 +1,4 @@
+import {fieldPlate} from './atlas-page.mjs';
 // Writes the Manu section of assembl lab as static pages: /manu/, one page per bird and
 // /manu/compare/. Text, sources and quiz answers are all in the HTML, so the pages read
 // without script; the 3D model and the quiz checking load on top.
@@ -300,19 +301,7 @@ function indexPage() {
 <body class="mt mt-index">
 <a class="skip" href="#main">Skip to the birds</a>
 <main id="main">
-<section class="mt-hero mt-wrap mt-index-hero" aria-labelledby="manu-title">
-<div class="mt-hero-text">
-<p class="mt-eyebrow"><span class="v2-brand">assembl</span> lab · learning</p>
-<h1 id="manu-title"><span lang="mi">Manu</span>.<br><span class="mt-accent">Eight birds of Aotearoa, up close.</span></h1>
-<p class="mt-summary">Turn each bird in 3D and switch on labels that link its bill, wings and tail to the way it lives. Read where it lives, what it eats and how it is faring, then check what you’ve learned. Written for curious learners, including Years 9 to 13 and their teachers.</p>
-${truthChips()}
-<p class="mt-ctas"><a class="mt-btn mt-btn-primary" href="${BASE}tui/"><span>Start with the <span lang="mi">tūī</span></span></a><a class="mt-btn mt-btn-ghost" href="${BASE}compare/">Compare two birds</a></p>
-</div>
-<figure class="mt-hero-model mt-index-still">
-${stillImg('tui', 'mt-still mt-still-solo', '(min-width: 1000px) 52vw, 100vw', altFor(BIRDS.tui), true)}
-<figcaption>The <span lang="mi">tūī</span> model on <span lang="mi">kōwhai</span>. Every bird here is a stylised reconstruction, not a scan.</figcaption>
-</figure>
-</section>
+${fieldPlate(entry('src/viewer/atlas.ts'))}
 
 <section class="mt-sec-wide mt-wrap" aria-labelledby="birds-title">
 <h2 id="birds-title" class="mt-h2">The eight birds</h2>
@@ -335,8 +324,8 @@ ${ORDER.map((k) => {
 </section>
 
 <section class="mt-sec-wide mt-wrap mt-size" aria-labelledby="size-title">
-<h2 id="size-title" class="mt-h2">Same size on screen. Not in life.</h2>
-<p class="mt-lead">The models are drawn at one size, like plates in a field guide. Their real lengths, bill tip to tail tip:</p>
+<h2 id="size-title" class="mt-h2">How big are these birds?</h2>
+<p class="mt-lead">Select “Compare at the same scale” in the viewer to see the difference. These are typical adult lengths from bill tip to tail tip.</p>
 <ol class="mt-bars">
 ${[...ORDER].sort((a, b) => BIRDS[a].lengthCm - BIRDS[b].lengthCm).map((k) => {
   const b = BIRDS[k];
@@ -351,16 +340,16 @@ ${[...ORDER].sort((a, b) => BIRDS[a].lengthCm - BIRDS[b].lengthCm).map((k) => {
 <div class="mt-about-cols">
 <div>
 <h3 class="mt-h3">What they are</h3>
-<p>Stylised procedural reconstructions. Code builds every feather as real geometry on a rigged body, then each species is shaped by eye from field-guide descriptions and photographs. They are not scans or measured specimens.</p>
+<p>Each bird has a feathered 3D body built around published measurements for the bill, wing, tail and legs. The depth of the breast, the curve of the neck and the resting pose are estimated from photographs.</p>
 <p>They come from the manu library, which runs on Theo Tillberg’s Feather engine (MIT). The Aotearoa species and flora are by <span class="v2-brand">assembl</span>.</p>
 </div>
 <div>
-<h3 class="mt-h3">What’s known to be off</h3>
+<h3 class="mt-h3">How to read the models</h3>
 <ul class="mt-facts">
-<li>Every bird is drawn at the same size on screen.</li>
-<li>All eight share one wing shape and one set of movements. The kererū, a pigeon, moves like the songbirds.</li>
-<li>Body shapes, bills and plumage are art-directed, not measured.</li>
-<li>The tomtit is a South Island male; the toutouwai’s long legs are only suggested.</li>
+<li>The fitted view enlarges small birds so you can see their markings. The 5 cm ruler changes with the view.</li>
+<li>The eight birds share an animation rig. Use plumage and shape to identify them here. The species notes link to footage and calls.</li>
+<li>Adult dimensions vary. Rounded lengths and weights come from each linked species account.</li>
+<li>The miromiro depicts a South Island male. Look for the white forehead spot and yellow-orange breast.</li>
 </ul>
 </div>
 <div>
@@ -372,7 +361,7 @@ ${[...ORDER].sort((a, b) => BIRDS[a].lengthCm - BIRDS[b].lengthCm).map((k) => {
 </section>
 </main>
 ${footer()}
-<script src="/lab/navigation.js" defer></script>
+
 </body>
 </html>
 `;
