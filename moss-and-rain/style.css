@@ -1,0 +1,13 @@
+@font-face{font-family:Instrument;src:url(/lab/v3/instrument.woff) format('woff');font-weight:100 900;font-display:swap}
+:root{color:#654a4e;background:#fffdfb;font:400 16px/1.5 Instrument,Arial,sans-serif}
+*{box-sizing:border-box}body,p,h1{margin:0}
+header,.controls,.notes, noscript p{padding-inline:clamp(18px,4vw,76px)}
+header,.controls,.controls>div,.brand{display:flex;align-items:center}
+header,.controls{justify-content:space-between}header{height:62px}a{color:inherit;text-underline-offset:.2em}header a{text-decoration:none}.brand{gap:14px}.brand img{width:100px;height:auto}.back{font-size:.95rem}.back span{margin-left:.4em}
+.stage{height:clamp(370px,76svh,900px);position:relative;background:#263129;isolation:isolate;overflow:hidden}.stage img,.stage canvas{width:100%;height:100%;position:absolute;inset:0;display:block;object-fit:cover}.stage canvas{touch-action:pan-y;cursor:crosshair}.stage canvas:active{cursor:grabbing}.stage canvas:focus-visible{outline:3px solid #e3d0d2;outline-offset:-5px}
+.controls{gap:12px;border-bottom:1px solid #e3d0d2;padding-block:10px;min-height:64px}.controls p{font-size:.95rem}.controls>div{gap:8px}
+button{font:inherit;font-size:.95rem;color:inherit;background:transparent;border:1px solid #e3d0d2;border-radius:0;min-height:44px;padding:8px 15px;cursor:pointer}button:disabled{opacity:.45;cursor:default}button:not(:disabled):hover,button[aria-pressed=true]{background:#e3d0d2}#shower{background:#654a4e;color:#fffdfb;border-color:#654a4e}
+:focus-visible{outline:2px solid #654a4e;outline-offset:3px}.notes{display:grid;grid-template-columns:1fr 1fr;gap:5%;padding-block:clamp(40px,6vw,92px)}h1{font-size:clamp(50px,7vw,106px);font-weight:500;line-height:1.05;letter-spacing:-.045em}.eyebrow,.small{font-size:.94rem}.eyebrow{margin-bottom:12px}.notes>div>p:not([class]){max-width:35em;font-size:clamp(18px,1.5vw,25px);line-height:1.4}.small{margin-top:18px;max-width:42em}.small a{white-space:normal}.sr{position:absolute;width:1px;height:1px;white-space:nowrap;overflow:hidden;clip-path:inset(50%)}[hidden]{display:none!important}
+@media(max-width:680px){header{height:54px}.brand img{width:87px}.stage{height:64svh;min-height:340px}.controls{align-items:flex-start;flex-direction:column;gap:10px;padding-block:14px}.controls>div{flex-wrap:wrap}.notes{grid-template-columns:1fr;gap:22px;padding-block:34px}.notes .eyebrow{margin-bottom:5px}button{padding-inline:13px}}
+
+details{margin-top:16px}summary{cursor:pointer;text-underline-offset:.2em;text-decoration:underline}details p{max-width:40em;margin-top:8px}
