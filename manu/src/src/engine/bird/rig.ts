@@ -102,7 +102,7 @@ export function wingCross(loft: Loft, species: Species) {
   const q = loft.wingAt(0.2, -0.35, 1);
   loft.surface(q.s, q.ang, sfc);
   const wrist = sfc.p;
-  const ta = species.tail.droop * DEG;
+  const ta = (W.foldedDroop ?? species.tail.droop) * DEG;
   const dir = new THREE.Vector3(0, -Math.sin(ta), -Math.cos(ta));
   const up = new THREE.Vector3(0, Math.cos(ta), -Math.sin(ta));
   const root = loft.center(species.spine.tail, new THREE.Vector3()).addScaledVector(up, 0.03);
@@ -221,7 +221,7 @@ export function buildRig(species: Species): Rig {
       loft.surface(q.s, q.ang, sfc);
       return sfc.p.clone().addScaledVector(sfc.n, -depth);
     };
-    const ta = species.tail.droop * DEG;
+    const ta = (W.foldedDroop ?? species.tail.droop) * DEG;
     const tailDir = new THREE.Vector3(0, -Math.sin(ta), -Math.cos(ta));
     const tailUp = new THREE.Vector3(0, Math.cos(ta), -Math.sin(ta));
     const meet = c(sp.tail).addScaledVector(tailDir, species.tail.length[1] * wingCross(loft, species)).addScaledVector(tailUp, 0.03);

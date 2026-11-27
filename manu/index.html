@@ -20,22 +20,104 @@
 <body class="mt mt-index">
 <a class="skip" href="#main">Skip to the birds</a>
 <main id="main">
-<section class="mt-hero mt-wrap mt-index-hero" aria-labelledby="manu-title">
-<div class="mt-hero-text">
-<p class="mt-eyebrow"><span class="v2-brand">assembl</span> lab · learning</p>
-<h1 id="manu-title"><span lang="mi">Manu</span>.<br><span class="mt-accent">Eight birds of Aotearoa, up close.</span></h1>
-<p class="mt-summary">Turn each bird in 3D and switch on labels that link its bill, wings and tail to the way it lives. Read where it lives, what it eats and how it is faring, then check what you’ve learned. Written for curious learners, including Years 9 to 13 and their teachers.</p>
-<ul class="mt-truth" aria-label="How to read this page">
-<li><span class="mt-chip-mark ill" aria-hidden="true"></span>Stylised model, not a scan</li>
-<li><span class="mt-chip-mark src" aria-hidden="true"></span>Every fact cited</li>
-</ul>
-<p class="mt-ctas"><a class="mt-btn mt-btn-primary" href="/manu/tui/"><span>Start with the <span lang="mi">tūī</span></span></a><a class="mt-btn mt-btn-ghost" href="/manu/compare/">Compare two birds</a></p>
-</div>
-<figure class="mt-hero-model mt-index-still">
-<img class="mt-still mt-still-solo" src="/manu/stills/tui-1200.webp" srcset="/manu/stills/tui-640.webp 640w, /manu/stills/tui-1200.webp 1200w" sizes="(min-width: 1000px) 52vw, 100vw" width="1200" height="960" alt="A stylised 3D model of a tūī, adult, perched on a kōwhai sprig, its head turned to show the bill in profile." fetchpriority="high">
-<figcaption>The <span lang="mi">tūī</span> model on <span lang="mi">kōwhai</span>. Every bird here is a stylised reconstruction, not a scan.</figcaption>
-</figure>
-</section>
+<style>.atlas{--paper:#f6f2e9;--ink:#2a3025;--soft:#5d6555;--edge:#cccfc0;--wash:#e8e9dd;color:var(--ink);background:var(--paper);width:100%;min-height:610px;height:100svh;height:100dvh;max-height:1220px;display:flex;flex-direction:column;font-family:"Instrument Sans",Arial,sans-serif;transition:background .4s,color .4s;position:relative;isolation:isolate}
+.atlas[data-dusk]{--paper:#20261e;--ink:#f3f1e6;--soft:#c1c7b5;--edge:#53614e;--wash:#303a2c}
+.atlas *{box-sizing:border-box}.atlas a,.atlas button,.atlas label{color:inherit;font:inherit}.atlas button{cursor:pointer}.atlas :focus-visible{outline:2px solid currentColor;outline-offset:3px}
+.atlas-bar{position:static;background:transparent;color:inherit;display:flex;align-items:center;gap:24px;padding:16px clamp(16px,3vw,48px);border:0;border-bottom:1px solid var(--edge);font-size:14px}.atlas-bar>a:last-child{margin-left:auto}.atlas-bar a,.atlas-compare,.info-actions a{color:inherit;text-underline-offset:4px}.atlas-bar>span{color:var(--soft)}.atlas-bar i{margin:0 6px;color:var(--edge)}
+.atlas-brand{display:flex;align-items:baseline;gap:7px;color:#654a4e!important;text-decoration:none}.atlas-brand img{width:84px;height:auto}.atlas[data-dusk] .atlas-brand{background:#fffdfb;padding:4px 7px}
+.atlas-body{display:grid;grid-template-columns:clamp(150px,16vw,235px) minmax(0,1fr) clamp(248px,24vw,350px);flex:1;min-height:0}.specimen-list,.atlas-info{display:flex;flex-direction:column;padding:clamp(16px,2vw,36px);overflow:auto}.specimen-list{border-right:1px solid var(--edge)}.at-label,#plate-count{font:500 11px/1.3 "IBM Plex Mono",monospace;letter-spacing:.07em;color:var(--soft);margin:0 0 18px}
+.specimen-list [role=tablist]{display:grid;gap:2px}.specimen-list [role=tab]{display:grid;gap:2px;min-height:48px;align-content:center;padding:8px 12px;margin-left:-12px;border-left:2px solid transparent;text-decoration:none;font-size:17px}.specimen-list small{font-size:12px;color:var(--soft)}.specimen-list [aria-selected=true]{background:var(--wash);border-color:var(--ink)}.specimen-list a:hover{background:var(--wash)}.atlas-compare{margin-top:auto;padding-top:20px;font-size:14px!important}
+.plate-column{position:relative;min-width:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;background:radial-gradient(ellipse at 48% 40%,#e0e3d7 2%,#eeeee4 70%,var(--paper) 100%);overflow:hidden}.atlas[data-dusk] .plate-column{background:radial-gradient(ellipse at 45% 40%,#394233,var(--paper) 80%)}
+.plate-ui,.plate-tools{display:flex;align-items:center;justify-content:space-between;padding:14px clamp(12px,2vw,30px);gap:8px}.plate-ui>div,.scale-tools,.turn-pair{display:flex}.plate-ui #plate-count{margin:0}.atlas button{border:1px solid var(--edge);background:var(--paper);border-radius:0;min-width:38px;min-height:40px;display:inline-grid;place-items:center;padding:7px 9px}.atlas button:hover,.atlas button[aria-pressed=true]{background:var(--wash)}.atlas button:active{transform:translateY(1px)}.atlas button svg{width:18px;height:18px}.plate-ui button+button,.plate-tools button+button{border-left:0}
+#plate-stage{position:relative;min-height:0;cursor:grab;touch-action:none}#plate-stage:active{cursor:grabbing}#plate-stage canvas,#plate-stage>img{inset:0;position:absolute;width:100%;height:100%;object-fit:contain}#plate-stage canvas{opacity:0}.atlas[data-ready] #plate-stage canvas{opacity:1}.atlas[data-ready] #plate-stage img{visibility:hidden}.scale-mark{min-width:34px;color:var(--soft);font:11px monospace}.scale-mark i{display:block;height:6px;border:1px solid currentColor;border-top:0;width:30px}.scale-mark span{display:block;margin-top:3px}.atlas:not([data-ready]) .scale-mark{visibility:hidden}#plate-status{font-size:12px;color:var(--soft);padding:0 14px 15px;text-align:center;margin:0;min-height:27px}
+.atlas-info{border-left:1px solid var(--edge);justify-content:center;gap:24px}.atlas-info .at-label{margin:0}.atlas-info h1{font:500 clamp(38px,4.4vw,73px)/1 "Instrument Sans",sans-serif;letter-spacing:-.044em;margin:10px 0;color:var(--ink)}#plate-latin{font:italic 17px/1.3 Georgia,serif;color:var(--soft)}.info-text>p:not(.at-label){line-height:1.5;font-size:15px;margin:22px 0 0}.info-text dl{padding:13px 0;margin:16px 0 0;border-block:1px solid var(--edge);font-size:14px}.info-text dl div{display:grid;grid-template-columns:58px 1fr;gap:8px;margin:5px 0}.info-text dt{color:var(--soft)}.info-text dd{margin:0}.info-actions{display:grid;gap:13px;font-size:14px}.info-actions button{display:flex;align-items:center;justify-content:center;gap:8px}.info-actions label{display:flex;align-items:center;gap:8px;cursor:pointer}.info-actions input{accent-color:#57604c}.atlas[data-focus] .specimen-list,.atlas[data-focus] .atlas-info{display:none}.atlas[data-focus] .atlas-body{display:flex}.atlas[data-focus] .plate-column{width:100%}
+@media(max-width:920px){.atlas-body{grid-template-columns:minmax(0,1fr) minmax(232px,32%);grid-template-rows:auto minmax(0,1fr)}.specimen-list{grid-column:1/-1;display:block;overflow-x:auto;border:0;border-bottom:1px solid var(--edge);padding:0 10px}.specimen-list>.at-label,.atlas-compare,.specimen-list small{display:none}.specimen-list [role=tablist]{display:flex;gap:0}.specimen-list [role=tab]{min-width:max-content;margin:0;border:0;border-bottom:2px solid transparent}.specimen-list [aria-selected=true]{border-color:var(--ink)}}
+@media(max-width:690px){.atlas{min-height:0}.atlas-bar{padding:9px 13px;gap:8px;font-size:12px}.atlas-brand img{width:69px}.atlas-body{display:flex;flex-direction:column}.specimen-list{flex:none}.specimen-list [role=tab]{font-size:14px;min-height:42px}.plate-column{flex:1 1 60%;min-height:0}.atlas-info{max-height:35dvh;flex:0 1 auto;display:block;border-left:0;border-top:1px solid var(--edge);padding:15px 18px 24px;overscroll-behavior:contain}.atlas-info h1{font-size:34px;margin:4px 0}#plate-latin{font-size:14px}.info-text>p:not(.at-label){margin:10px 0 0;font-size:14px}.info-text dl{margin:9px 0 0;padding:5px 0}.info-actions{margin-top:16px}.plate-ui,.plate-tools{padding:6px 10px}.plate-ui button,.plate-tools button{min-width:35px;min-height:36px}.plate-tools{font-size:12px}#plate-status{font-size:11px;padding-bottom:5px;min-height:18px}.atlas[data-focus] .plate-column{flex:1}}
+@media(prefers-reduced-motion:reduce){.atlas *,.atlas{animation:none!important;transition:none!important}}
+
+.atlas:not([data-ready]) .scale-mark{visibility:hidden}
+
+.specimen-list [role=tab]{grid-template-columns:40px 1fr;column-gap:9px;grid-template-rows:auto auto}
+.specimen-list [role=tab]>img{grid-column:1;grid-row:1/3;width:40px;height:39px;object-fit:contain;align-self:center}
+.specimen-list [role=tab]>span,.specimen-list [role=tab]>small{grid-column:2}
+.at-habitat{margin-top:15px;font-size:14px;line-height:1.5}.at-habitat summary{cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+@media(max-width:920px){.specimen-list [role=tab]{display:flex;align-items:center;gap:5px}.specimen-list [role=tab]>img{width:30px;height:30px}}
+</style>
+<section class="atlas" id="field-guide" aria-labelledby="atlas-name">
+<header class="atlas-bar"><a class="atlas-brand" href="/"><img src="/lab/v3/wordmark.png" alt="assembl."> Lab</a><span>Manu <i>/</i> Field guide</span><a href="#birds-title">All species ↓</a></header>
+<div class="atlas-body"><nav class="specimen-list" aria-label="Bird specimens"><p class="at-label">Species</p>
+<div role="tablist" aria-label="Choose a bird"><a href="/manu/tui/" role="tab" aria-controls="atlas-info" aria-selected="true" data-bird="tui"><img width="44" height="44" src="/manu/stills/tui-tab.webp" alt=""><span>Tūī</span><small>Tūī</small></a><a href="/manu/korimako/" role="tab" aria-controls="atlas-info" aria-selected="false" data-bird="korimako"><img width="44" height="44" src="/manu/stills/korimako-tab.webp" alt=""><span>Korimako</span><small>Bellbird</small></a><a href="/manu/piwakawaka/" role="tab" aria-controls="atlas-info" aria-selected="false" data-bird="piwakawaka"><img width="44" height="44" src="/manu/stills/piwakawaka-tab.webp" alt=""><span>Pīwakawaka</span><small>Fantail</small></a><a href="/manu/tauhou/" role="tab" aria-controls="atlas-info" aria-selected="false" data-bird="tauhou"><img width="44" height="44" src="/manu/stills/tauhou-tab.webp" alt=""><span>Tauhou</span><small>Silvereye</small></a><a href="/manu/miromiro/" role="tab" aria-controls="atlas-info" aria-selected="false" data-bird="miromiro"><img width="44" height="44" src="/manu/stills/miromiro-tab.webp" alt=""><span>Miromiro</span><small>Tomtit</small></a><a href="/manu/toutouwai/" role="tab" aria-controls="atlas-info" aria-selected="false" data-bird="toutouwai"><img width="44" height="44" src="/manu/stills/toutouwai-tab.webp" alt=""><span>Toutouwai</span><small>North Island robin</small></a><a href="/manu/hihi/" role="tab" aria-controls="atlas-info" aria-selected="false" data-bird="hihi"><img width="44" height="44" src="/manu/stills/hihi-tab.webp" alt=""><span>Hihi</span><small>Stitchbird</small></a><a href="/manu/kereru/" role="tab" aria-controls="atlas-info" aria-selected="false" data-bird="kereru"><img width="44" height="44" src="/manu/stills/kereru-tab.webp" alt=""><span>Kererū</span><small>New Zealand pigeon</small></a></div><a class="atlas-compare" href="/manu/compare/">Compare two birds ↗</a></nav>
+<div class="plate-column"><div class="plate-ui"><span id="plate-count">Plate 01 / 08</span><div><button type="button" id="plate-pause" title="Pause bird movement" aria-label="Pause bird movement" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14m8-14v14"/></svg></button><button type="button" id="plate-light" title="Dusk light" aria-label="Dusk light" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2"/></svg></button><button type="button" id="plate-expand" title="Expand specimen" aria-label="Expand specimen" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9V3h6m6 0h6v6M3 15v6h6m6 0h6v-6"/></svg></button></div></div>
+<div id="plate-stage" tabindex="0" role="group" aria-label="Bird specimen. Drag to rotate, pinch or use plus and minus to zoom. Arrow keys turn. Zero resets."><img id="plate-image" src="/manu/stills/tui-1200.webp" width="1200" height="960" alt="Tūī perched on a kōwhai branch"><canvas aria-hidden="true"></canvas></div>
+<div class="plate-tools"><div class="scale-mark" title="Length in the plane of the specimen"><i></i><span>5 cm</span></div><div class="turn-pair"><button type="button" id="plate-left" title="Turn left 90 degrees" aria-label="Turn left 90 degrees"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m14 5-7 7 7 7"/></svg></button><button type="button" id="plate-turn">360°</button><button type="button" id="plate-right" title="Turn right 90 degrees" aria-label="Turn right 90 degrees"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m10 5 7 7-7 7"/></svg></button></div><div class="scale-tools"><button type="button" id="plate-minus" title="Zoom out" aria-label="Zoom out"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></button><button type="button" id="plate-plus" title="Zoom in" aria-label="Zoom in"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"/></svg></button><button type="button" id="plate-reset" title="Reset view" aria-label="Reset view"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10a8 8 0 1 1 1 7M4 4v6h6"/></svg></button></div></div>
+<p id="plate-status" role="status">Opening the 3D specimen…</p></div>
+<article class="atlas-info" id="atlas-info" role="tabpanel" aria-live="polite"><div class="info-text"><p class="at-label" id="plate-family">Honeyeaters</p><h1 id="atlas-name" lang="mi">Tūī</h1><i id="plate-latin" lang="la">Prosthemadera novaeseelandiae</i><p id="plate-desc">A dark, glossy honeyeater with two curled white throat tufts, a loud and complex song, and a whirr in its wings.</p><dl><div><dt>Length</dt><dd id="plate-length">About 30 cm</dd></div><div><dt>Weight</dt><dd id="plate-weight">125 g (male), 90 g (female)</dd></div></dl><p id="plate-cue">Look for the paired white tufts below the curved bill.</p><details class="at-habitat"><summary>Where to look</summary><p id="plate-habitat">Widespread and locally abundant on the North, South and Stewart Islands and their offshore islands. Scarce only in drier, mostly open country east of the Southern Alps.</p></details></div>
+<div class="info-actions"><button type="button" id="plate-detail" aria-pressed="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2"/></svg> Inspect plumage</button><label><input type="checkbox" id="plate-shared"> Compare at the same scale</label><a id="plate-lesson" href="/manu/tui/">Species notes and quiz ↗</a><a id="plate-source" href="https://www.nzbirdsonline.org.nz/species/tui">NZ Birds Online ↗</a></div></article></div>
+</section><script type="module">// Inlined by the static page generator; the renderer is fetched after first paint.
+const data = {"tui":{"name":"Tūī","latin":"Prosthemadera novaeseelandiae","english":"Tūī","family":"Honeyeaters","length":"About 30 cm","weight":"125 g (male), 90 g (female)","description":"A dark, glossy honeyeater with two curled white throat tufts, a loud and complex song, and a whirr in its wings.","habitat":"Widespread and locally abundant on the North, South and Stewart Islands and their offshore islands. Scarce only in drier, mostly open country east of the Southern Alps.","cue":"Look for the paired white tufts below the curved bill.","source":"https://www.nzbirdsonline.org.nz/species/tui"},"korimako":{"name":"Korimako","latin":"Anthornis melanura","english":"Bellbird","family":"Honeyeaters","length":"About 20 cm","weight":"34 g (male), 26 g (female)","description":"An olive-green honeyeater with wine-red eyes and a ringing song that changes from one place to the next.","habitat":"Native and exotic forest, scrub, farm shelter belts, urban parks and gardens on the North, South, Stewart and Auckland Islands and many offshore islands.","cue":"Look at the curved bill and the dark line through the eye.","source":"https://www.nzbirdsonline.org.nz/species/bellbird"},"piwakawaka":{"name":"Pīwakawaka","latin":"Rhipidura fuliginosa","english":"Fantail","family":"Fantails","length":"About 16 cm","weight":"About 8 g","description":"A small, restless insect-catcher that twists and turns in the air, steering with a broad, fanned tail.","habitat":"From Northland to Stewart Island, and on some islands of the Chatham group.","cue":"Turn the bird to see the white edges of the raised tail.","source":"https://www.nzbirdsonline.org.nz/species/new-zealand-fantail"},"tauhou":{"name":"Tauhou","latin":"Zosterops lateralis","english":"Silvereye","family":"White-eyes","length":"About 12 cm","weight":"About 13 g","description":"A small olive-green bird with a bright white eye-ring, which flew to New Zealand on its own in the 1800s.","habitat":"Throughout New Zealand, from sea level to about 1,200 metres: towns, farmland, orchards, native and exotic forest, scrub and scrubby wetland edges.","cue":"Zoom in on the white feather ring around the eye.","source":"https://www.nzbirdsonline.org.nz/species/silvereye"},"miromiro":{"name":"Miromiro","latin":"Petroica macrocephala","english":"Tomtit","family":"Australasian robins","length":"About 13 cm","weight":"About 11 g","description":"A small, big-headed forest bird that watches from a branch, then pounces.","habitat":"Forest and shrubland, both native and exotic, from sea level to the subalpine zone. Rarely seen in heavily modified open land such as farmland and suburbs.","cue":"Find the white forehead spot above the short bill.","source":"https://www.nzbirdsonline.org.nz/species/tomtit"},"toutouwai":{"name":"Toutouwai","latin":"Petroica longipes","english":"North Island robin","family":"Australasian robins","length":"About 18 cm","weight":"About 35 g","description":"An upright, long-legged forest bird that feeds on the ground and stores food to eat later.","habitat":"Mainly the central North Island, from Taranaki to the Bay of Plenty, plus Te Hauturu-o-Toi / Little Barrier Island and Kāpiti Island. DOC has established more populations on predator-free islands, in fenced sanctuaries and at sites with predator control.","cue":"Compare the upright stance and the length of the legs.","source":"https://www.nzbirdsonline.org.nz/species/north-island-robin"},"hihi":{"name":"Hihi","latin":"Notiomystis cincta","english":"Stitchbird","family":"Stitchbirds","length":"About 18 cm","weight":"36.5 g (male), 30 g (female)","description":"One of New Zealand’s rarest birds, and the only member of its family. It survived in the wild on a single island.","habitat":"The only naturally surviving population is on Te Hauturu-o-Toi / Little Barrier Island. Hihi have been reintroduced to seven other sites, including Tiritiri Mātangi, Kāpiti and Zealandia.","cue":"Find the white ear tufts behind the black crown.","source":"https://www.nzbirdsonline.org.nz/species/stitchbird"},"kereru":{"name":"Kererū","latin":"Hemiphaga novaeseelandiae","english":"New Zealand pigeon","family":"Pigeons","length":"About 50 cm","weight":"About 630–650 g","description":"A big, glossy fruit pigeon that carries the seeds of large-fruited trees from one patch of forest to another.","habitat":"Widespread from Northland to Stewart Island, and on some offshore islands.","cue":"Trace the clean edge where the green breast meets the white belly.","source":"https://www.nzbirdsonline.org.nz/species/new-zealand-pigeon"}};
+const plate = document.querySelector('.atlas');
+const el = name => plate.querySelector('#plate-' + name);
+const tabs = [...plate.querySelectorAll('[role=tab]')];
+const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+let viewer, active='tui', generation=0, paused=reduced.matches;
+const status = text => {el('status').textContent=text;};
+const toggle = (name,on) => el(name).setAttribute('aria-pressed',String(on));
+function update(id, moveFocus=false) {
+  const b=data[id]; if(!b)return;
+  active=id; const ticket=++generation;
+  tabs.forEach(t=>{const chosen=t.dataset.bird===id;t.setAttribute('aria-selected',chosen);t.tabIndex=chosen?0:-1;if(chosen&&moveFocus)t.focus();});
+  el('stage').setAttribute('aria-label',b.name+' specimen. Drag to rotate, pinch or use plus and minus to zoom. Arrow keys turn. Zero resets.');
+  const idx=tabs.findIndex(t=>t.dataset.bird===id);
+  el('count').textContent='Plate '+String(idx+1).padStart(2,'0')+' / 08';
+  plate.querySelector('h1').textContent=b.name;
+  for(const [field,value] of Object.entries({latin:b.latin,family:b.family,desc:b.description,length:b.length,weight:b.weight,cue:b.cue,habitat:b.habitat}))el(field).textContent=value;
+  el('weight').parentElement.hidden=!b.weight;
+  if(!viewer && el('shared').disabled)status('Still specimen · species notes and quiz available');
+  el('image').src='/manu/stills/'+id+'-1200.webp';el('image').alt='Perched '+b.name+' specimen';
+  el('lesson').href='/manu/'+id+'/';el('source').href=b.source;
+  toggle('detail',false);
+  if(!viewer)return;
+  plate.removeAttribute('data-ready');status('Preparing '+b.name+'…');
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    if(ticket!==generation)return;
+    try {
+      viewer.select(id);plate.dataset.ready='';
+      status('Drag to turn · pinch or use + to zoom');
+      if(!reduced.matches)plate.querySelector('.info-text').animate([{opacity:.45,transform:'translateY(4px)'},{opacity:1,transform:'none'}],{duration:260,easing:'ease-out'});
+    } catch(error) {console.warn('Manu specimen:',error);still();}
+  }));
+}
+function still() {
+  viewer=null;plate.removeAttribute('data-ready');status('Still specimen · species notes and quiz available');
+  for(const id of ['pause','light','detail','plus','minus','left','right','turn','reset','shared'])el(id).disabled=true;
+}
+for(const [index,tab] of tabs.entries()){
+  tab.onclick=e=>{if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;e.preventDefault();update(tab.dataset.bird);};
+  tab.onkeydown=e=>{let next=index;if(e.key==='ArrowRight')next++;else if(e.key==='ArrowLeft')next--;else if(e.key==='Home')next=0;else if(e.key==='End')next=tabs.length-1;else return;e.preventDefault();update(tabs[(next+tabs.length)%tabs.length].dataset.bird,true);};
+}
+el('expand').onclick=()=>{const focused=plate.toggleAttribute('data-focus');toggle('expand',focused);el('expand').setAttribute('aria-label',focused?'Exit expanded view':'Expand specimen');};
+window.addEventListener('keydown',e=>{if(e.key==='Escape'&&plate.hasAttribute('data-focus')){el('expand').click();el('expand').focus();}});
+el('light').onclick=()=>{const dusk=plate.toggleAttribute('data-dusk');viewer?.dusk(dusk);toggle('light',dusk);};
+el('pause').onclick=()=>{paused=!paused;viewer?.pause(paused);toggle('pause',paused);el('pause').setAttribute('aria-label',paused?'Resume bird movement':'Pause bird movement');};
+toggle('pause',paused);
+el('shared').onchange=()=>{viewer?.scale(el('shared').checked);toggle('detail',false);};
+el('detail').onclick=()=>toggle('detail',viewer?.detail()||false);
+for(const [id,factor] of [['plus',1.35],['minus',1/1.35]])el(id).onclick=()=>viewer?.zoom(factor);
+for(const [id,n] of [['left',-Math.PI/2],['right',Math.PI/2],['turn',Math.PI*2]])el(id).onclick=()=>viewer?.turn(n);
+el('reset').onclick=()=>{viewer?.reset();toggle('detail',false);};
+const initial=new URLSearchParams(location.search).get('bird');update(data[initial]?initial:'tui');
+async function start() {
+  if(new URLSearchParams(location.search).get('renderer')==='still'||navigator.connection?.saveData){still();return;}
+  try{
+    const {openPlate}=await import("/manu/assets/atlas-CafQ2vZS.js");
+    viewer=await openPlate(el('stage').querySelector('canvas'),plate.querySelector('.scale-mark i'), value => toggle('detail',value));
+    viewer.pause(paused);update(active);
+    Object.defineProperty(plate,'specimenState',{get:()=>viewer?.state});
+    el('stage').querySelector('canvas').addEventListener('webglcontextlost',still,{once:true});
+  }catch(error){console.warn('Manu renderer:',error);still();}
+}
+requestAnimationFrame(()=>requestAnimationFrame(start));
+</script>
 
 <section class="mt-sec-wide mt-wrap" aria-labelledby="birds-title">
 <h2 id="birds-title" class="mt-h2">The eight birds</h2>
@@ -62,8 +144,8 @@
 </section>
 
 <section class="mt-sec-wide mt-wrap mt-size" aria-labelledby="size-title">
-<h2 id="size-title" class="mt-h2">Same size on screen. Not in life.</h2>
-<p class="mt-lead">The models are drawn at one size, like plates in a field guide. Their real lengths, bill tip to tail tip:</p>
+<h2 id="size-title" class="mt-h2">How big are these birds?</h2>
+<p class="mt-lead">Select “Compare at the same scale” in the viewer to see the difference. These are typical adult lengths from bill tip to tail tip.</p>
 <ol class="mt-bars">
 <li><span class="mt-bar-name"><a href="/manu/tauhou/" lang="mi">Tauhou</a></span><span class="mt-bar" style="--w:24.0%"><span class="mt-bar-fill"></span></span><span class="mt-bar-v">12 cm <span class="mt-bar-src">NZ Birds Online</span></span></li>
 <li><span class="mt-bar-name"><a href="/manu/miromiro/" lang="mi">Miromiro</a></span><span class="mt-bar" style="--w:26.0%"><span class="mt-bar-fill"></span></span><span class="mt-bar-v">13 cm <span class="mt-bar-src">NZ Birds Online, DOC</span></span></li>
@@ -81,16 +163,16 @@
 <div class="mt-about-cols">
 <div>
 <h3 class="mt-h3">What they are</h3>
-<p>Stylised procedural reconstructions. Code builds every feather as real geometry on a rigged body, then each species is shaped by eye from field-guide descriptions and photographs. They are not scans or measured specimens.</p>
+<p>Each bird has a feathered 3D body built around published measurements for the bill, wing, tail and legs. The depth of the breast, the curve of the neck and the resting pose are estimated from photographs.</p>
 <p>They come from the manu library, which runs on Theo Tillberg’s Feather engine (MIT). The Aotearoa species and flora are by <span class="v2-brand">assembl</span>.</p>
 </div>
 <div>
-<h3 class="mt-h3">What’s known to be off</h3>
+<h3 class="mt-h3">How to read the models</h3>
 <ul class="mt-facts">
-<li>Every bird is drawn at the same size on screen.</li>
-<li>All eight share one wing shape and one set of movements. The kererū, a pigeon, moves like the songbirds.</li>
-<li>Body shapes, bills and plumage are art-directed, not measured.</li>
-<li>The tomtit is a South Island male; the toutouwai’s long legs are only suggested.</li>
+<li>The fitted view enlarges small birds so you can see their markings. The 5 cm ruler changes with the view.</li>
+<li>The eight birds share an animation rig. Use plumage and shape to identify them here. The species notes link to footage and calls.</li>
+<li>Adult dimensions vary. Rounded lengths and weights come from each linked species account.</li>
+<li>The miromiro depicts a South Island male. Look for the white forehead spot and yellow-orange breast.</li>
 </ul>
 </div>
 <div>
@@ -109,6 +191,6 @@
 <p class="mt-foot-links"><a href="/manu/">All eight birds</a><a href="/manu/compare/">Compare two birds</a><a href="/">assembl lab</a></p>
 </div>
 </footer>
-<script src="/lab/navigation.js" defer></script>
+
 </body>
 </html>

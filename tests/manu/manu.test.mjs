@@ -33,3 +33,16 @@ test('measurements: one entry per bird, in plausible ranges, matching the propor
     for (const k of ['wing', 'tail', 'tarsus']) assert.ok(doc.includes(String(v[k])), `${b}.${k} = ${v[k]} not in docs/manu/proportions.md`);
   }
 });
+
+test('the field guide ships a callable viewer and a still and lesson for each tab', () => {
+  const html = readFileSync(join(root, 'manu/index.html'), 'utf8');
+  const url = html.match(/await import\("(\/manu\/assets\/atlas-[^"]+\.js)"\)/)?.[1];
+  assert.ok(url, 'the built page must import the atlas');
+  const bundle = readFileSync(join(root, url), 'utf8');
+  assert.match(bundle, /export\s*\{[^}]*\bopenPlate\b[^}]*\}/, 'the build must preserve the viewer factory');
+  for (const bird of BIRDS) {
+    assert.ok(html.includes('data-bird="' + bird + '"'));
+    assert.ok(existsSync(join(root, 'manu/stills', bird + '-1200.webp')));
+    assert.ok(existsSync(join(root, 'manu', bird, 'index.html')));
+  }
+});

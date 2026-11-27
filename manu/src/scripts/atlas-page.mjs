@@ -1,0 +1,26 @@
+import {BIRDS, ORDER} from '../content/birds.mjs';
+import {SOURCES} from '../content/sources.mjs';
+import {readFileSync} from 'node:fs';
+const css=readFileSync(new URL('../src/styles/plate.css',import.meta.url),'utf8');
+const client=readFileSync(new URL('../src/viewer/plate.js',import.meta.url),'utf8');
+const family={tui:'Honeyeaters',korimako:'Honeyeaters',piwakawaka:'Fantails',tauhou:'White-eyes',miromiro:'Australasian robins',toutouwai:'Australasian robins',hihi:'Stitchbirds',kereru:'Pigeons'};
+const cues={tui:'Look for the paired white tufts below the curved bill.',korimako:'Look at the curved bill and the dark line through the eye.',piwakawaka:'Turn the bird to see the white edges of the raised tail.',tauhou:'Zoom in on the white feather ring around the eye.',miromiro:'Find the white forehead spot above the short bill.',toutouwai:'Compare the upright stance and the length of the legs.',hihi:'Find the white ear tufts behind the black crown.',kereru:'Trace the clean edge where the green breast meets the white belly.'};
+const svg=(p)=>'<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">'+p+'</svg>';
+const icons={light:'<circle cx="12" cy="12" r="4"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2"/>',focus:'<path d="M3 9V3h6m6 0h6v6M3 15v6h6m6 0h6v-6"/>',plus:'<path d="M5 12h14M12 5v14"/>',minus:'<path d="M5 12h14"/>',reset:'<path d="M4 10a8 8 0 1 1 1 7M4 4v6h6"/>',left:'<path d="m14 5-7 7 7 7"/>',right:'<path d="m10 5 7 7-7 7"/>',eye:'<path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2"/>',pause:'<path d="M8 5v14m8-14v14"/>'};
+const button=(id,label,key,pressed=false)=>'<button type="button" id="plate-'+id+'" title="'+label+'" aria-label="'+label+'"'+(pressed?' aria-pressed="false"':'')+'>'+svg(icons[key])+'</button>';
+const data=Object.fromEntries(ORDER.map(k=>{const b=BIRDS[k];return [k,{name:b.reo,latin:b.scientific,english:b.englishShort||b.english,family:family[k],length:b.glance[0].v,weight:b.glance.find(g=>g.k==='Weight')?.v||'',description:b.summary,habitat:b.lives[0].t,cue:cues[k],source:SOURCES[b.sources.find(s=>s.startsWith('nzbo-'))].url}];}));
+export function fieldPlate(entry){
+ const b=data.tui;
+ return '<style>'+css+'</style>'+ `
+<section class="atlas" id="field-guide" aria-labelledby="atlas-name">
+<header class="atlas-bar"><a class="atlas-brand" href="/"><img src="/lab/v3/wordmark.png" alt="assembl."> Lab</a><span>Manu <i>/</i> Field guide</span><a href="#birds-title">All species ↓</a></header>
+<div class="atlas-body"><nav class="specimen-list" aria-label="Bird specimens"><p class="at-label">Species</p>
+<div role="tablist" aria-label="Choose a bird">${ORDER.map((k,i)=>`<a href="/manu/${k}/" role="tab" aria-controls="atlas-info" aria-selected="${i===0}" data-bird="${k}"><img width="44" height="44" src="/manu/stills/${k}-tab.webp" alt=""><span>${BIRDS[k].reo}</span><small>${BIRDS[k].englishShort||BIRDS[k].english}</small></a>`).join('')}</div><a class="atlas-compare" href="/manu/compare/">Compare two birds ↗</a></nav>
+<div class="plate-column"><div class="plate-ui"><span id="plate-count">Plate 01 / 08</span><div>${button('pause','Pause bird movement','pause',true)}${button('light','Dusk light','light',true)}${button('expand','Expand specimen','focus',true)}</div></div>
+<div id="plate-stage" tabindex="0" role="group" aria-label="Bird specimen. Drag to rotate, pinch or use plus and minus to zoom. Arrow keys turn. Zero resets."><img id="plate-image" src="/manu/stills/tui-1200.webp" width="1200" height="960" alt="Tūī perched on a kōwhai branch"><canvas aria-hidden="true"></canvas></div>
+<div class="plate-tools"><div class="scale-mark" title="Length in the plane of the specimen"><i></i><span>5 cm</span></div><div class="turn-pair">${button('left','Turn left 90 degrees','left')}<button type="button" id="plate-turn">360°</button>${button('right','Turn right 90 degrees','right')}</div><div class="scale-tools">${button('minus','Zoom out','minus')}${button('plus','Zoom in','plus')}${button('reset','Reset view','reset')}</div></div>
+<p id="plate-status" role="status">Opening the 3D specimen…</p></div>
+<article class="atlas-info" id="atlas-info" role="tabpanel" aria-live="polite"><div class="info-text"><p class="at-label" id="plate-family">${b.family}</p><h1 id="atlas-name" lang="mi">${b.name}</h1><i id="plate-latin" lang="la">${b.latin}</i><p id="plate-desc">${b.description}</p><dl><div><dt>Length</dt><dd id="plate-length">${b.length}</dd></div><div><dt>Weight</dt><dd id="plate-weight">${b.weight}</dd></div></dl><p id="plate-cue">${b.cue}</p><details class="at-habitat"><summary>Where to look</summary><p id="plate-habitat">${b.habitat}</p></details></div>
+<div class="info-actions"><button type="button" id="plate-detail" aria-pressed="false">${svg(icons.eye)} Inspect plumage</button><label><input type="checkbox" id="plate-shared"> Compare at the same scale</label><a id="plate-lesson" href="/manu/tui/">Species notes and quiz ↗</a><a id="plate-source" href="${b.source}">NZ Birds Online ↗</a></div></article></div>
+</section><script type="module">${client.replace('BIRD_DATA',JSON.stringify(data)).replace('ATLAS_MODULE',JSON.stringify(entry))}</script>`;
+}

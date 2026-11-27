@@ -260,14 +260,14 @@ const songbirdBehaviour = {
 // Proportions read off side-on photographs (see docs/manu/proportions.md): posture, torso depth
 // and width, head height, where the head sits, tail and heel angles. Lengths come from MEASURED.
 const SHELL: Record<string, ShellDef> = {
-  tui: { posture: 58, depth: 0.7, width: 0.8, headH: 0.72, headW: 0.85, headPitch: 8, neck: [0.1, 0.2], billDepth: 0.3, billDroop: 0.14, eye: 0.17, tailDroop: 70, tailShape: [1, 0.94], tailWidth: 0.19, heel: 25, cover: 0.45, toe: 0.7 },
-  korimako: { posture: 30, depth: 0.7, width: 0.82, headH: 0.8, headW: 0.85, headPitch: 4, neck: [0.15, 0.25], billDepth: 0.31, billDroop: 0.1, eye: 0.2, tailDroop: 15, tailShape: [0.96, 1], tailWidth: 0.2, heel: 30, cover: 0.5, toe: 0.7 },
-  piwakawaka: { posture: 34, depth: 0.95, width: 0.85, headH: 1.05, headW: 0.9, headPitch: 0, neck: [0.05, 0.2], billDepth: 0.45, billDroop: 0.03, eye: 0.25, tailDroop: 48, tailShape: [1, 0.85], tailWidth: 0.17, heel: 20, cover: 0.55, toe: 0.7, torso: 1.3 },
-  tauhou: { posture: 35, depth: 0.78, width: 0.85, headH: 0.9, headW: 0.9, headPitch: 2, neck: [0.1, 0.25], billDepth: 0.35, billDroop: 0.08, eye: 0.23, tailDroop: 35, tailShape: [1, 1], tailWidth: 0.2, heel: 25, cover: 0.5, toe: 0.7 },
-  miromiro: { posture: 25, depth: 0.8, width: 0.9, headH: 1.1, headW: 0.95, headPitch: 0, neck: [0.05, 0.3], billDepth: 0.4, billDroop: 0.04, eye: 0.22, tailDroop: 15, tailShape: [1, 1], tailWidth: 0.2, heel: 25, cover: 0.5, toe: 0.75 },
-  toutouwai: { posture: 60, depth: 0.7, width: 0.82, headH: 0.92, headW: 0.88, headPitch: 0, neck: [0.1, 0.4], billDepth: 0.33, billDroop: 0.04, eye: 0.22, tailDroop: 62, tailShape: [1, 0.97], tailWidth: 0.2, heel: 15, cover: 0.25, toe: 0.7 },
-  hihi: { posture: 22, depth: 0.82, width: 0.82, headH: 0.8, headW: 0.85, headPitch: 4, neck: [0.12, 0.25], billDepth: 0.3, billDroop: 0.12, eye: 0.18, tailDroop: -8, tailShape: [1, 0.95], tailWidth: 0.19, heel: 30, cover: 0.5, toe: 0.7 },
-  kereru: { posture: 50, depth: 0.6, width: 0.85, headH: 0.86, headW: 0.8, headPitch: 8, neck: [0.1, 1.1], billDepth: 0.42, billDroop: 0.1, eye: 0.14, tailDroop: 55, tailShape: [0.92, 1], tailWidth: 0.2, heel: 20, cover: 0.7, toe: 1.0, shoulder: 0.5 },
+  tui: { posture: 49, depth: 0.64, width: 0.8, headH: 0.72, headW: 0.85, headPitch: 8, neck: [0.1, 0.2], billDepth: 0.3, billDroop: 0.14, eye: 0.17, tailDroop: 53, tailShape: [1, 0.94], tailWidth: 0.19, heel: 25, cover: 0.45, toe: 0.7 },
+  korimako: { posture: 36, depth: 0.72, width: 0.82, headH: 0.8, headW: 0.85, headPitch: 4, neck: [0.15, 0.25], billDepth: 0.31, billDroop: 0.1, eye: 0.2, tailDroop: 23, tailShape: [0.96, 1], tailWidth: 0.2, heel: 30, cover: 0.5, toe: 0.7 },
+  piwakawaka: { posture: 22, depth: 0.95, width: 0.85, headH: 1.02, headW: 0.9, headPitch: 0, neck: [0.05, 0.2], billDepth: 0.45, billDroop: 0.03, eye: 0.25, tailDroop: -19, tailShape: [1, 0.85], tailWidth: 0.17, heel: 20, cover: 0.55, toe: 0.7, torso: 1.3 },
+  tauhou: { posture: 40, depth: 0.86, width: 0.85, headH: 0.9, headW: 0.9, headPitch: 2, neck: [0.1, 0.25], billDepth: 0.35, billDroop: 0.08, eye: 0.23, tailDroop: 35, tailShape: [1, 1], tailWidth: 0.2, heel: 25, cover: 0.5, toe: 0.7 },
+  miromiro: { posture: 35, depth: 0.8, width: 0.9, headH: 1.1, headW: 0.99, headPitch: 0, neck: [0.05, 0.3], billDepth: 0.4, billDroop: 0.04, eye: 0.22, tailDroop: 25, tailShape: [1, 1], tailWidth: 0.2, heel: 25, cover: 0.5, toe: 0.75 },
+  toutouwai: { posture: 60, depth: 0.73, width: 0.82, headH: 0.92, headW: 0.88, headPitch: 0, neck: [0.1, 0.4], billDepth: 0.33, billDroop: 0.04, eye: 0.22, tailDroop: 62, tailShape: [1, 0.97], tailWidth: 0.2, heel: 15, cover: 0.18, toe: 0.7 },
+  hihi: { posture: 31, depth: 0.82, width: 0.82, headH: 0.8, headW: 0.85, headPitch: 1, neck: [0.12, 0.25], billDepth: 0.3, billDroop: 0.12, eye: 0.18, tailDroop: 25, tailShape: [1, 0.95], tailWidth: 0.19, heel: 30, cover: 0.5, toe: 0.7 },
+  kereru: { posture: 44, depth: 0.73, width: 0.93, headH: 0.86, headW: 0.8, headPitch: 8, neck: [0.12, 0.56], billDepth: 0.42, billDroop: 0.1, eye: 0.14, tailDroop: 48, tailShape: [0.92, 1], tailWidth: 0.2, heel: 20, cover: 0.7, toe: 1.0, shoulder: 0.24 },
 };
 
 // ---------------------------------------------------------------------------------------
@@ -372,8 +372,8 @@ export const PIWAKAWAKA: Species = measured('piwakawaka', SHELL.piwakawaka, {
     { name: 'brow', look: 'stripe', region: { kind: 'streak', from: [9.2, 0.66], to: [7.7, 0.64], r: [0.16, 0.028] } },
     { name: 'earSpot', look: 'stripe', region: { kind: 'blob', at: [7.2, 0.56], r: [0.22, 0.03] } },
   ]),
-  wing: { ...base.wing, color: 0x1a1612, sheen: 0x3a3428, bar: { rows: [0.55, 0.8], v: [-1.02, 1.02], base: 0x9a8a6a, tip: 0xd8ccb0 } },
-  tail: { ...base.tail, rectrices: 6, restFan: 1.6, maxFan: 15, color: 0x121110, outer: { from: 0.75, color: 0xd8d4cc } },
+  wing: { ...base.wing, foldedDroop: 24, color: 0x1a1612, sheen: 0x3a3428, bar: { rows: [0.55, 0.8], v: [-1.02, 1.02], base: 0x9a8a6a, tip: 0xd8ccb0 } },
+  tail: { ...base.tail, rectrices: 6, restFan: 5.3, maxFan: 15, color: 0x121110, outer: { from: 0.75, color: 0xd8d4cc } },
   legs: { ...base.legs, color: 0x1a1612 },
   behaviour: { ...songbirdBehaviour, breathHz: [3, 4.6], holdCalm: [0.25, 1.1], holdAlert: [0.15, 0.6], saccade: [0.035, 0.0004], tailEvery: [0.6, 2.2], wingEvery: [3, 8], billUp: 4 },
 });

@@ -158,6 +158,31 @@ export function buildParts(rig: Rig): Parts {
 
   // --- skin: loft + lids + orbital ring + legs ---------------------------------
   const skinB = new PartBuilder(rig);
+  // Paired curled throat feathers of the tūī. Each loose vane shares the throat's movement.
+  if (sp.looks.poi) {
+    const neck = rig.rest.neck2;
+    const inverse = neck.worldQuat.clone().invert();
+    for (const sign of [-1, 1]) {
+      const throat = {p:new THREE.Vector3(), n:new THREE.Vector3(), t:new THREE.Vector3()};
+      rig.loft.surface(6.72, sign * .37, throat);
+      for (let i = 0; i < 16; i++) {
+        const angle = i * 2.39996;
+        const paths: THREE.Vector3[] = [];
+        for (let step = 0; step <= 14; step++) {
+          const t = step / 14;
+          const arc = .8 * Math.PI * t;
+          const width = .027 * Math.sin(arc);
+          const vane = throat.p.clone().addScaledVector(throat.n,.018 + Math.sin(arc) * .042);
+          vane.x += Math.cos(angle + t * .5) * width;
+          vane.y -= .066 * t + Math.sin(angle) * width;
+          vane.z += Math.sin(angle) * width;
+          paths.push(vane.sub(neck.worldPos).applyQuaternion(inverse));
+        }
+        const tint = new THREE.Color().setScalar(.68 + .26 * ((i * 7) % 16) / 15);
+        skinB.add(tube(paths, t => [.002 + .009 * Math.sin(Math.PI*t),.001 + .002 * Math.sin(Math.PI*t)], up, 6), 'neck2', tint);
+      }
+    }
+  }
   // Eye surround. The opening is not round: it is a lemon, long front to back with pointed
   // corners (the one toward the bill sharper), cut in a low raised ring of bare slate skin
   // whose outer edge is beaded with the tiniest feathers. The lids are shells under that
@@ -228,7 +253,7 @@ export function buildParts(rig: Rig): Parts {
       legCol,
     );
     // toes wrap the perch: theta 0 = top, positive forward
-    const rt = 0.0085;
+    const rt = (sp.legs.thick ?? 0.011) * 0.77;
     const toe = (i: number, th0: number, th1: number, x0: number, x1: number) => {
       const pts: THREE.Vector3[] = [];
       const N = 14;
@@ -251,7 +276,7 @@ export function buildParts(rig: Rig): Parts {
         legCol.clone().multiplyScalar(1 - (i % 2) * 0.12),
       );
     };
-    const fwd = sp.legs.toe / (Rp + rt);
+    const fwd = Math.min(Math.PI * 1.12, sp.legs.toe / (Rp + rt));
     toe(1, -0.12, fwd * 0.95, 0, -0.03 * sg);
     toe(2, -0.12, fwd * 1.1, 0, 0.002 * sg);
     toe(3, -0.12, fwd * 0.98, 0, 0.034 * sg);

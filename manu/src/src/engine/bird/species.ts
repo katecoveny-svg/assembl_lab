@@ -104,6 +104,8 @@ export interface WingDef {
    * instead of from rest.cross[0].
    */
   chord?: number;
+  /** Angle of the folded primaries when the tail is held independently upright. */
+  foldedDroop?: number;
   /** a pale patch on the folded wing's coverts: rows as 0 (lesser, at the shoulder) … 1 (greater), v across the strip -1 … 1 */
   bar?: { rows: [number, number]; v: [number, number]; base: number; tip: number };
 }

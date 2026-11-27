@@ -13,8 +13,10 @@ export default defineConfig({
     manifest: true,
     chunkSizeWarningLimit: 2000,
     rollupOptions: {
+      preserveEntrySignatures: 'exports-only',
       input: {
         page: resolve(__dirname, 'src/viewer/page.ts'),
+        atlas: resolve(__dirname, 'src/viewer/atlas.ts'),
         compare: resolve(__dirname, 'src/viewer/compare.ts'),
       },
       output: { entryFileNames: 'assets/[name]-[hash].js', chunkFileNames: 'assets/[name]-[hash].js', assetFileNames: 'assets/[name]-[hash][extname]' },
