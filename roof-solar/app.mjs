@@ -99,7 +99,14 @@ const plateOrigin=(()=>{
  if(url.protocol==='https:'&&(/^(www\.)?assembl\.co\.nz$/.test(url.hostname)||/^[a-z0-9-]+\.assembl-home\.pages\.dev$/.test(url.hostname)))return url.origin;
  return null;
 })();
-async function show16a(){
+const studySun = $("#studySun");
+function linkedStudyHour() {
+  const values = q.getAll("studyHour");
+  if (values.length !== 1 || !/^\d{1,2}$/.test(values[0])) return null;
+  const hour = Number(values[0]);
+  return hour >= Number(studySun.min) && hour <= Number(studySun.max) ? hour : null;
+}
+async function show16a(initialHour=null){
  clearProperty(); S.abort?.abort(); const run=++S.run;
  S.study=true; S.site=null; S.plan=null; S.ready=false; S.twin=null;
  if(S.sc){ S.sc.canvas.removeEventListener("pointerdown",pd); S.sc.canvas.removeEventListener("pointerup",pu); S.sc.dispose(); S.sc=null; }
@@ -116,7 +123,13 @@ async function show16a(){
   S.twin=await m.mountTwin16a($("#twinView"),()=>run===S.run);if(run!==S.run)return;
   const panels=Object.values(S.twin.units).reduce((a,b)=>a+b,0);
   $("#twinControls").hidden=false; $("#showSolar").checked=true;
-  $("#studySun").value=new Intl.DateTimeFormat("en-NZ",{timeZone:"Pacific/Auckland",hour:"numeric",hourCycle:"h23"}).format(S.twin.app.when); $("#studySunTime").textContent=$("#studySun").value.padStart(2,"0")+":00";
+  if(initialHour!==null){
+    studySun.value=initialHour;
+    studySun.dispatchEvent(new Event("input"));
+  }else{
+    studySun.value=new Intl.DateTimeFormat("en-NZ",{timeZone:"Pacific/Auckland",hour:"numeric",hourCycle:"h23"}).format(S.twin.app.when);
+    $("#studySunTime").textContent=studySun.value.padStart(2,"0")+":00";
+  }
   badge("16A · roof design study");
   $("#result").innerHTML='<h2>16A · roof design study</h2><p><strong>'+panels+' illustrative panels</strong> on 16C and 16D, the proposed roofs.</p><p class="rs-msg">Roof shapes and true-north orientation follow the consent drawings and traced survey. The original interactive 16A model keeps its building form, terrain and plant placements. The roof, decking and landscape finishes are illustrative. The drawing has no verified geographic anchor in this tool; no yield or measured shade is calculated.</p><p><a href="/plan-studio/twins/16a/">Open the full 16A twin</a></p><p class="rs-msg">For measured roof data and a generation estimate, choose a New Zealand address, map point or the public landmark.</p>';
   $("#methodBody").textContent="Design view only: illustrative panels on the north-facing slope of each roof; local geometry on traced survey terrain. Visual shade includes the geometry shown, not measured surroundings.";
@@ -221,7 +234,7 @@ $("#landmark").addEventListener("click", () => { choose(LANDMARK.lat, LANDMARK.l
   const now = new Date(), start = q.get("d") ? +q.get("d") : Math.floor((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - Date.UTC(now.getFullYear(), 0, 0)) / 864e5);
   $("#day").value = Math.max(1, Math.min(365, start)); $("#min").value = q.get("m") ? +q.get("m") : 15 * 60 + 30; sunChanged();
   const lat = parseFloat(q.get("lat")), lon = parseFloat(q.get("lon"));
-  if (inNZ(lat, lon)) choose(lat, lon, "The point in the link"); else if(q.get("study")==="landmark") choose(LANDMARK.lat, LANDMARK.lon, LANDMARK.name); else show16a();
+  if (inNZ(lat, lon)) choose(lat, lon, "The point in the link"); else if(q.get("study")==="landmark") choose(LANDMARK.lat, LANDMARK.lon, LANDMARK.name); else show16a(linkedStudyHour());
 }
 
 addEventListener('message',event=>{

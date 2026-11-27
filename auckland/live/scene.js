@@ -11,7 +11,7 @@ import { Line2 } from 'three/addons/lines/Line2.js';
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { sunPosition, AREA, ORIGIN } from './transit.js';
-import { createFleet, createBeacons } from './vehicles.js?v=93cec4d968';
+import { createFleet, createBeacons } from './vehicles.js?v=5e5a5ccf6f';
 
 const DATA = new URL('./data/', import.meta.url).href;
 const WM = AREA.maxX - AREA.minX, HM = AREA.maxY - AREA.minY, X0 = AREA.minX - ORIGIN.E, Z0 = ORIGIN.N - AREA.maxY; // world x, z of the north-west corner
@@ -437,7 +437,7 @@ export async function createWorld(canvas, { phone = false, capture = false, time
     stopFlight();
     const to = new T.Vector3(t[0], t[1] ?? 0, t[2]), off = camera.position.clone().sub(controls.target); off.y = 0; if (off.lengthSq() < 1) off.set(0.6, 0, -1);
     if (Number.isFinite(bearing)) {
-      // Rear three-quarter view along the actual reported heading, not broadside through the city block.
+      // Look across the bow or the kerb-side entrance while keeping the reported vehicle heading.
       const angle = bearing + .25;
       off.set(-Math.sin(angle),0,Math.cos(angle));
     }
@@ -473,13 +473,18 @@ export async function createWorld(canvas, { phone = false, capture = false, time
       s.x = s.fx + (s.tx - s.fx) * e; s.z = s.fz + (s.tz - s.fz) * e; s.y = s.fy + (s.ty - s.fy) * e;
       list.push({ id: s.id, mode: s.mode, x: s.x, y: s.y, z: s.z, heading: s.h, colour: s.colour, route: s.route });
     }
-    fleet.update(list, selectedId, camera.position.distanceTo(controls.target)); beacons.update(list, selectedId, camera.position.distanceTo(controls.target) < 150);
+    const selected=state.get(selectedId);
+    const range=selected ? camera.position.distanceTo(v3.set(selected.x,selected.y,selected.z)) : Infinity;
+    fleet.update(list,selectedId,range);beacons.update(list,selectedId,range<150);
   }
   // nearest vehicle to a screen point (pixels), for taps
   const v3 = new T.Vector3();
   function pick(px, py, radius = 26) {
     const w = canvas.clientWidth, h = canvas.clientHeight; let best = null, bd = radius;
-    for (const v of list) { v3.set(v.x, v.y + 12, v.z).project(camera); if (v3.z > 1) continue; const d = Math.hypot((v3.x * 0.5 + 0.5) * w - px, (-v3.y * 0.5 + 0.5) * h - py); if (d < bd) { bd = d; best = v.id; } }
+    for (const v of list) {
+      const close = camera.position.distanceToSquared(v3.set(v.x,v.y,v.z)) < 210*210;
+      const lift = close ? v.mode==='ferry' ? 3 : 1.7 : 12;
+      v3.set(v.x, v.y + lift, v.z).project(camera); if (v3.z > 1) continue; const d = Math.hypot((v3.x * 0.5 + 0.5) * w - px, (-v3.y * 0.5 + 0.5) * h - py); if (d < bd) { bd = d; best = v.id; } }
     return best;
   }
   function screenOf(id, lift = 20) { const s = state.get(id); if (!s) return null; v3.set(s.x, s.y + lift, s.z).project(camera); if (v3.z > 1) return null; return [(v3.x * 0.5 + 0.5) * canvas.clientWidth, (-v3.y * 0.5 + 0.5) * canvas.clientHeight]; }
@@ -503,13 +508,14 @@ export async function createWorld(canvas, { phone = false, capture = false, time
     if (follow && !fly && !cinematic) {
       const s = state.get(follow);
       if (s) {
-        const point=[s.x,s.y+(busFollow?1.8:0),s.z];
+        const lift=busFollow?1.75:s.mode==='ferry'?3.1:0;
+        const point=[s.x,s.y+lift,s.z];
         const d = new T.Vector3(...point).sub(controls.target);
         controls.target.add(d.multiplyScalar(reducedMotion.matches ? 1 : 0.08)); camera.position.add(d);
         if(busFollow && t>=nextSightCheck) {
           nextSightCheck=t+600;
           if(!sight.clear(camera.position.toArray(),point)) {
-            const pose=busCameraPose(point,s.h+.34,phone?64:66,.47,sight);
+            const pose=busCameraPose(point,s.h+2.15,phone?35:28,.32,sight);
             const p=new T.Vector3(...pose);
             if(camera.position.distanceTo(p)>2) {
               // Cut away from an occluding façade rather than tweening through solid geometry.
