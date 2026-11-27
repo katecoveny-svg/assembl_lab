@@ -3,9 +3,6 @@ import {duration, gardenView, journeyPose, reachable, roomView} from './garden-w
 const studio=window.__nzStudio;
 const parentOrigin=document.referrer ? new URL(document.referrer).origin : location.origin;
 const send=(type,extra={})=>parent.postMessage({studio:'assembl-planting',type,...extra},parentOrigin);
-const bed=studio.engine.beds[0];
-const centre=bed.points.reduce((sum,p)=>({x:sum.x+p.x,z:sum.z+p.z}),{x:0,z:0});
-const x=centre.x/bed.points.length,z=centre.z/bed.points.length;
 const gy=studio.terrainEngine.getHeight(-5.5,-10.2);
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
 const canvas=document.querySelector('#canvas-wrap canvas');
@@ -179,20 +176,46 @@ document.addEventListener('visibilitychange',()=>{
 });
 reduced.addEventListener('change',()=>{if(reduced.matches)pauseWalk();});
 returnToGarden();
-let keyboardStroke = 0;
 function plant() {
   studio.setTool('paint-mix');
-  const candidates=[];
-  for(const row of [.9,.78,.68,.55])for(const col of [.24,.72,.46,.12,.88]){
-    const p=studio.exposedSoil(innerWidth*col,innerHeight*row);
-    if(p)candidates.push(p);
+  const engine = studio.engine;
+  const candidates = [];
+  const margin = engine.terrainSize * .46 - studio.state.brushRadius;
+  for (const row of [.94,.81,.67,.53,.40]) {
+    for (const col of [.08,.26,.44,.62,.80,.94]) {
+      const point = studio.exposedSoil(innerWidth*col,innerHeight*row);
+      if (point && Math.abs(point.x) < margin && Math.abs(point.z) < margin) candidates.push(point);
+    }
   }
-  if(!candidates.length)candidates.push({x,z:z+2});
-  // Repeated keyboard strokes start on the least crowded visible ground.
-  const nearby=p=>studio.engine.plants.reduce((n,k)=>n+(Math.hypot(k.x-p.x,k.z-p.z)<1.6?1:0),0);
-  candidates.sort((a,b)=>nearby(a)-nearby(b));
-  const p=candidates[keyboardStroke++%Math.min(2,candidates.length)];
-  studio.paintAt(p.x,p.z);
+  const nearby = p => engine.plants.reduce((n,k) => n+(Math.hypot(k.x-p.x,k.z-p.z)<1.6),0);
+  candidates.forEach(p => {p.neighbours=nearby(p);});
+  candidates.sort((a,b) => a.neighbours-b.neighbours);
+  const points = [];
+  for (const candidate of candidates) {
+    if (points.every(p => Math.hypot(p.x-candidate.x,p.z-candidate.z)>.9)) points.push(candidate);
+    if (points.length===4) break;
+  }
+  let added = 0;
+  if (points.length) {
+    const undo = engine.undoStack.slice(), redo = engine.redoStack.slice();
+    engine.pushUndoState();
+    const original = engine.undoStack.at(-1);
+    for (const point of points) {
+      added = studio.plantMixAt(point.x,point.z);
+      if (added) break;
+      // A full brush still paints mulch. A failed attempt must not change the
+      // visible ground, bill or user's undo history before trying another point.
+      engine.splatDataA.set(original.splatA);
+      engine.splatDataB.set(original.splatB);
+      engine.splatDataC.set(original.splatC);
+    }
+    if (!added) {
+      engine.undoStack = undo;
+      engine.redoStack = redo;
+    }
+    studio.updateStatsUI();
+  }
+  send('patch',{added});
 }
 window.addEventListener('message', async e => {
   if (e.source !== parent || e.origin !== parentOrigin || e.data?.studio !== 'assembl-planting') return;
@@ -223,7 +246,11 @@ window.addEventListener('message', async e => {
   if (e.data.type === 'year' && ['1','4','7','12'].includes(e.data.value)) {
     document.querySelector('.yr-btn[data-year="'+e.data.value+'"]')?.click();
   }
-  if (e.data.type === 'undo') document.querySelector('#btn-undo')?.click();
+  if (e.data.type === 'undo') {
+    const count=studio.engine.undoStack.length;
+    document.querySelector('#btn-undo')?.click();
+    send('undo-result',{changed:studio.engine.undoStack.length<count});
+  }
   if (e.data.type === 'plant') plant();
 });
 try {

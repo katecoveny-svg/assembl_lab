@@ -33,6 +33,15 @@ retry.onclick = () => { stage.scrollIntoView({block:'start',behavior:'instant'})
 window.addEventListener('message', e => {
   if (!frame || e.source !== frame.contentWindow || e.origin !== source.origin || e.data?.studio !== 'assembl-planting') return;
   if(e.data.type === 'unavailable'){recover();return;}
+  if(e.data.type === 'patch' && Number.isInteger(e.data.added) && e.data.added>=0){
+    const count=e.data.added;
+    status.textContent=count ? count+(count===1?' plant added.':' plants added.') : 'No plants fitted here. Brush another patch or undo.';
+    return;
+  }
+  if(e.data.type === 'undo-result'){
+    status.textContent=e.data.changed?'Last planting change undone.':'No planting changes to undo.';
+    return;
+  }
   if(e.data.type === 'estimate'){
     const out = controls.querySelector('[data-supply-estimate]');
     if(out && typeof e.data.total === 'string' && /^\$[\d,.]+$/.test(e.data.total)){
