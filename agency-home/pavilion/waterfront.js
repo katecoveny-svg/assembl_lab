@@ -1,3 +1,4 @@
+import {subscribeReports} from './vehicle-reports.js?v=00fa4f7d40';
 const motion = matchMedia('(prefers-reduced-motion: reduce)');
 const heads = document.querySelectorAll('#homes-title,#garden-title,.transport h3,#tides h3,#contact h2');
 const reveals = new IntersectionObserver(entries=>{
@@ -13,8 +14,54 @@ const reveals = new IntersectionObserver(entries=>{
 heads.forEach(el=>reveals.observe(el));
 const host=document.querySelector('#city-host'), replay=document.querySelector('#ak-fly'),status=document.querySelector('#ak-status'),trip=document.querySelector('#ak-trip');
 const fullCity='https://lab.assembl.co.nz/auckland/live/?view=3d';
-let frame,visible=false,linger,watchdog,failed=false;
+let frame,visible=false,linger,watchdog,failed=false,stopCityReports,requestedVehicle;
+const listCity='https://lab.assembl.co.nz/auckland/live/?view=list';
+const entry=document.querySelector('[data-arrival-report]');
+const earlyTitle=entry.querySelector('[data-vehicle-title]'),earlyFix=entry.querySelector('[data-vehicle-fix]'),follow=entry.querySelector('[data-vehicle-follow]');
+const clockNZ=new Intl.DateTimeFormat('en-NZ',{hour:'numeric',minute:'2-digit',second:'2-digit',timeZone:'Pacific/Auckland'});
+let stopEntry,entryVisible=false,displayed;
+function earlyReport(report) {
+  const rows=report.vehicles;
+  // Retain the same vehicle while it is reporting so the link survives a refresh.
+  const recent=rows.filter(v=>v.nearby && Date.now()/1000-v.ts<90);
+  displayed=rows.find(v=>v.id===displayed?.id) || (recent.length?recent:rows).reduce((best,v)=>!best||v.ts>best.ts?v:best,null);
+  if(!displayed){
+    earlyTitle.textContent=report.available?'No recent vehicle reports':'Vehicle feed unavailable';
+    earlyFix.textContent='Auckland Transport';follow.href=listCity;follow.textContent='Open transport list ↗';return;
+  }
+  const v=displayed;
+  earlyTitle.textContent=v.mode==='ferry'?'Ferry '+v.route:(v.mode==='train'?'Train ':'Bus ')+v.route;
+  earlyFix.textContent=(v.nearby?'Near '+v.nearby+' · ':'')+'Reported '+clockNZ.format(v.ts*1000)+' Auckland time';
+  const url=new URL(fullCity);url.searchParams.set('vehicle',v.id);
+  follow.href=url;follow.textContent='Find this '+v.mode+' in 3D ↓';
+}
+function entrySubscription(){
+  if(entryVisible&&!document.hidden&&!navigator.connection?.saveData){
+    if(!stopEntry){
+      if(displayed && Date.now()/1000-displayed.ts>=180)earlyReport({vehicles:[],available:true});
+      stopEntry=subscribeReports(earlyReport);
+    }
+  }else if(stopEntry){stopEntry();stopEntry=null;}
+}
+// An edge touching the viewport counts as intersecting at zero area. Start the
+// transport feed only when someone can actually see the report.
+new IntersectionObserver(([e])=>{
+  entryVisible=e.intersectionRatio>=.01;
+  entrySubscription();
+},{threshold:.01}).observe(entry);
+document.addEventListener('visibilitychange',entrySubscription);
+follow.addEventListener('click',event=>{
+  if(!displayed||!displayed.ts||Date.now()/1000-displayed.ts>=180||failed||event.defaultPrevented||event.button!==0||
+      event.ctrlKey||event.metaKey||event.shiftKey||event.altKey||navigator.connection?.saveData||
+      new URLSearchParams(location.search).get('renderer')==='still')return;
+  requestedVehicle=displayed.id;event.preventDefault();location.hash='transport';
+  if(frame && stopCityReports){frame.contentWindow.postMessage({city:'select',id:requestedVehicle},location.origin);requestedVehicle=null;}
+  // Keyboard focus travels to the destination even if it already owns the hash.
+  const section=document.querySelector('#transport');section.tabIndex=-1;section.focus({preventScroll:true});
+  section.scrollIntoView({block:'start',behavior:'instant'});
+});
 function clearFrame(){
+ stopCityReports?.();stopCityReports=null;
  clearTimeout(watchdog);frame?.remove();frame=null;host.classList.remove('city-ready');replay.hidden=true;for(const b of document.querySelectorAll('.fleet-modes button')){b.disabled=true;b.removeAttribute('aria-pressed');}
 }
 function mount(){
@@ -22,7 +69,7 @@ function mount(){
  if(new URLSearchParams(location.search).get('renderer')==='still'||navigator.connection?.saveData){
   status.textContent='City preview · open Auckland Live for transport updates.';return;
  }
- frame=document.createElement('iframe');frame.title='Interactive Auckland Live city and vehicle positions';frame.src='/pavilion/city-view.html?v=02e38905f6';
+ frame=document.createElement('iframe');frame.title='Interactive Auckland Live city and vehicle positions';frame.src='/pavilion/city-view.html?v=6842be9928';
  host.append(frame);status.textContent='Loading the Auckland waterfront…';
  watchdog=setTimeout(()=>{if(!host.classList.contains('city-ready')){failed=true;clearFrame();status.textContent='The city is taking longer to load. Open Auckland Live below.'}},45000);
 }
@@ -40,6 +87,13 @@ function showSelection(v){
 addEventListener('message',e=>{
  if(e.origin!==location.origin||!frame||e.source!==frame.contentWindow)return;
  const m=e.data;
+ if(m?.city==='subscribe'){
+   stopCityReports?.();stopCityReports=subscribeReports(report=>{
+     frame?.contentWindow.postMessage({city:'positions',report,requestedId:requestedVehicle},location.origin);
+     requestedVehicle=null;
+   },15000);
+ }
+ if(m?.city==='expired')status.textContent='That vehicle has stopped reporting. Choose another recent report.';
  if(m?.city==='ready'){clearTimeout(watchdog);host.classList.add('city-ready');if(status.textContent.startsWith('Loading'))status.textContent='Checking Auckland Transport reports…'}
  if(m?.city==='updates'||m?.city==='unavailable'){
   if(m.selected){showSelection(m.selected);return}
@@ -75,7 +129,22 @@ for(const button of document.querySelectorAll('.fleet-modes button'))button.oncl
 const roof = document.querySelector('.solar-scene'), activate = document.querySelector('#solar-open');
 const hour = document.querySelector('#solar-hour'), clock = document.querySelector('#solar-time');
 const solarStatus = document.querySelector('#solar-status'), roofOrigin = 'https://lab.assembl.co.nz';
-let solarFrame, solarTimer;
+const studyLink=document.querySelector('#roof-study .solar-rail a');
+const fullStudy=new URL(studyLink.href);
+const validHour=value=>Number.isInteger(value)&&value>=Number(hour.min)&&value<=Number(hour.max);
+let chosenHour=history.state?.roofStudyHour;
+let solarFrame,solarTimer;
+function studyAt(path,h){
+  const url=new URL(path);
+  if(validHour(h))url.searchParams.set('studyHour',String(h));
+  return url;
+}
+function selectHour(h){
+  hour.value=String(h);
+  clock.textContent=String(h).padStart(2,'0')+':00';
+  studyLink.href=studyAt(fullStudy,h);
+}
+if(validHour(chosenHour))selectHour(chosenHour);
 function releaseRoof(message){
   clearTimeout(solarTimer);solarFrame?.remove();solarFrame=null;delete roof.dataset.ready;
   hour.closest('label').hidden=true;activate.hidden=false;activate.disabled=false;
@@ -84,7 +153,7 @@ function releaseRoof(message){
 activate.onclick=()=>{
   if(solarFrame)return;
   solarFrame=document.createElement('iframe');solarFrame.title='Proposed 16D roof, study the time of day';solarFrame.referrerPolicy='origin';
-  solarFrame.src=roofOrigin+'/roof-solar/?view=plate';roof.append(solarFrame);
+  solarFrame.src=studyAt(roofOrigin+'/roof-solar/?view=plate',chosenHour);roof.append(solarFrame);
   activate.disabled=true;solarStatus.textContent='Opening the roof model…';
   solarTimer=setTimeout(()=>releaseRoof('The roof viewer took too long. Open Roof Solar for the full study.'),40000);
 };
@@ -92,11 +161,20 @@ addEventListener('message',e=>{
   if(!solarFrame||e.source!==solarFrame.contentWindow||e.origin!==roofOrigin)return;
   if(e.data?.type==='assembl:plate-ready'){
     clearTimeout(solarTimer);roof.dataset.ready='true';activate.hidden=true;hour.closest('label').hidden=false;
-    const h=Number(e.data.hour);hour.value=Number.isInteger(h)?h:12;
-    hour.dispatchEvent(new Event('input'));
+    const h=validHour(chosenHour)?chosenHour:e.data.hour;
+    if(validHour(h)){
+      selectHour(h);
+      if(e.data.hour!==h)solarFrame.contentWindow.postMessage({type:'assembl:solar-hour',hour:h},roofOrigin);
+    }
     solarStatus.textContent='16D roof · illustrative sunlight, Auckland region';
   }
-  if(e.data?.type==='assembl:solar-hour-set')clock.textContent=String(e.data.hour).padStart(2,'0')+':00';
 });
-hour.oninput=()=>solarFrame?.contentWindow.postMessage({type:'assembl:solar-hour',hour:Number(hour.value)},roofOrigin);
+hour.oninput=()=>{
+  const h=Number(hour.value);
+  if(!validHour(h))return;
+  chosenHour=h;selectHour(h);
+  solarFrame?.contentWindow.postMessage({type:'assembl:solar-hour',hour:h},roofOrigin);
+};
+// Keep the handoff through browser Back without retaining the offscreen renderer.
+hour.addEventListener('change',()=>{if(validHour(chosenHour))history.replaceState({...history.state,roofStudyHour:chosenHour},'')});
 new IntersectionObserver(([entry])=>{if(!entry.isIntersecting&&solarFrame)releaseRoof('Illustrative panels and modelled sunlight.');},{rootMargin:'40% 0px'}).observe(roof);

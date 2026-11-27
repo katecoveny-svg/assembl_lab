@@ -4,6 +4,7 @@ export function tideCard(asset){
  const host=byId('water-host'),slider=byId('tide-event'),open=byId('water-open');
  const tool='https://assembl-waitemata-tides.pages.dev/';
  let day=1,index=0,visible=false,scene=null,pending=null,selectedHeight=0,manual=false;
+ let interrupted=false;
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
  let paused=reduced.matches;
  const forced=new URLSearchParams(location.search).get('renderer')==='still';
@@ -13,23 +14,25 @@ export function tideCard(asset){
  function fallback(message){
   host.dataset.renderer='still';host.dataset.interactive='false';byId('water-fallback').hidden=false;
   byId('water-fallback').textContent=message;open.hidden=forced;open.textContent='Load water';
+  open.removeAttribute('aria-pressed');
  }
  function mount(){
   if(!visible||document.hidden){scene?.setActive(false);return}
   if(scene){scene.setActive(true);return}
+  if(interrupted)return;
   if(forced||(!manual&&navigator.connection?.saveData)){fallback('Published tide heights below');return}
   if(pending)return;
-  pending=import('./harbour.js?v=36c9e5002d').then(m=>m.createHarbour(host)).then(water=>{
+  pending=import('./harbour.js?v=105174e887').then(m=>m.createHarbour(host)).then(water=>{
    scene=water;scene.setHeight(selectedHeight);scene.pause(paused);scene.setActive(visible&&!document.hidden);
    host.dataset.renderer='procedural';host.dataset.interactive='true';byId('water-fallback').hidden=true;
    open.hidden=false;open.textContent=paused?'Resume waves':'Pause waves';
    open.setAttribute('aria-pressed',String(paused));
   }).catch(()=>fallback('3D unavailable · published heights below')).finally(()=>{pending=null});
  }
- host.addEventListener('waterlost',()=>{scene=null;host.replaceChildren();fallback('3D interrupted · published heights below')});
- reduced.addEventListener('change',e=>{paused=e.matches;scene?.pause(paused);if(scene)open.textContent=paused?'Resume waves':'Pause waves'});
+ host.addEventListener('waterlost',()=>{scene=null;interrupted=true;host.replaceChildren();fallback('3D interrupted · published heights below')});
+ reduced.addEventListener('change',e=>{paused=e.matches;scene?.pause(paused);if(scene){open.textContent=paused?'Resume waves':'Pause waves';open.setAttribute('aria-pressed',String(paused))}});
  function showSelection(){byId('tide-link').href=destination();scene?.setHeight(selectedHeight)}
- open.onclick=()=>{if(!scene){manual=true;mount();return}paused=!paused;scene.pause(paused);open.textContent=paused?'Resume waves':'Pause waves';open.setAttribute('aria-pressed',String(paused))};
+ open.onclick=()=>{if(!scene){manual=true;interrupted=false;mount();return}paused=!paused;scene.pause(paused);open.textContent=paused?'Resume waves':'Pause waves';open.setAttribute('aria-pressed',String(paused))};
  function setEvent(i){
   index=Math.max(0,Math.min(i,days[keys[day]].length-1));const [time,height,,zone,kind]=days[keys[day]][index];
   selectedHeight=Number(height);

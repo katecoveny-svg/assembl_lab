@@ -448,7 +448,7 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
   scene.add(shade,model);
  }
  function size(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
- function draw(progress,time,gust,roofLift=0,guided=false,benchPass=0,arrival=null){windTime.value=time;gustStrength.value=gust;
+ function draw(progress,time,gust,roofLift=0,guided=false,benchPass=0,arrival=null,inspection=0){windTime.value=time;gustStrength.value=gust;
    if(dogMesh){
      dogMesh.morphTargetInfluences[0]=Math.sin(time*4.1)*(.36+.42*(.5+.5*Math.sin(time*.79)));
      dogMesh.morphTargetInfluences[1]=.5-.5*Math.cos(time*.84);
@@ -464,7 +464,8 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
    }
    // Lift only the existing canopy, its lining and seams. Both still cast shadows on the rooms.
    if(layout?.active)roofLift=1;
-   roofStudy.position.set(0,roofLift*3.2,-roofLift*2.1);
+   const raised=Math.max(inspection,roofLift);
+   roofStudy.position.set(0,raised*3.2,-raised*2.1);
    if(roofLift){cp.lerp(v(13.4,10.1,18.9),roofLift);aim.lerp(v(.1,2.65,0),roofLift)}
    if(camera.aspect<1.24){const f=Math.max(0,1.24-camera.aspect);cp.z+=17.8*f*(1-p)**1.5;cp.x+=4.9*f*(1-p);aim.x+=.65*f}
    camera.fov=match?42-3*p:42+14*p*p;if(guided&&p>.76)camera.fov=T.MathUtils.lerp(56,camera.aspect<1?69:51,T.MathUtils.smoothstep(p,.76,1));camera.updateProjectionMatrix();
@@ -499,6 +500,14 @@ const floorBase=mat(0x5c584e);box(0,.034,0,14.20,.042,4.12,floorBase);
    if(arrival!==null)entryCamera(arrival,cp,aim);
    if(layout?.active){layout.frame(cp,aim);camera.updateProjectionMatrix()}
    if(walker.pose){walker.frame(cp,aim);camera.fov=camera.aspect<1?77:59;camera.updateProjectionMatrix()}
+   if(inspection>0){
+    // Move the visitor's actual camera to a clear three-quarter view of the existing roof assembly.
+    const distance=Math.max(1,.98/camera.aspect);
+    cp.lerp(v(9.6*distance,10.4*distance,15.6*distance),inspection);
+    aim.lerp(v(0,2.45,0),inspection);
+    camera.fov=T.MathUtils.lerp(camera.fov,camera.aspect<1?57:48,inspection);
+    camera.updateProjectionMatrix();
+   }
    camera.position.copy(cp);camera.lookAt(aim);
    for(const {o,placements,windFactor} of wind){for(let i=0;i<placements.length;i++){const [x,y,z,s,a]=placements[i];const front=Math.exp(-Math.pow((time%6.8)*3.9-x*.52-z*.34-4.5,2)/13);const wave=.26*Math.sin(time*1.18+x*.51+z*.35)+.11*Math.sin(time*2.07-z*.19)+gust*(.22+1.1*front)*Math.sin(time*2.51-x*.33);
      tmp.position.set(x,y,z);tmp.scale.setScalar(s);tmp.rotation.set(wave*windFactor*.47,a,wave*windFactor,'ZXY');tmp.updateMatrix();o.setMatrixAt(i,tmp.matrix)}o.instanceMatrix.needsUpdate=true}
