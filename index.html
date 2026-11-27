@@ -4,111 +4,118 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>assembl Lab | Interactive 3D tools for Aotearoa</title>
-  <meta name="description" content="Compare planting costs, review a building design, find an Auckland bus or check a published tide prediction. Try the tools in your browser.">
+  <meta name="description" content="Paint a planting plan, walk a building design, follow Auckland Transport vehicles or compare the harbour’s predicted tides. Try the tools in your browser.">
   <meta property="og:type" content="website">
   <meta property="og:title" content="assembl Lab | Interactive 3D tools for Aotearoa">
   <meta property="og:description" content="See what a design change costs, where a vehicle last reported or when the tide will turn.">
-  <meta property="og:image" content="https://lab.assembl.co.nz/lab/v3/img/tiles/16a-cutaway-r2.webp">
+  <meta property="og:image" content="https://lab.assembl.co.nz/lab/v3/img/tiles/garden-walk-wide.webp">
   <meta property="og:url" content="https://lab.assembl.co.nz/">
   <meta name="theme-color" content="#FFFDFB">
   <link rel="icon" href="/site-v2/mark-a-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="/site-v2/mark-a-180.png">
   <link rel="canonical" href="https://lab.assembl.co.nz/">
-  <link rel="stylesheet" href="/lab/v3/front-door.css?v=planting-os-1">
-  <script type="importmap">{"imports":{"three":"/assets/vendor/three/three.module.min.js","three/addons/":"/assets/vendor/three/addons/"}}</script>
-<link rel="stylesheet" href="/lab/v3/planting-entry.css?v=garden1"><script src="/lab/v3/planting-entry.js?v=d4366cbf91" type="module"></script></head>
+  <link rel="preload" href="/lab/v3/instrument.woff" as="font" type="font/woff" crossorigin>
+  <link rel="stylesheet" href="/lab/v3/planting-entry.css?v=garden1">
+  <link rel="stylesheet" href="/lab/v3/front-door.css?v=fieldwork1">
+  <script src="/lab/v3/planting-entry.js?v=d4366cbf91" type="module"></script>
+  <script src="/lab/v3/tide-choice.mjs?v=fieldwork1" type="module"></script>
+</head>
 <body>
   <a class="skip" href="#main">Skip to main content</a>
-
-
-  <main id="main" tabindex="-1" class="shell project-first">
-
-    <section id="garden" class="lab-garden" aria-label="Interactive Aotearoa planting bed">
-      <div class="planting-editor">
-<div data-planting-stage="/nz-planting-studio/studio-v9.2?embed=agency"><picture><source media="(max-width:680px)" srcset="/lab/v3/img/tiles/gemini-coastal-phone.webp"><img src="/lab/v3/img/tiles/gemini-coastal-wide.webp" width="1500" height="890" fetchpriority="high" alt="Dark-clad coastal house, glass-fronted living room and flowering garden in Planting Studio"></picture></div>
-<header class="shell site-header">
+  <header class="shell site-header">
     <a class="brand" href="/" aria-label="assembl Lab home"><img src="/lab/v3/wordmark.png" alt="assembl."><span>Lab</span></a>
     <nav aria-label="Main navigation">
-      <a href="https://www.assembl.co.nz/#work">Architectural 3D</a>
-      <a href="/auckland/live/?view=3d">Auckland Live</a>
-      <a href="/roof-solar/">Roof solar</a>
-      <a href="#garden">Garden studio</a>
-      <a href="https://assembl-waitemata-tides.pages.dev/">Tides</a>
+      <a href="#tools">Tools</a>
+      <a href="#field-guides">Field guides</a>
+      <a href="https://www.assembl.co.nz/#services">Agency <span aria-hidden="true">↗</span></a>
     </nav>
-  </header><section class="opening garden-opening" id="top">
-      <div class="opening-title"><p class="label">assembl Lab · Tāmaki Makaurau</p><h1>What will this garden look like in twelve years?</h1></div>
-      <p class="opening-note">Give a client two planting options to compare. Change the mix, season or age of the bed and see how the planting fills out. The supply estimate updates from indicative New Zealand rates.</p>
-    </section><div class="planting-rail"><button data-open-planting type="button">Open interactive garden</button><span data-planting-status role="status">Aotearoa Planting Studio</span><div data-planting-controls hidden><label>Planting mix <select name="mix"><option value="coast">Coastal native</option><option value="fern">Fern glade</option><option value="flowers">Flower border</option></select></label><label>Season <select name="season"><option value="summer">Summer</option><option value="autumn">Autumn</option><option value="winter">Winter</option><option value="spring">Spring</option></select></label><label>Growth <select name="year"><option value="1">Year 1</option><option value="4" selected>Year 4</option><option value="7">Year 7</option><option value="12">Year 12</option></select></label><output data-supply-estimate hidden></output><button type="button" data-garden-action="plant">Plant a patch</button><button type="button" data-garden-action="undo">Undo</button></div><a href="https://lab.assembl.co.nz/architecture/#/planting">Full planting studio ↗</a></div></div>
-    </section>
-    <section id="tools" class="tool-section" aria-labelledby="tools-heading">
-      <div id="more" class="section-heading">
-        <p class="label">Public tools</p>
-        <h2 id="tools-heading">What do you need to work out?</h2>
+  </header>
+  <main id="main" tabindex="-1">
+    <section id="garden" class="lab-garden" aria-labelledby="garden-heading">
+      <div data-planting-stage="/nz-planting-studio/studio-v9.2?embed=agency">
+        <picture><source media="(max-width:680px)" srcset="/lab/v3/img/tiles/garden-walk-phone.webp"><img src="/lab/v3/img/tiles/garden-walk-wide.webp" width="1440" height="684" fetchpriority="high" alt="The coastal house seen from its planted bed, with an open slider leading into the living room."></picture>
       </div>
+      <div class="shell">
+        <div class="planting-rail">
+          <button data-open-planting type="button">Open interactive garden</button>
+          <span data-planting-status role="status">Aotearoa Planting Studio</span>
+          <div data-planting-controls hidden>
+            <label>Planting mix <select name="mix"><option value="coast">Coastal native</option><option value="fern">Fern glade</option><option value="flowers">Flower border</option></select></label>
+            <label>Season <select name="season"><option value="summer">Summer</option><option value="autumn">Autumn</option><option value="winter">Winter</option><option value="spring">Spring</option></select></label>
+            <label>Growth <select name="year"><option value="1">Year 1</option><option value="4" selected>Year 4</option><option value="7">Year 7</option><option value="12">Year 12</option></select></label>
+            <output data-supply-estimate hidden></output>
+            <button type="button" data-garden-action="plant">Plant a patch</button><button type="button" data-garden-action="undo">Undo</button>
+          </div>
+          <a href="/architecture/#/planting">Full planting studio <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="opening garden-opening" id="top">
+          <div><p class="label">Landscape design · Planting Studio</p><h1 id="garden-heading">What will this garden look like in twelve years?</h1></div>
+          <p class="opening-note">Paint a bed for a client, then compare the same planting in winter and summer. Change its age to see the spread. The supply estimate updates as you plant, using indicative New Zealand rates.</p>
+        </div>
+      </div>
+    </section>
+    <section id="tools" class="shell tool-section" aria-labelledby="tools-heading">
+      <div id="more" class="section-heading"><p class="label">Tools</p><h2 id="tools-heading">Find a vehicle. Check a roof.</h2></div>
       <div class="tool-grid">
-        <a class="tool" href="/plan-studio/twins/16a/">
-          <img src="/lab/v3/img/tiles/16a-cutaway-r2.webp" width="960" height="600" loading="lazy" decoding="async" alt="">
-          <div class="tool-copy">
-            <p class="label">Architectural plans</p>
-            <h3>Review a floor plan at eye level</h3>
-            <p>Check how a drawn room works once it is furnished. In the 16A model, move a piece of furniture or change its finish and share the view with your client.</p>
-            <span class="tool-action">Open the 3D model <span aria-hidden="true">↗</span></span>
-          </div>
-        </a>
         <a class="tool" href="/auckland/live/?view=3d">
-          <img src="/lab/v3/img/tiles/auckland-harbour-r2.webp" width="960" height="600" loading="lazy" decoding="async" alt="">
-          <div class="tool-copy">
-            <p class="label">Live vehicle reports</p>
-            <h3>Auckland Live</h3>
-            <p>Before you leave, find your bus, train or ferry. See where Auckland Transport last placed it and when that position was reported.</p>
-            <span class="tool-action">Open Auckland Live <span aria-hidden="true">↗</span></span>
-          </div>
+          <div class="frame"><img src="/lab/v3/img/tiles/auckland-harbour-r2.webp" width="960" height="600" loading="lazy" decoding="async" alt="The ferry terminal and Auckland waterfront in the 3D transit map."></div>
+          <div class="tool-copy"><p class="label">Auckland Transport · Live reports</p><h3>Auckland Live</h3><p>Find your bus, train or ferry before you leave. Follow a vehicle on the map and check when its position was last reported.</p><span class="tool-action">Find a vehicle <span aria-hidden="true">↗</span></span></div>
         </a>
         <a class="tool" href="/roof-solar/">
-          <img src="/lab/v3/img/tiles/solar-plate.webp" width="960" height="600" loading="lazy" decoding="async" alt="Glass solar modules on the corrugated 16D roof, part of the 16A design study.">
-          <div class="tool-copy">
-            <p class="label">Solar design</p>
-            <h3>Roof Solar</h3>
-            <p>See where shade falls on a proposed panel layout. For an early estimate of generation, select a mapped New Zealand roof and review the assumptions before requesting a quote.</p>
-            <span class="tool-action">Open Roof Solar <span aria-hidden="true">↗</span></span>
-          </div>
-        </a>
-        <a class="tool" href="https://assembl-waitemata-tides.pages.dev/">
-          <img src="/lab/v3/img/tiles/water-plate.webp" width="800" height="500" loading="lazy" decoding="async" alt="">
-          <div class="tool-copy">
-            <p class="label">Published tide predictions</p>
-            <h3>Waitematā Tides</h3>
-            <p>Planning a waterfront shoot? Choose a date and compare the times and heights of Auckland’s predicted high and low tides. The water illustrates the published LINZ predictions.</p>
-            <span class="tool-action">Open Waitematā Tides <span aria-hidden="true">↗</span></span>
-          </div>
+          <div class="frame"><img src="/lab/v3/img/tiles/solar-plate.webp" width="960" height="600" loading="lazy" decoding="async" alt="Close view of the illustrative solar modules on the proposed 16D roof, part of the 16A plan study."></div>
+          <div class="tool-copy"><p class="label">Solar design · Modelled sunlight</p><h3>Roof Solar</h3><p>Move the sun across the proposed 16D roof to see where shade falls. Choose a mapped New Zealand roof for a separate generation estimate before requesting a quote.</p><span class="tool-action">Compare the sunlight <span aria-hidden="true">↗</span></span></div>
         </a>
       </div>
-      <a class="garden-feature" href="/moss-and-rain/"><img src="/moss-and-rain/dry.webp" width="1320" height="654" loading="lazy" decoding="async" alt="Silver-tipped moss shoots and slender capsules growing on rough volcanic stone."><div class="tool-copy"><p class="label">Nature / Interactive lesson</p><h3>Why does moss turn green in the rain?</h3><p>Ask learners to predict what rain will change. Wet one patch of silvery bryum, keep another dry and compare the leaf tips to explain the colour change.</p><span class="tool-action">Try the moss lesson ↗</span></div></a>
-      <a class="garden-feature" href="https://www.assembl.co.nz/#work"><img src="https://www.assembl.co.nz/pavilion/assets/pavilion.webp" width="1600" height="900" loading="lazy" alt="The Waiheke Pavilion and its coastal approach."><div class="tool-copy"><p class="label">Architectural visualisation · Waiheke Pavilion</p><h3>Show a client their rooms before construction.</h3><p>Can a client picture the layout from a drawing? Walk them through the Waiheke Pavilion, rearrange the living room and inspect the kitchen finishes together.</p><span class="tool-action">Walk through the example ↗</span></div></a>
-      <a class="garden-feature" href="/manu/"><img src="/manu/stills/piwakawaka-1200.webp" width="1200" height="960" loading="lazy" alt="Pīwakawaka showing its long, white-edged tail"><div class="tool-copy"><p class="label">Nature / Field guide</p><h3>Which bird did you see?</h3><p>Compare eight birds of Aotearoa at the same scale. Turn a specimen to look at its bill, feet and tail, then check your identification against the species notes.</p><span class="tool-action">Open the manu field guide ↗</span></div></a>
-      <p class="tile-credit">Waitematā tile: <a href="https://commons.wikimedia.org/wiki/File:Auckland_skyline_from_Viaduct_Harbour.jpg">Chiara Coetzee</a>, cropped and composited, <a href="https://creativecommons.org/publicdomain/zero/1.0/">CC0 source photograph</a>. Scene is illustrative.</p>
     </section>
-
-    <section id="house" class="examples" aria-labelledby="examples-heading">
-      <div>
-        <p class="label">PLAN STUDIO</p>
-        <h2 id="examples-heading">Review a project with your design team.</h2>
-        <p>Track the documents and approvals each project stage needs. In the services model, see where a duct crosses a pipe and inspect a proposed reroute.</p>
+    <section id="tides" class="shell tide-study" data-tide-study aria-labelledby="tide-heading">
+      <div class="study-heading"><div><p class="label">Harbour planning · LINZ station 070</p><h2 id="tide-heading">Waitematā Tides</h2></div><p>Planning a waterfront shoot? Choose a day and compare Auckland’s predicted highs and lows. Open the harbour to see the water move against the tide marker.</p></div>
+      <div class="harbour-view">
+        <img src="/lab/v3/img/tiles/water-plate.webp" width="800" height="500" loading="lazy" alt="The black-sailed foiling yacht and Auckland skyline in the illustrated harbour.">
+        <div data-water-host></div>
+        <button type="button" class="surface-control" data-water-toggle aria-expanded="false" hidden>Explore the harbour</button>
       </div>
-      <div class="example-actions">
-        <a id="workspace" class="jump" href="/architecture/">Architecture workspace <span aria-hidden="true">↗</span></a>
-        <a class="jump" href="/plan-studio/twins/services/">Inspect a services clash <span aria-hidden="true">↗</span></a>
+      <div class="tide-rail">
+        <div class="tide-choices" data-tide-choices hidden>
+          <label>Date <input type="date" data-tide-day></label>
+          <label>Prediction <select data-tide-event></select></label>
+        </div>
+        <a data-full-tide href="https://assembl-waitemata-tides.pages.dev/">Open Waitematā Tides <span aria-hidden="true">↗</span></a>
+      </div>
+      <p class="water-status" data-water-status role="status"></p>
+      <p class="prediction" data-tide-reading aria-live="polite"></p>
+      <p class="credit">Heights are published predictions above Auckland chart datum. <a href="/waitemata-tides/tables/">Monthly tables</a>. The water is illustrative. For trip planning at sea, use official navigation information. <a href="https://www.linz.govt.nz/products-services/tides-and-tidal-streams/tide-predictions/tide-predictions-list-view">Toitū Te Whenua LINZ</a> · <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Skyline photograph by <a href="https://commons.wikimedia.org/wiki/File:Auckland_skyline_from_Viaduct_Harbour.jpg">Chiara Coetzee</a>, cropped and composited, <a href="https://creativecommons.org/publicdomain/zero/1.0/">CC0</a>.</p>
+    </section>
+    <section class="shell tool-section" aria-labelledby="architecture-heading">
+      <div class="section-heading"><p class="label">Architectural visualisation</p><h2 id="architecture-heading">Walk a design with your client.</h2></div>
+      <div class="tool-grid">
+        <a class="tool" href="/plan-studio/twins/16a/">
+          <div class="frame"><img src="/lab/v3/img/tiles/16a-cutaway-r2.webp" width="960" height="600" loading="lazy" alt="The furnished 16C cutaway from the 16A plan study."></div>
+          <div class="tool-copy"><h3>16A plan study</h3><p>See how the consent drawings translate into furnished rooms. Move a piece of furniture, change its finish and share a view with your client.</p><span class="tool-action">Open the 3D model <span aria-hidden="true">↗</span></span></div>
+        </a>
+        <a class="tool" href="https://www.assembl.co.nz/?view=pavilion#pavilion">
+          <div class="frame"><img src="https://www.assembl.co.nz/pavilion/assets/pavilion.webp" width="1600" height="900" loading="lazy" alt="The Waiheke Pavilion and its coastal approach."></div>
+          <div class="tool-copy"><h3>Waiheke Pavilion</h3><p>Walk through the house at eye level. Rearrange the living room and inspect the kitchen finishes together before specifying materials.</p><span class="tool-action">Walk through the Pavilion <span aria-hidden="true">↗</span></span></div>
+        </a>
+      </div>
+      <div id="house" class="workspace"><a id="workspace" href="/architecture/">Architecture workspace <span aria-hidden="true">↗</span></a><a href="/plan-studio/twins/services/">Inspect a services clash <span aria-hidden="true">↗</span></a></div>
+    </section>
+    <section id="field-guides" class="shell tool-section" aria-labelledby="guides-heading">
+      <div class="section-heading"><p class="label">Field guides</p><h2 id="guides-heading">Identify a bird or test a prediction.</h2></div>
+      <div class="tool-grid">
+        <a class="tool" href="/moss-and-rain/">
+          <div class="frame"><img src="/moss-and-rain/dry.webp" width="1320" height="654" loading="lazy" alt="Silver-tipped moss shoots and fine capsules growing on volcanic stone."></div>
+          <div class="tool-copy"><h3>Why does moss turn green in the rain?</h3><p>Ask learners to predict what rain will change. Wet one patch of silvery bryum, leave another dry and compare their leaf tips.</p><span class="tool-action">Try the moss lesson <span aria-hidden="true">↗</span></span></div>
+        </a>
+        <a class="tool" href="/manu/">
+          <div class="frame bird-frame"><img src="/manu/stills/piwakawaka-1200.webp" width="1200" height="960" loading="lazy" alt="Pīwakawaka showing its long, white-edged tail."></div>
+          <div class="tool-copy"><h3>Which bird did you see?</h3><p>Compare eight birds at the same scale. Turn a specimen to see its bill, feet and tail, then check its identifying features.</p><span class="tool-action">Open the manu field guide <span aria-hidden="true">↗</span></span></div>
+        </a>
       </div>
     </section>
   </main>
-
   <footer id="start" class="shell site-footer">
     <p>Built by <a href="https://www.assembl.co.nz/">assembl.</a> in <span lang="mi">Tāmaki Makaurau</span> Auckland.</p>
-    <nav aria-label="Footer navigation">
-      <a href="https://www.assembl.co.nz/#contact">Discuss a tool for your business ↗</a>
-      <a href="https://www.assembl.co.nz/privacy/">Privacy</a>
-      <a href="https://www.assembl.co.nz/terms/">Terms</a>
-    </nav>
+    <nav aria-label="Footer navigation"><a href="https://www.assembl.co.nz/#contact">Discuss a tool for your business ↗</a><a href="https://www.assembl.co.nz/privacy/">Privacy</a><a href="https://www.assembl.co.nz/terms/">Terms</a></nav>
   </footer>
 </body>
 </html>
