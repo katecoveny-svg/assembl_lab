@@ -5,6 +5,8 @@ import * as T from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
+import { busCabin, ferryCabin, ferryWeatherDeck, ferryHulls } from './passenger-cabins.js?v=7a88e0b11d';
+
 export { STATUS_COLOURS, statusColour } from './status.js';
 
 // part(geometry, colour, {band, rough}) → geometry with color, band and rough attributes, ready to merge
@@ -21,11 +23,13 @@ const rbox = (w, h, d, r) => new RoundedBoxGeometry(w, h, d, 2, r);
 const wheel = (r, w, at) => { const g = new T.CylinderGeometry(r, r, w, 14); g.rotateZ(Math.PI / 2); return part(g, '#161718', { rough: 0.8, at }); };
 
 // Forward is -z (north at bearing 0). y = 0 is the road, rail or water surface.
-export function busGeometry(detail = false) { // a representative 12 m low-floor city bus, not an operator model
+export function busGeometry(detail = false, panes = []) { // a representative 12 m low-floor city bus, not an operator model
   const P = [
-    part(rbox(2.5, 2.75, 11.9, 0.2), detail ? '#344b61' : '#e8eae7', { at: [0, 1.73, 0], rough: 0.34 }),
-    part(box(2.522, 0.77, 10.6), detail ? '#141d25' : '#1a2228', { at: [0, 2.23, 0.35], rough: detail ? 0.34 : 0.12 }),
-    part(box(2.28, 1.55, 0.08), '#1a2228', { at: [0, 1.95, -5.95], rough: 0.06 }), // windscreen
+    part(rbox(2.5, detail ? 1.18 : 2.75, 11.9, 0.18), detail ? '#355268' : '#e8eae7', { at: [0, detail ? .94 : 1.73, 0], rough: 0.34 }),
+    ...(detail ? [part(rbox(2.49,.28,11.82,.09),'#d5d9d4',{at:[0,2.99,.02],rough:.48})] : [
+      part(box(2.522,.77,10.6),'#1a2228',{at:[0,2.23,.35],rough:.12}),
+      part(box(2.28,1.55,.08),'#1a2228',{at:[0,1.95,-5.95],rough:.06}),
+    ]),
     part(box(1.7, 0.26, 0.06), detail ? '#13191c' : '#f6b73c', { at: [0, 3.0, -5.95], rough: 0.3 }), // destination sign (lit amber; no text)
     part(box(2.54, detail ? .045 : .22, 11.4), '#c3c7cc', { at: [0, 1.32, 0], band: 1, rough: 0.3 }), // status band
     part(rbox(2.0, 0.32, 3.8, .10), detail ? '#bac0c2' : '#cfd2cf', { at: [0, 3.25, 1.6], rough: 0.5 }), // roof air-con pod
@@ -34,6 +38,7 @@ export function busGeometry(detail = false) { // a representative 12 m low-floor
     wheel(0.5, 0.32, [1.12, 0.5, -3.7]), wheel(0.5, 0.32, [-1.12, 0.5, -3.7]), wheel(0.5, 0.32, [1.12, 0.5, 2.9]), wheel(0.5, 0.32, [-1.12, 0.5, 2.9]),
   ];
   if (!detail) return mergeGeometries(P);
+  busCabin(P,panes,part);
   for (const side of [-1,1]) {
     const x = side * 1.270;
     // Sculpted sill and separate access panels, without copying official logos or fleet marks.
@@ -46,10 +51,6 @@ export function busGeometry(detail = false) { // a representative 12 m low-floor
       const hub = new T.CylinderGeometry(.12,.14,.043,14); hub.rotateZ(Math.PI/2);
       P.push(part(rim,'#899091',{at:[side*1.29,.5,z],rough:.38}),part(hub,'#363e43',{at:[side*1.316,.5,z],rough:.5}));
     }
-    for (const z of (side < 0 ? [-2.97,-1.49,2.28,3.70,5.0] : [-3.9,-2.38,-.86,.66,2.18,3.70,5.0])) {
-      P.push(part(box(.035,.68,1.35),'#253846',{at:[x,2.24,z],rough:.17}));
-      P.push(part(box(.05,.025,1.38),'#535f69',{at:[x,1.902,z],rough:.46}));
-    }
     P.push(part(rbox(.13,.24,.42,.055),'#242c30',{at:[side*1.40,2.18,-5.1],rough:.43}));
     P.push(part(box(.12,.045,.14),'#3b4143',{at:[side*1.30,2.18,-5.1],rough:.48}));
     for (const z of [-5.65,5.62]) P.push(part(box(.045,.12,.26),'#da933b',{at:[x,.82,z],rough:.31}));
@@ -57,12 +58,11 @@ export function busGeometry(detail = false) { // a representative 12 m low-floor
   }
   // Auckland left-side kerb doors. Dark perimeter, separate tall glazing and shut line.
   for (const z of [-4.79,.86]) {
-    P.push(part(box(.042,1.78,1.32),'#272e31',{at:[-1.288,1.68,z],rough:.42}));
-    for (const dz of [-.31,.31]) P.push(part(box(.036,1.01,.53),'#21353e',{at:[-1.314,1.91,z+dz],rough:.13}));
+    for (const dz of [-.61,0,.61]) P.push(part(box(.045,1.98,.055),'#272e31',{at:[-1.249,1.83,z+dz],rough:.42}));
+    for (const dz of [-.30,.30]) P.push(part(box(.045,.57,.50),'#263b46',{at:[-1.263,1.12,z+dz],rough:.26}));
     P.push(part(box(.041,.12,1.18),'#747e80',{at:[-1.310,.85,z],rough:.55}));
   }
   for (let i=0;i<7;i++) P.push(part(box(1.65,.035,.047),'#6c7374',{at:[0,3.425,1+i*.23],rough:.53}));
-  P.push(part(box(1.95,1.01,.065),'#24333b',{at:[0,2.27,5.94],rough:.18}));
   P.push(part(box(1.22,.28,.05),'#111719',{at:[0,2.23,5.985],rough:.48}));
   for (const x of [-.65,.65]) P.push(part(box(.32,.035,.07),'#f4e8cc',{at:[x,1.03,-6.0],rough:.21}));
   for (let row=0;row<5;row++) P.push(part(box(1.46,.035,.05),'#47515a',{at:[0,.78+row*.052,5.96],rough:.59}));
@@ -141,14 +141,15 @@ function ferryDeck(lower, upper) {
   const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(points.flat(),3));
   g.setIndex(ix);g.computeVertexNormals();return g;
 }
-export function ferryGeometry() { // a passenger catamaran, about 34 m
+export function ferryGeometry(detail = false, panes = []) { // a passenger catamaran, about 34 m
   const P = [];
-  for (const x of [-3.5, 3.5]) {
+  if(detail)ferryHulls(P,part);
+  else for (const x of [-3.5, 3.5]) {
     P.push(part(hull(2.6, 1.6, 33.5), '#e9ecec', { at: [x, 0.9, 0], rough: 0.3 }));
     P.push(part(hull(2.62, 0.9, 33.0), '#23292e', { at: [x, 0.05, 0], rough: 0.5 })); // below the boot line
   }
   const tiers=[
-    [[4.75,-12.9,15.8,1.6],[4.86,-12.8,15.8,2.19],'#dcd8c8'],
+    [[4.75,detail?-14.40:-12.9,15.8,1.6],[4.86,detail?-14.60:-12.8,15.8,2.19],detail?'#adb9b8':'#dcd8c8'],
     [[4.6,-10.8,13.1,2.20],[4.57,-10.35,13.05,3.1],'#e5e9e6'],
     [[4.57,-10.35,13.05,3.1],[4.38,-9.12,12.94,4.57],'#254654'],
     [[4.38,-9.12,12.94,4.57],[4.52,-9.18,13.30,4.84],'#dbe5e4'],
@@ -157,20 +158,37 @@ export function ferryGeometry() { // a passenger catamaran, about 34 m
     [[3.58,-5.64,7.18,5.52],[3.43,-4.73,7.02,6.78],'#294853'],
     [[3.43,-4.73,7.02,6.78],[3.72,-4.93,7.49,7.05],'#e2e8e4']
   ];
-  for(const [lo,hi,colour] of tiers)P.push(part(ferryDeck(lo,hi),colour,{rough:colour.startsWith('#2')?.18:.46}));
+  for (const [lo,hi,colour] of tiers) {
+    const glazing=colour=== '#254654' || colour==='#294853';
+    if(detail){
+      // A sheltered lower saloon and a shorter pilothouse leave a usable passenger deck astern.
+      if(lo[3]>=2.20 && hi[3]<=4.57){ lo[2]=9.4;hi[2]=9.35; }
+      if(lo[3]>=5.04){ lo[2]=3.4;hi[2]=3.35; }
+      if(glazing){ ferryCabin(P,panes,part,lo,hi); continue; }
+    }
+    let deck=ferryDeck(lo,hi);
+    if(detail){deck=deck.toNonIndexed();deck.computeVertexNormals();}
+    P.push(part(deck,colour,{rough:glazing?.18:.46}));
+  }
+  if(detail){
+    ferryWeatherDeck(P,part);
+    // Dark belt below the brow visually separates the cabin roof from the glazing.
+    P.push(part(ferryDeck([4.42,-9.17,13.21,4.59],[4.46,-9.19,13.22,4.69]),'#435b60',{rough:.48}));
+    for(const side of [-1,1])P.push(part(box(.14,.27,.72),'#62726c',{at:[side*1.46,7.15,-2.45],rough:.57}));
+  }
   P.push(part(rbox(1.38,.64,2.1,.2),'#bdc8c4',{at:[0,7.32,3.3],rough:.55}));
   P.push(part(box(.13,2.78,.13),'#8f9996',{at:[0,8.43,.4],rough:.38}));
   for (const side of [-1,1]) {
-    for (let z=-7.4; z<12; z+=1.9) {
+    if(!detail)for (let z=-7.4; z<12; z+=1.9) {
       P.push(part(box(.084,1.44,.11).rotateZ(side*.128),'#aab5b6',{at:[side*4.48,3.83,z],rough:.38}));
     }
-    for (let z=-1.7; z<8.4; z+=1.64) {
+    if(!detail)for (let z=-1.7; z<8.4; z+=1.64) {
       P.push(part(box(.09,1.26,.095).rotateZ(side*.118),'#ccd7d5',{at:[side*3.50,6.15,z],rough:.4}));
     }
     for (const z of [-12.1,-8.6,-4.4,1.3,7.4,12.9]) {
       P.push(part(rbox(.26,.40,1.34,.12),'#253239',{at:[side*4.88,1.85,z],rough:.80}));
     }
-    for (const [z0,z1] of [[-14.4,-9.5],[12.4,15.3]]) {
+    for (const [z0,z1] of [[detail?-12.8:-14.4,-9.5],[12.4,15.3]]) {
       for(let z=z0;z<=z1;z+=.96)P.push(part(box(.056,.90,.056),'#aeb9b6',{at:[side*4.54,2.63,z],rough:.42}));
       for(const y of [2.58,3.04])P.push(part(box(.056,.06,z1-z0),'#c6d0cd',{at:[side*4.54,y,(z0+z1)/2],rough:.34}));
     }
@@ -202,32 +220,55 @@ export function createFleet(scene, { max = { bus: 1400, train: 80, ferry: 60 } }
     m.instanceColor = new T.InstancedBufferAttribute(new Float32Array(max[k] * 3), 3); m.name = 'fleet_' + k; scene.add(m); meshes[k] = m;
   }
   // A single near-detail instance. Never multiply the close-up geometry by the whole live fleet.
-  let closeBus = null, signs = null;
+  const closeMeshes = new Map();
+  let signs;
+  function closeVehicle(mode) {
+    if(closeMeshes.has(mode))return closeMeshes.get(mode);
+    const panes=[];
+    const geometry=mode==='bus' ? busGeometry(true,panes) : ferryGeometry(true,panes);
+    const body=new T.InstancedMesh(geometry,mat,1);
+    body.instanceColor=new T.InstancedBufferAttribute(new Float32Array(3),3);
+    body.castShadow=body.receiveShadow=true; body.frustumCulled=false;
+    body.name='fleet_'+mode+'_closeup';
+    // One thin, sky-lit glass shell with real seats behind it, using the city's existing environment.
+    const windows=mergeGeometries(panes),position=windows.attributes.position;
+    const tint=new Float32Array(position.count*3),dark=new T.Color('#203138'),light=new T.Color('#557582'),colour=new T.Color();
+    for(let i=0;i<position.count;i++){
+      const y=position.getY(i),low=mode==='bus'?1.32:y>5?5.52:3.1;
+      colour.copy(dark).lerp(light,T.MathUtils.clamp((y-low)/1.5,0,1)).toArray(tint,i*3);
+    }
+    windows.setAttribute('color',new T.Float32BufferAttribute(tint,3));
+    const glazing=new T.MeshStandardMaterial({vertexColors:true,roughness:.12,metalness:.28,
+      envMapIntensity:1.35,transparent:true,opacity:.56,depthWrite:false,side:T.DoubleSide,forceSinglePass:true});
+    const glass=new T.Mesh(windows,glazing);
+    glass.name='fleet_'+mode+'_glazing';
+    scene.add(body,glass);
+    if(mode==='bus')signs=makeBusSigns(scene);
+    const vehicle={body,glass};closeMeshes.set(mode,vehicle);return vehicle;
+  }
   const dummy = new T.Object3D(), col = new T.Color();
   return {
     meshes, material: mat,
     // list: [{mode, x, y, z, heading (radians, 0 = north), colour}]
     update(list, selectedId = null, cameraDistance = Infinity) {
-      let featured = false;
+      let featuredMode=null;
       const n = { bus: 0, train: 0, ferry: 0 };
       for (const v of list) {
-        const high = v.mode === 'bus' && v.id === selectedId && cameraDistance < 210;
-        if (high && !closeBus) {
-          closeBus = new T.InstancedMesh(busGeometry(true), mat, 1);
-          closeBus.instanceColor = new T.InstancedBufferAttribute(new Float32Array(3), 3);
-          closeBus.frustumCulled = false; closeBus.castShadow = closeBus.receiveShadow = true;
-          closeBus.name = 'fleet_bus_closeup'; scene.add(closeBus); signs = makeBusSigns(scene);
-        }
-        const m = high ? closeBus : meshes[v.mode]; if (!m || (!high && n[v.mode] >= m.instanceMatrix.count)) continue;
+        const high=(v.mode==='bus' || v.mode==='ferry') && v.id===selectedId && cameraDistance<210;
+        const close=high ? closeVehicle(v.mode) : null;
+        const m=close?.body || meshes[v.mode];
+        if(!m || (!high && n[v.mode]>=m.instanceMatrix.count))continue;
         dummy.position.set(v.x, v.y, v.z); dummy.rotation.set(0, -v.heading, 0); dummy.updateMatrix();
         const slot = high ? 0 : n[v.mode]++;
         m.setMatrixAt(slot, dummy.matrix); m.setColorAt(slot, col.set(v.colour));
         if (high) {
-          featured = true; m.instanceMatrix.needsUpdate = m.instanceColor.needsUpdate = true;
-          signs.group.position.copy(dummy.position); signs.group.rotation.copy(dummy.rotation); signs.set(v.route);
+          featuredMode=v.mode; m.instanceMatrix.needsUpdate=m.instanceColor.needsUpdate=true;
+          close.glass.position.copy(dummy.position); close.glass.quaternion.copy(dummy.quaternion);
+          if(v.mode==='bus'){signs.group.position.copy(dummy.position);signs.group.rotation.copy(dummy.rotation);signs.set(v.route);}
         }
       }
-      if (closeBus) { closeBus.count = featured ? 1 : 0; signs.group.visible = featured && !!signs.group.userData.route; }
+      for(const [mode,{body,glass}] of closeMeshes){body.count=mode===featuredMode?1:0;glass.visible=mode===featuredMode;}
+      if(signs)signs.group.visible=featuredMode==='bus' && !!signs.group.userData.route;
       for (const k of Object.keys(meshes)) { meshes[k].count = n[k]; meshes[k].instanceMatrix.needsUpdate = true; if (meshes[k].instanceColor) meshes[k].instanceColor.needsUpdate = true; }
     },
     setNight(f) { mat.userData.uNight.value = f; },

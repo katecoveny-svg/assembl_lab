@@ -42,7 +42,7 @@ switchView.href = alternate.href;
 switchView.textContent = listOnly ? 'Open 3D city' : 'Use list view';
 document.body.classList.toggle('list-only', listOnly);
 if (!listOnly) try {
-  const { createWorld } = await import('./scene.js');
+  const { createWorld } = await import('./scene.js?v=4f8baf28ac');
   S.world = await createWorld(canvas, { phone, capture: qs.has('capture'), timeMs: skyMs });
   window.liveWorld = S.world;
 } catch (e) { console.error(e); document.body.classList.add('list-only'); switchView.textContent = 'Retry 3D city'; alternate.searchParams.set('view', '3d'); switchView.href = alternate.href; $('#detail').innerHTML = `<p class="note warn">The 3D city could not start in this browser (${esc(e.message)}). The search and lists below still work.</p>`; }
@@ -164,7 +164,7 @@ async function select(sel, { fly = true, closeUp = false } = {}) { // a later ch
   nearController?.abort(); S.nearStreetNames=[];
   ++locationRun; ++stopRun; S.sel = sel; S.closeUpBus = closeUp; S.arrivals = null; setPanelSmall(false);
   const w = S.world;
-  if (w) { w.select(sel?.kind === 'vehicle' ? sel.id : null); if (sel?.kind !== 'vehicle') w.unfollow(); }
+  if (w) { w.controls.minDistance=sel?.kind==='vehicle'?18:60; w.select(sel?.kind === 'vehicle' ? sel.id : null); if (sel?.kind !== 'vehicle') w.unfollow(); }
   if (sel?.kind === 'route') {
     w?.showRoute(null); w?.showStop(null);
     render(); // The route and Follow action do not depend on the optional planned line.
@@ -181,7 +181,11 @@ async function select(sel, { fly = true, closeUp = false } = {}) { // a later ch
     else if (w && v?.routeId) { await ensureShapes(); if (S.sel !== sel) return; const r = S.index.routes.get(v.routeId); w?.showRoute(S.shapes?.[v.routeId], r?.color && r.color !== '000000' ? '#' + r.color : '#ffffff'); }
     w?.showStop(null); if (v && fly && X.inArea(v.lat, v.lon)) {
       const p = X.toWorld(v.lat, v.lon), ground = w?.heightAt(p.x,p.z) || 0, close = closeUp && freshMappedVehicle(v);
-      w?.flyTo([p.x, ground + (close ? 2 : 0), p.z], close ? 66 : 420, close ? 0.47 : 0.42, close && v.bearing != null ? v.bearing * Math.PI / 180 : null, close && vehicleInfo(v).mode === 'bus');
+      const mode=vehicleInfo(v).mode, bus=mode==='bus', ferry=mode==='ferry';
+      const range=bus ? (phone?35:28) : ferry ? (phone?70:54) : 66;
+      const lift=bus ? 1.75 : ferry ? 3.1 : 2;
+      const bearing = close && v.bearing != null ? v.bearing*Math.PI/180+(bus||ferry?1.90:0) : null;
+      w?.flyTo([p.x, (ferry?0:ground)+(close?lift:0), p.z],close?range:420,close ? .32 : .42,bearing,close && bus);
     }
   } else { w?.showRoute(null); w?.showStop(null); }
   const u = new URL(location.href); ['route', 'stop', 'vehicle'].forEach((k) => u.searchParams.delete(k));
