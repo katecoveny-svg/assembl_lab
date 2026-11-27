@@ -5,11 +5,14 @@
 // Cloudflare Pages Function. Uses OPENAI_API_KEY first when set (HOME_OPENAI_MODEL), then the ANTHROPIC_API_KEY secret. Optional: HOME_AGENT_MODEL (default claude-fable-5-2),
 // HOME_AGENT_FALLBACK (default claude-opus-5-5), HOME_AGENT_DAILY_CAP (per running instance, default 400 a day).
 const MAX_BODY = 80_000, MAX_MESSAGES = 30;
-const ALLOW = new Set(["assembl.co.nz", "www.assembl.co.nz", "assembl-home.pages.dev"]);
+const ALLOW = new Set(["assembl.co.nz", "www.assembl.co.nz", "assembl-home.pages.dev", "lab.assembl.co.nz"]);
 let day = "", used = 0;
+function isAllowedHost(host) {
+  return ALLOW.has(host) || /\.assembl\.co\.nz$/i.test(host) || /\.pages\.dev$/i.test(host) || /^localhost(:\d+)?$/i.test(host) || /^127\.0\.0\.1(:\d+)?$/i.test(host);
+}
 function cors(request) {
   const o = request.headers.get("origin"); let host = ""; try { host = new URL(o).host; } catch {}
-  return ALLOW.has(host) ? { "access-control-allow-origin": o, "access-control-allow-methods": "GET, POST, OPTIONS", "access-control-allow-headers": "content-type", "access-control-max-age": "86400", vary: "origin" } : {};
+  return isAllowedHost(host) ? { "access-control-allow-origin": o, "access-control-allow-methods": "GET, POST, OPTIONS", "access-control-allow-headers": "content-type", "access-control-max-age": "86400", vary: "origin" } : {};
 }
 const json = (request, status, body) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", "cache-control": "no-store", ...cors(request) } });
 
@@ -137,7 +140,7 @@ export async function onRequest({ request, env }) {
   if (request.method === "GET") return json(request, 200, { type: "assembl.home.agent.status", configured: !!(env.OPENAI_API_KEY || env.ANTHROPIC_API_KEY), model: env.OPENAI_API_KEY ? (env.HOME_OPENAI_MODEL || OPENAI_MODEL) : MODEL, first: env.OPENAI_API_KEY ? "openai" : "anthropic" });
   if (request.method !== "POST") return json(request, 405, { error: "method" });
   const o = request.headers.get("origin"); let host = ""; try { host = new URL(o).host; } catch {}
-  if (o && !ALLOW.has(host) && host !== new URL(request.url).host) return json(request, 403, { error: "origin" });
+  if (o && !isAllowedHost(host) && host !== new URL(request.url).host) return json(request, 403, { error: "origin" });
   if (!env.ANTHROPIC_API_KEY && !env.OPENAI_API_KEY) return json(request, 503, { error: "not_configured" });
   const today = new Date().toISOString().slice(0, 10); if (today !== day) { day = today; used = 0; }
   if (used >= +(env.HOME_AGENT_DAILY_CAP || 400)) return json(request, 429, { error: "daily_cap" });

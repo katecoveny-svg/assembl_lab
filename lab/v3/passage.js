@@ -51,3 +51,26 @@ function label(){toggle.hidden=false;toggle.textContent=paused?'Play motion':'Pa
 toggle.onclick=()=>{paused=!paused;label();request()};
 media.addEventListener('change',()=>{paused=media.matches;label();request()});
 addEventListener('scroll',request,{passive:true});addEventListener('resize',request);document.addEventListener('visibilitychange',request);label();request();
+
+// Crisp interactive live-preview modal for "Work you can open"
+const pvModal=document.getElementById('tool-preview-modal');
+const pvFrame=document.getElementById('preview-frame');
+const pvTitle=document.getElementById('preview-modal-title');
+const pvFull=document.getElementById('preview-open-full');
+const pvClose=document.getElementById('preview-close');
+function closePreview(){if(!pvModal)return;pvModal.hidden=true;if(pvFrame)pvFrame.src='about:blank';document.body.style.overflow='';}
+if(pvModal){
+ document.querySelectorAll('.tool-preview-btn[data-preview-url]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+   const url=btn.dataset.previewUrl;
+   if(pvTitle)pvTitle.textContent=btn.dataset.previewTitle||'Interactive preview';
+   if(pvFull)pvFull.href=url;
+   if(pvFrame)pvFrame.src=url;
+   pvModal.hidden=false;
+   document.body.style.overflow='hidden';
+  });
+ });
+ pvClose?.addEventListener('click',closePreview);
+ pvModal.addEventListener('click',e=>{if(e.target===pvModal)closePreview();});
+ addEventListener('keydown',e=>{if(e.key==='Escape'&&!pvModal.hidden)closePreview();});
+}

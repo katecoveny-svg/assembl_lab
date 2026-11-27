@@ -310,10 +310,11 @@ async function firstGuideClick(){
  if(loadingGuide)return;
  guideButton.setAttribute('aria-busy','true');
  try{
-  studioStyles();loadingGuide=import('/guide.js');await loadingGuide;
-  const oldTop=guideButton.getBoundingClientRect().top;
-  $('#studio-details').open=true;window.scrollBy(0,guideButton.getBoundingClientRect().top-oldTop);
-  guideButton.removeEventListener('click',firstGuideClick);guideButton.click();
+  studioStyles();
+  loadingGuide=import('../guide.js').catch(()=>import('/guide.js'));
+  await loadingGuide;
+  guideButton.removeEventListener('click',firstGuideClick);
+  guideButton.click();
  }catch{loadingGuide=null;guideButton.textContent='Retry guide'}
  finally{guideButton.removeAttribute('aria-busy')}
 }

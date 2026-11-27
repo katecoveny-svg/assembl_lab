@@ -16,7 +16,11 @@ const panel = $("#ask"), fab = $("#ask-fab"), log = $("#ask-log"), input = $("#a
 let live = null, eleven = false, voiceOn = true, busy = false, history = [];
 
 // ------------------------------------------------------------------------------------------- open, close, the button
-const showFab = () => fab.classList.toggle("show", scrollY > innerHeight * 0.6 || !panel.hidden);
+const showFab = () => {
+  if (!fab) return;
+  fab.hidden = false;
+  fab.classList.add("show");
+};
 addEventListener("scroll", showFab, { passive: true }); showFab();
 function open(opts = {}) {
   panel.hidden = false; fab.setAttribute("aria-expanded", "true"); if (live === null || !eleven) check();
@@ -98,10 +102,16 @@ function step(text) {
 }
 
 // what the agent (or the set answers) can do on the page
-const SECTIONS = { top: "#top", what: "#what", work: "#work", homes: "#work", how: "#how", who: "#who", start: "#start" };
-const NAMES = { top: "the top", what: "what we do", work: "the work", homes: "the work", how: "how we work", who: "who it is for", start: "how to start" };
+const SECTIONS = { top: "#top", pavilion: "#pavilion", what: "#what", work: "#work", homes: "#architecture", architecture: "#architecture", lab: "#lab", tides: "#tides", garden: "#garden-title", how: "#how", who: "#who", start: "#start" };
+const NAMES = { top: "the top", pavilion: "the Waiheke Pavilion", what: "what we do", work: "selected work", homes: "two timber homes (16A)", architecture: "two timber homes (16A)", lab: "assembl Lab", tides: "Waitematā Tides", garden: "Aotearoa Garden Studio", how: "how we work", who: "who it is for", start: "how to start" };
 async function goTo(section) {
   const el = $(SECTIONS[section] || "#top"); if (!el) return "That section isn't on the page.";
+  // Automatically open collapsed <details> (e.g. #studio-details for #what / #how / #who / #faq) before scrolling
+  const details = el.closest("details");
+  if (details && !details.open) {
+    details.open = true;
+    await wait(60);
+  }
   el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
   await wait(reduce ? 150 : 950); return `Scrolled to ${NAMES[section] || section}.`;
 }
@@ -157,19 +167,21 @@ async function scripted(text) {
   const t = text.toLowerCase();
   if (/price|cost|how much|budget|quote/.test(t)) return say("It depends on the work. After a short conversation we send a written proposal with the scope, price and timing. The button at the end of the page opens an email to us.");
   if (/chatgpt|claude|assistant|google|found|seo|search|rank/.test(t)) { await goTo("what"); return say("Getting found is the first of the three things we do: by assistants and by search, when people ask for what you do. No one can promise a ranking, but we can make your business easy to find and easy to quote."); }
-  if (/3d|render|house|model|plan|drawing|architect|twin|work|show|demo|film|bird/.test(t)) { await goTo("work"); return say("Here's work you can open now: a house built from its plans, the birds of Aotearoa, and our fly-throughs."); }
+  if (/tide|harbour|water|boat/.test(t)) { await goTo("tides"); return say("Here is Waitematā Tides — drag the boat across the harbour or step through published LINZ high and low tides."); }
+  if (/garden|plant|flax|native|landscape/.test(t)) { await goTo("garden"); return say("Here is the Aotearoa Garden Studio — paint in harakeke and native tussocks, switch to architectural model view, and scrub through the seasons."); }
+  if (/3d|render|house|model|plan|drawing|architect|twin|work|show|demo|film|waiheke/.test(t)) { await goTo("work"); return say("Here's work you can open now: the Waiheke Pavilion fly-through, two timber homes built from consent drawings, Waitematā Tides, and the Aotearoa Garden Studio."); }
   if (/approve|agent|human|person|how do you work|process/.test(t)) { await goTo("how"); return say("Agents prepare, and a person approves every step. Nothing goes out without a yes."); }
   if (/contact|email|talk|start|hire|work with/.test(t)) { await goTo("start"); return say("Start here: the Start a conversation button opens an email to us. Send a line about your business and what you'd like to do."); }
   if (/who|kate|about|where|based/.test(t)) return say("assembl is a full-service marketing and advertising agency in Tāmaki Makaurau Auckland, founded by Kate Hudson. Marketing for the agentic era, for every kind of New Zealand business.");
   if (/what|do you|services|help/.test(t)) { await goTo("what"); return say("Three things. We help you get found, by assistants and by search. We create campaigns. And we show what's possible, with working demos, films and 3D twins."); }
-  return say("I can't reach the live guide just now, so these are set answers. Try the tour, or ask about getting found, campaigns, our work or how to start.");
+  return say("I can't reach the live guide just now, so these are set answers. Try the tour, or ask about getting found, campaigns, our 3D work, or how to start.");
 }
 
 // ------------------------------------------------------------------------------------------- the tour
 const TOUR = [
   { to: "top", line: "Kia ora, welcome to assembl. We're a full-service marketing and advertising agency in Tāmaki Makaurau Auckland: marketing for the agentic era. I'll walk you through in under a minute." },
+  { to: "work", line: "This is work you can open now: our Waiheke architectural film, two timber homes built from consent plans, Waitematā Tides, and the Aotearoa Garden Studio." },
   { to: "what", line: "Here's what we do. We help you get found, by assistants and by search. We create campaigns. And we show what's possible, with working demos, films and 3D twins." },
-  { to: "work", line: "This is work you can open now: a house built from its plans, the birds of Aotearoa, and our fly-throughs." },
   { to: "how", line: "How we work. Agents prepare, and a person approves every step. Nothing goes out without a yes." },
   { to: "who", line: "It's for every kind of New Zealand business, from small local teams to larger brands." },
   { to: "start", line: "That's the page. Ask me anything, or tap Start a conversation to email us." },
