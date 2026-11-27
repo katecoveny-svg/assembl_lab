@@ -57,7 +57,7 @@ function changeMode(next) {
   controls.enabled=!inside;
   const look=controls.target.clone().sub(studio.camera.position);
   yaw=Math.atan2(look.x,-look.z); pitch=Math.atan2(look.y,Math.hypot(look.x,look.z));
-  wrap.dataset.walk=mode;
+  wrap.dataset.walk=mode;send('walk',{mode:next});
   tour.textContent=next==='tour'?'Pause walk':next==='paused'?'Continue inside':'Walk inside';
   const hadTourFocus=document.activeElement===tour;
   tour.hidden=inside;
@@ -82,7 +82,9 @@ function tick(now) {
   const dt=last?Math.min(.3,(now-last)/1000):0; last=now;
   if(mode==='tour') {
     elapsed=Math.min(duration,elapsed+dt*1000);
+    const crossed=isInside();
     place(journeyPose(elapsed/duration));
+    if(!crossed&&isInside())send('threshold');
     if(elapsed>=duration)changeMode('room');
   } else if(mode==='room') stepInside(dt);
   schedule();
@@ -192,9 +194,18 @@ function plant() {
   const p=candidates[keyboardStroke++%Math.min(2,candidates.length)];
   studio.paintAt(p.x,p.z);
 }
-window.addEventListener('message', e => {
+window.addEventListener('message', async e => {
   if (e.source !== parent || e.origin !== parentOrigin || e.data?.studio !== 'assembl-planting') return;
   if (e.data.type === 'visibility') { inView = !!e.data.visible; document.documentElement.toggleAttribute('data-garden-idle', !inView); if(inView)schedule();else{stopClock();keys.clear();} return; }
+  if(e.data.type==='continue-bed'){
+    try {
+      const {encodeBed}=await import('./public-bed.mjs?v=1');
+      const month=Number(document.querySelector('#season-slider').value);
+      const year=Number(document.querySelector('.yr-btn.active').dataset.year);
+      send('continue-bed',{payload:await encodeBed(studio,month,year)});
+    } catch { send('bed-unavailable'); }
+    return;
+  }
   if(!['mix','season','year','undo','plant'].includes(e.data.type))return;
   interacted=true;
   if(mode==='room'||isInside())returnToGarden();else pauseWalk();

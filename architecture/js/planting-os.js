@@ -143,8 +143,11 @@ function mountPlantingHost(el, ctx, { isTab = false } = {}) {
   const project = ctx?.project ?? null;
   const esc = ctx?.esc ?? ((s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]));
   let mode = 'studio';
-  const initialUrl = buildPlantingEmbedUrl(project, { mode });
-  const standaloneUrl = initialUrl.replace(/([?&])embed=os&?/, '$1').replace(/[?&]$/, '');
+  const publicBed=!isTab && !project && location.hash==='#/planting' ? history.state?.publicBed : null;
+  const suffix=publicBed ? '#public-bed='+encodeURIComponent(publicBed) : '';
+  const initialUrl = buildPlantingEmbedUrl(project, { mode })+suffix;
+  const standaloneUrl = new URL(initialUrl,location.href);
+  standaloneUrl.searchParams.delete('embed');
 
   el.innerHTML = `
     <section class="pl-os-shell${isTab ? ' is-tab' : ''}" aria-label="Aotearoa 3D Planting Studio">
@@ -179,6 +182,11 @@ function mountPlantingHost(el, ctx, { isTab = false } = {}) {
     if (!btn) return;
     mode = btn.dataset.plMode || 'studio';
     el.querySelectorAll('[data-pl-mode]').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+    // Keep a continued design mounted when switching views, including any new edits.
+    if (publicBed) {
+      iframe?.contentWindow?.__nzStudio?.setViewMode(mode === 'studio' ? '3d' : mode);
+      return;
+    }
     const nextUrl = buildPlantingEmbedUrl(project, { mode });
     if (iframe) iframe.src = nextUrl;
     if (extLink) extLink.href = nextUrl.replace(/([?&])embed=os&?/, '$1').replace(/[?&]$/, '');
@@ -186,8 +194,18 @@ function mountPlantingHost(el, ctx, { isTab = false } = {}) {
   el.addEventListener('click', onModeClick);
 
   const onMessage = (ev) => {
-    if (ev.origin !== location.origin) return;
+    if (ev.origin !== location.origin || ev.source!==iframe?.contentWindow) return;
     const data = ev.data;
+    if(publicBed && data?.type==='assembl:bed-restored'){
+      if(statsEl){
+        statsEl.textContent='Opened your planting · '+data.count+' plants · Year '+data.year+' · '+new Intl.NumberFormat('en-NZ',{style:'currency',currency:'NZD',maximumFractionDigits:0}).format(data.total/100)+' indicative supply';
+        statsEl.hidden=false;statsEl.setAttribute('role','status');
+      }
+      return;
+    }
+    if(publicBed && data?.type==='assembl:bed-recovery'){
+      statsEl.textContent='Original example displayed. Use Back to return to your homepage planting.';statsEl.hidden=false;return;
+    }
     if (!data || data.type !== 'assembl:planting-stats') return;
     const text = formatPlantingStats(data);
     if (statsEl && text) {

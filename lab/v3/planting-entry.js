@@ -46,3 +46,36 @@ window.addEventListener('message', e => {
 });
 controls.addEventListener('change', e => { if (e.target.matches('select')) send(e.target.name, {value:e.target.value}); });
 controls.addEventListener('click', e => { const action = e.target.closest('button')?.dataset.gardenAction; if (action) send(action); });
+
+// Keep the edit in this tab. The fragment contains only the public bed's plant
+// placements, season, age and catalogue total; HTTP requests omit fragments.
+const full=stage.closest('section')?.querySelector('.planting-rail a[href*="/architecture/#/planting"]');
+if(full){
+  let waiting=0,original=full.textContent, plainNext=false;
+  const recoverBed=()=>{
+    clearTimeout(waiting);waiting=0;plainNext=true;
+    full.textContent='Open original studio';
+    status.textContent='Could not carry this planting across. Your edits are still here.';
+    full.removeAttribute('aria-busy');
+  };
+  full.addEventListener('click',event=>{
+    if(!frame||!stage.dataset.ready||plainNext||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+    event.preventDefault();if(waiting)return;
+    full.setAttribute('aria-busy','true');full.textContent='Opening your planting…';
+    waiting=setTimeout(recoverBed,4500);send('continue-bed');
+  });
+  addEventListener('pageshow',()=>{
+    clearTimeout(waiting);waiting=0;plainNext=false;full.removeAttribute('aria-busy');full.textContent=original;
+  });
+  addEventListener('message',event=>{
+    if(!waiting||event.source!==frame?.contentWindow||event.origin!==source.origin||event.data?.studio!=='assembl-planting')return;
+    if(event.data.type==='bed-unavailable'){recoverBed();return;}
+    if(event.data.type!=='continue-bed')return;
+    const payload=event.data.payload;
+    if(typeof payload!=='string'||payload.length>230000||!/^b1\.[a-zA-Z0-9_.~-]+$/.test(payload)){recoverBed();return;}
+    const target=new URL(full.href);
+    target.hash='/planting/bed/'+payload;
+    clearTimeout(waiting);waiting=0;full.textContent=original;full.removeAttribute('aria-busy');
+    location.assign(target.href);
+  });
+}
