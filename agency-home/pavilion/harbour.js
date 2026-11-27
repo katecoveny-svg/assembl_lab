@@ -6,7 +6,8 @@ import { Water } from './harbour-vendor/Water.js';
 const waves=[[.10,.61,.62,.78,1.16],[.05,1.15,-.89,.46,1.64],[.021,2.27,.96,-.28,2.10]];
 const number=x=>x.toFixed(5);
 const waveGL=waves.map(([a,k,dx,dz,w])=>number(a)+'*sin('+number(k)+'*dot(p,vec2('+number(dx)+','+number(dz)+'))-'+number(w)+'*s)').join('+');
-function swell(x,z,t){let y=0;for(const [a,k,dx,dz,w] of waves)y+=a*Math.sin(k*(x*dx+z*dz)-w*t);return y}
+function swell(x,z,t){let y=0;for(const [a,k,dx,dz,w] of waves)y+=a*Math.sin(k*(x*dx+z*dz)-w*t);return y*(1-T.MathUtils.smoothstep(Math.abs(z),50,150))}
+const boatHome={x:5,z:-43},boatScale=1.36;
 const xyz=(x,y,z)=>new T.Vector3(x,y,z);
 function makeBoat(scene){
  const boat=new T.Group();scene.add(boat);
@@ -141,7 +142,7 @@ export async function createHarbour(holder){
    // A rocking hull makes a short waterline disturbance, centred on the draggable boat.
    vec2 boatLocal=p-hullCentre;
    vec2 hullAxes=vec2(dot(boatLocal,vec2(.549,.836)),dot(boatLocal,vec2(-.836,.549)));
-   float ring=length(hullAxes/vec2(1.06,3.4));
+   float ring=length(hullAxes/(vec2(1.06,3.4)*${number(boatScale)}));
    float crest=sin(ring*12.-time*2.6)*exp(-2.9*abs(ring-1.17));
    chop+=boatLocal/max(length(boatLocal),.2)*crest*.12;
    float wake=0.;
@@ -196,13 +197,27 @@ export async function createHarbour(holder){
  const scale=new T.CanvasTexture(marks);scale.colorSpace=T.SRGBColorSpace;scale.anisotropy=4;
  const face=new T.Mesh(new T.PlaneGeometry(.42,1120/240),new T.MeshStandardMaterial({map:scale,roughness:.7,side:T.DoubleSide}));
  face.position.set(0,datum+(1100-560)/240,.196);staff.add(face);staff.position.set(-2.15,0,-21);scene.add(staff);
- const boat=makeBoat(scene);boat.scale.setScalar(1.36);boat.position.set(5,0,-43);
+ const boat=makeBoat(scene);boat.scale.setScalar(boatScale);boat.position.set(boatHome.x,0,boatHome.z);
  const grip=document.createElement('button');grip.className='boat-grip';grip.type='button';
  const hint=document.createElement('span');hint.textContent='Drag boat';grip.append(hint);grip.setAttribute('aria-label','Drag the model boat, or use the arrow keys to move it. Home resets the boat.');
  const pin=new T.Vector3(),pointer=new T.Vector2(),ray=new T.Raycaster(),plane=new T.Plane(xyz(0,1,0)),hit=new T.Vector3();
  let taking=null,lastMark=-1,trailIndex=0;
+ // Intersect the left and right edges of the current viewport at the boat's depth.
+ // Reserve the full hull span so its grab target stays on screen in portrait.
+ const edgeRay=new T.Raycaster(),edgePoint=new T.Vector2();
+ function horizontalLimit(ndc,z){
+  edgeRay.setFromCamera(edgePoint.set(ndc,0),camera);
+  const {origin,direction}=edgeRay.ray;
+  return origin.x+(z-origin.z)*direction.x/direction.z;
+ }
+ function visibleX(x,z){
+  const edge=Math.max(0,1-24/width),clearance=boatScale*3.7;
+  const left=Math.max(-13,horizontalLimit(-edge,z)+clearance);
+  const right=Math.min(16,horizontalLimit(edge,z)-clearance);
+  return left<right?T.MathUtils.clamp(x,left,right):(left+right)/2;
+ }
  function moveBoat(x,z){
-  const nx=T.MathUtils.clamp(x,-13,16),nz=T.MathUtils.clamp(z,-64,-30);
+  const nz=T.MathUtils.clamp(z,-64,-30),nx=visibleX(x,nz);
   if(Math.hypot(nx-boat.position.x,nz-boat.position.z)>.08&&clock-lastMark>.13){
    trail[trailIndex].set(boat.position.x,boat.position.z,clock);trailIndex=(trailIndex+1)%trail.length;lastMark=clock;
   }
@@ -211,20 +226,20 @@ export async function createHarbour(holder){
  grip.onpointerdown=e=>{
   if(!e.isPrimary||e.button!==0)return;
   e.stopPropagation();
-  const hull=pin.set(boat.position.x,water.position.y,boat.position.z).project(camera);
-  taking={id:e.pointerId,x:e.clientX,y:e.clientY,u:hull.x,v:hull.y};
+  taking={id:e.pointerId,x:e.clientX,y:e.clientY,startX:boat.position.x,startZ:boat.position.z};
   grip.setPointerCapture(e.pointerId);grip.dataset.grabbing='true';
  };
  grip.onpointermove=e=>{
   if(taking?.id!==e.pointerId)return;
-  pointer.set(taking.u+2*(e.clientX-taking.x)/width,taking.v-2*(e.clientY-taking.y)/hh);
+  const hull=pin.set(taking.startX,water.position.y,taking.startZ).project(camera);
+  pointer.set(hull.x+2*(e.clientX-taking.x)/width,hull.y-2*(e.clientY-taking.y)/hh);
   ray.setFromCamera(pointer,camera);plane.constant=-water.position.y;
   if(ray.ray.intersectPlane(plane,hit))moveBoat(hit.x,hit.z);
  };
  grip.onlostpointercapture=()=>{taking=null;delete grip.dataset.grabbing};
  grip.onkeydown=e=>{
   const offset={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-3],ArrowDown:[0,3]}[e.key];
-  if(e.key==='Home'){e.preventDefault();moveBoat(6,-47)}
+  if(e.key==='Home'){e.preventDefault();moveBoat(boatHome.x,boatHome.z)}
   if(offset){e.preventDefault();moveBoat(boat.position.x+offset[0],boat.position.z+offset[1])}
  };
  let ready=false;
@@ -236,11 +251,14 @@ export async function createHarbour(holder){
  camera.position.set((w/h>1.25?0:4.5)+Math.sin(pan)*2,3.9+tilt,-16+dist+4.4);
  const targetX=(w/h>1.25?0:4.5)+pan*2.3;
  camera.lookAt(targetX,2.75+tilt*.70,-16);
+ camera.updateMatrixWorld();
+ boat.position.x=visibleX(boat.position.x,boat.position.z);
 
  water.position.y=height-1.65;const by=water.position.y+swell(boat.position.x,boat.position.z,clock);
  boat.position.y=by;const yaw=boat.rotation.y,x=boat.position.x,z=boat.position.z;
- const pitch=(swell(x+Math.sin(yaw)*1.95,z+Math.cos(yaw)*1.95,clock)-swell(x-Math.sin(yaw)*1.95,z-Math.cos(yaw)*1.95,clock))/3.9;
- const roll=(swell(x+Math.cos(yaw)*.82,z-Math.sin(yaw)*.82,clock)-swell(x-Math.cos(yaw)*.82,z+Math.sin(yaw)*.82,clock))/1.64;
+ const halfLength=1.95*boatScale,halfBeam=.82*boatScale;
+ const pitch=(swell(x+Math.sin(yaw)*halfLength,z+Math.cos(yaw)*halfLength,clock)-swell(x-Math.sin(yaw)*halfLength,z-Math.cos(yaw)*halfLength,clock))/(2*halfLength);
+ const roll=(swell(x+Math.cos(yaw)*halfBeam,z-Math.sin(yaw)*halfBeam,clock)-swell(x-Math.cos(yaw)*halfBeam,z+Math.sin(yaw)*halfBeam,clock))/(2*halfBeam);
  boat.rotation.order='YXZ';boat.rotation.x=-Math.atan(pitch);boat.rotation.z=Math.atan(roll);
  m.uniforms.hullCentre.value.set(x,z);m.uniforms.time.value=clock;renderer.render(scene,camera);
  if(!ready){
@@ -276,7 +294,7 @@ export async function createHarbour(holder){
   raf=requestAnimationFrame(tick);
  }
  function sync(){cancelAnimationFrame(raf);if(active){render();last=performance.now();if(!paused&&!document.hidden)raf=requestAnimationFrame(tick)}}
- canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();active=false;cancelAnimationFrame(raf);holder.dispatchEvent(new Event('waterlost'))});
+ canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();active=false;cancelAnimationFrame(raf);resize.disconnect();renderer.dispose();holder.dispatchEvent(new Event('waterlost'))},{once:true});
  sync();
  return {setHeight(v){height=v;render()},setActive(v){active=v;sync()},pause(v){paused=v;sync()},state(){return {clock,height,boat:[boat.position.x,boat.position.z]}}}
 }

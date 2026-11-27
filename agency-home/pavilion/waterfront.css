@@ -139,3 +139,11 @@ html body #garden.agency-garden{padding:0;margin:0;max-width:none}
 @media(max-width:680px){.project-purpose{grid-template-columns:1fr;gap:12px}.solar-scene{aspect-ratio:1.1}.solar-rail>p{font-size:14px}}
 
 @media(min-width:681px){.agency-services>div{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Frame the reference and its real-time plate through the same lens, even without a renderer. */
+html.agency-landing #vista[data-room-still=living] #room-poster{
+ inset:auto;left:50%;top:50%;width:auto;height:var(--base-gate,100%);max-width:none;
+ transform:translate(-50%,-50%);object-fit:contain
+}
+#pavilion[data-roof-inspect] :is(#walk-pad,.walk-directions){display:none}
+html.agency-landing #pavilion .house-tools{flex-wrap:wrap;row-gap:0}

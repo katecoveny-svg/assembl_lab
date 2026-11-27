@@ -1,14 +1,11 @@
 import * as THREE from 'three';
 import {createWorld} from 'https://lab.assembl.co.nz/auckland/live/scene.js?v=dd0baa0eb7';
-import {parsePositions,toWorld,inArea,modeOf} from 'https://lab.assembl.co.nz/auckland/live/transit.js';
-const base='https://lab.assembl.co.nz/auckland/live/';
-const endpoint='https://wurwcrgxjjwqdaxqceey.supabase.co/functions/v1/bus-positions';
+import {subscribeReports} from './vehicle-reports.js?v=00fa4f7d40';
 const tell=(type,data={})=>parent.postMessage({city:type,...data},location.origin);
 const canvas=document.querySelector('canvas'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
 const phone=innerWidth<680;
-let world, rows=new Map(),selected=null,timer,stopped=false,firstVisit=true;
-const routes=fetch(base+'data/routes.json').then(r=>r.json()).then(data=>new Map(data.routes.map(r=>[r.id,r])));
-const palette={bus:'#b66143',train:'#52736f',ferry:'#507c98'};
+let world, rows=new Map(),selected=null,firstVisit=true,unsubscribe;
+const hosted=parent!==window && document.referrer && new URL(document.referrer).origin===location.origin;
 let preferred='bus';
 function choose(v) {
   if(!v)return;
@@ -34,27 +31,21 @@ function followMode(mode,cycle=false){
   const i=cycle?choices.findIndex(v=>v.id===selected):-1;
   choose(choices[(i+1)%choices.length]);
 }
-async function refresh(){
-  try{
-    const [response,idx]=await Promise.all([fetch(endpoint,{cache:'no-store',signal:AbortSignal.timeout(18000)}),routes]);
-    if(!response.ok)throw Error('positions');
-    const now=Date.now()/1000, parsed=parsePositions(await response.json());
-    const vehicles=parsed.vehicles.filter(v=>v.routeId&&inArea(v.lat,v.lon)&&v.ts&&now-v.ts<180&&now-v.ts>=-30);
-    if(stopped)return;
-    rows=new Map(vehicles.map(v=>{
-      const route=idx.get(v.routeId),mode=route?modeOf(route.type):null;
-      return [v.id,{...v,...toWorld(v.lat,v.lon),mode,route:route?.short||v.routeId.split('-')[0],heading:v.bearing==null?null:v.bearing*Math.PI/180,colour:palette[mode]}];
-    }).filter(([,v])=>v.mode));
-    world.setVehicles([...rows.values()]);
-    const recent=[...rows.values()].reduce((n,v)=>Math.max(n,v.ts),0);
-    if(selected&&!rows.has(selected)){selected=null;world.unfollow();}
-    const modes=Object.fromEntries(['bus','ferry','train'].map(k=>[k,candidates(k).length]));
-    tell('modes',{modes});
-    if(!selected&&rows.size)followMode(modes[preferred]?preferred:Object.keys(modes).find(k=>modes[k]));
-    tell('updates',{count:rows.size,ts:recent,selected:selected&&rows.get(selected)});
-  }catch(error){console.warn('City position update:',error.message);
-    rows.clear();selected=null;world.unfollow();world.setVehicles([]);tell('modes',{modes:{}});tell('unavailable');
-  }finally{if(!stopped)timer=setTimeout(refresh,15000)}
+function showReports(report, requestedId) {
+  if(!report.available){
+    rows.clear();selected=null;world.unfollow();world.setVehicles([]);
+    tell('modes',{modes:{}});tell('unavailable');return;
+  }
+  rows=new Map(report.vehicles.map(v=>[v.id,v]));
+  world.setVehicles(report.vehicles);
+  if(selected&&!rows.has(selected)){selected=null;world.unfollow();}
+  const modes=Object.fromEntries(['bus','ferry','train'].map(k=>[k,candidates(k).length]));
+  tell('modes',{modes});
+  if(requestedId && rows.has(requestedId))choose(rows.get(requestedId));
+  else if(!selected && rows.size)followMode(modes[preferred]?preferred:Object.keys(modes).find(k=>modes[k]));
+  const recent=report.vehicles.reduce((ts,v)=>Math.max(ts,v.ts),0);
+  tell('updates',{count:rows.size,ts:recent,selected:selected&&rows.get(selected)});
+  if(requestedId && !rows.has(requestedId))tell('expired');
 }
 function orbit(angle,zoom=1){
   world.stopFlight();world.unfollow();
@@ -141,10 +132,18 @@ async function start(){
     if(!firstVisit||(!world.stats().aerial&&performance.now()-startTime<2200))return;
     firstVisit=false;world.onFrame=null;tell('ready');
   };
-  refresh();
-  addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==parent)return;if(e.data?.city==='next')followMode(preferred,true);if(e.data?.city==='follow'&&['bus','ferry','train'].includes(e.data.mode))followMode(e.data.mode,true)});
+  addEventListener('message',e=>{
+    if(!hosted||e.origin!==location.origin||e.source!==parent)return;
+    if(e.data?.city==='positions')showReports(e.data.report,e.data.requestedId);
+    if(e.data?.city==='select'){
+      const vehicle=rows.get(e.data.id);if(vehicle)choose(vehicle);else tell('expired');
+    }
+    if(e.data?.city==='next')followMode(preferred,true);
+    if(e.data?.city==='follow'&&['bus','ferry','train'].includes(e.data.mode))followMode(e.data.mode,true);
+  });
+  if(hosted)tell('subscribe');else unsubscribe=subscribeReports(showReports,15000);
   canvas.addEventListener('webglcontextlost',()=>tell('failed'),{once:true});
   window.cityView={world,rows:()=>[...rows.values()]};
 }
 start().catch(()=>tell('failed'));
-addEventListener('pagehide',()=>{stopped=true;clearTimeout(timer)});
+addEventListener('pagehide',()=>unsubscribe?.());

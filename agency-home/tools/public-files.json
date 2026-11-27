@@ -195,6 +195,10 @@
     "pavilion/planting-entry.js": "lab/v3/planting-entry.js",
     "pavilion/planting-entry.css": "lab/v3/planting-entry.css",
     "pavilion/assets/gemini-coastal-wide.webp": "lab/v3/img/tiles/gemini-coastal-wide.webp",
-    "pavilion/assets/gemini-coastal-phone.webp": "lab/v3/img/tiles/gemini-coastal-phone.webp"
+    "pavilion/assets/gemini-coastal-phone.webp": "lab/v3/img/tiles/gemini-coastal-phone.webp",
+    "pavilion/vehicle-reports.js": "agency-home/pavilion/vehicle-reports.js",
+    "pavilion/assets/room-bedroom.webp": "agency-home/pavilion/assets/room-bedroom.webp",
+    "pavilion/assets/room-bedroom-phone.webp": "agency-home/pavilion/assets/room-bedroom-phone.webp",
+    "pavilion/assets/room-living-browser.webp": "agency-home/pavilion/assets/room-living-browser.webp"
   }
 }

@@ -1,3 +1,4 @@
+import {subscribeReports} from './vehicle-reports.js?v=00fa4f7d40';
 const motion = matchMedia('(prefers-reduced-motion: reduce)');
 const heads = document.querySelectorAll('#homes-title,#garden-title,.transport h3,#tides h3,#contact h2');
 const reveals = new IntersectionObserver(entries=>{
@@ -13,8 +14,49 @@ const reveals = new IntersectionObserver(entries=>{
 heads.forEach(el=>reveals.observe(el));
 const host=document.querySelector('#city-host'), replay=document.querySelector('#ak-fly'),status=document.querySelector('#ak-status'),trip=document.querySelector('#ak-trip');
 const fullCity='https://lab.assembl.co.nz/auckland/live/?view=3d';
-let frame,visible=false,linger,watchdog,failed=false;
+let frame,visible=false,linger,watchdog,failed=false,stopCityReports,requestedVehicle;
+const listCity='https://lab.assembl.co.nz/auckland/live/?view=list';
+const entry=document.querySelector('[data-arrival-report]');
+const earlyTitle=entry.querySelector('[data-vehicle-title]'),earlyFix=entry.querySelector('[data-vehicle-fix]'),follow=entry.querySelector('[data-vehicle-follow]');
+const clockNZ=new Intl.DateTimeFormat('en-NZ',{hour:'numeric',minute:'2-digit',second:'2-digit',timeZone:'Pacific/Auckland'});
+let stopEntry,entryVisible=false,displayed;
+function earlyReport(report) {
+  const rows=report.vehicles;
+  // Retain the same vehicle while it is reporting so the link survives a refresh.
+  const recent=rows.filter(v=>v.nearby && Date.now()/1000-v.ts<90);
+  displayed=rows.find(v=>v.id===displayed?.id) || (recent.length?recent:rows).reduce((best,v)=>!best||v.ts>best.ts?v:best,null);
+  if(!displayed){
+    earlyTitle.textContent=report.available?'No recent vehicle reports':'Vehicle feed unavailable';
+    earlyFix.textContent='Auckland Transport';follow.href=listCity;follow.textContent='Open transport list ↗';return;
+  }
+  const v=displayed;
+  earlyTitle.textContent=v.mode==='ferry'?'Ferry '+v.route:(v.mode==='train'?'Train ':'Bus ')+v.route;
+  earlyFix.textContent=(v.nearby?'Near '+v.nearby+' · ':'')+'Reported '+clockNZ.format(v.ts*1000)+' Auckland time';
+  const url=new URL(fullCity);url.searchParams.set('vehicle',v.id);
+  follow.href=url;follow.textContent='Find this '+v.mode+' in 3D ↓';
+}
+function entrySubscription(){
+  if(entryVisible&&!document.hidden&&!navigator.connection?.saveData){
+    if(!stopEntry){
+      if(displayed && Date.now()/1000-displayed.ts>=180)earlyReport({vehicles:[],available:true});
+      stopEntry=subscribeReports(earlyReport);
+    }
+  }else if(stopEntry){stopEntry();stopEntry=null;}
+}
+new IntersectionObserver(([e])=>{entryVisible=e.isIntersecting;entrySubscription();},{rootMargin:'0px'}).observe(entry);
+document.addEventListener('visibilitychange',entrySubscription);
+follow.addEventListener('click',event=>{
+  if(!displayed||!displayed.ts||Date.now()/1000-displayed.ts>=180||failed||event.defaultPrevented||event.button!==0||
+      event.ctrlKey||event.metaKey||event.shiftKey||event.altKey||navigator.connection?.saveData||
+      new URLSearchParams(location.search).get('renderer')==='still')return;
+  requestedVehicle=displayed.id;event.preventDefault();location.hash='transport';
+  if(frame && stopCityReports){frame.contentWindow.postMessage({city:'select',id:requestedVehicle},location.origin);requestedVehicle=null;}
+  // Keyboard focus travels to the destination even if it already owns the hash.
+  const section=document.querySelector('#transport');section.tabIndex=-1;section.focus({preventScroll:true});
+  section.scrollIntoView({block:'start',behavior:'instant'});
+});
 function clearFrame(){
+ stopCityReports?.();stopCityReports=null;
  clearTimeout(watchdog);frame?.remove();frame=null;host.classList.remove('city-ready');replay.hidden=true;for(const b of document.querySelectorAll('.fleet-modes button')){b.disabled=true;b.removeAttribute('aria-pressed');}
 }
 function mount(){
@@ -22,7 +64,7 @@ function mount(){
  if(new URLSearchParams(location.search).get('renderer')==='still'||navigator.connection?.saveData){
   status.textContent='City preview · open Auckland Live for transport updates.';return;
  }
- frame=document.createElement('iframe');frame.title='Interactive Auckland Live city and vehicle positions';frame.src='/pavilion/city-view.html?v=02e38905f6';
+ frame=document.createElement('iframe');frame.title='Interactive Auckland Live city and vehicle positions';frame.src='/pavilion/city-view.html?v=c5c9d2d8b8';
  host.append(frame);status.textContent='Loading the Auckland waterfront…';
  watchdog=setTimeout(()=>{if(!host.classList.contains('city-ready')){failed=true;clearFrame();status.textContent='The city is taking longer to load. Open Auckland Live below.'}},45000);
 }
@@ -40,6 +82,13 @@ function showSelection(v){
 addEventListener('message',e=>{
  if(e.origin!==location.origin||!frame||e.source!==frame.contentWindow)return;
  const m=e.data;
+ if(m?.city==='subscribe'){
+   stopCityReports?.();stopCityReports=subscribeReports(report=>{
+     frame?.contentWindow.postMessage({city:'positions',report,requestedId:requestedVehicle},location.origin);
+     requestedVehicle=null;
+   },15000);
+ }
+ if(m?.city==='expired')status.textContent='That vehicle has stopped reporting. Choose another recent report.';
  if(m?.city==='ready'){clearTimeout(watchdog);host.classList.add('city-ready');if(status.textContent.startsWith('Loading'))status.textContent='Checking Auckland Transport reports…'}
  if(m?.city==='updates'||m?.city==='unavailable'){
   if(m.selected){showSelection(m.selected);return}
