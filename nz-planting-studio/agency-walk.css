@@ -1,0 +1,18 @@
+@font-face {
+  font-family:'Instrument Sans';
+  src:url('../lab/v3/instrument.woff') format('woff');
+  font-style:normal;font-weight:400 700;font-display:swap;
+}
+.agency-journey {
+  position:absolute; right:max(14px,env(safe-area-inset-right)); bottom:14px; z-index:8;
+  display:flex; align-items:center; gap:1px; pointer-events:auto;
+  font:500 13px/1.2 'Instrument Sans',system-ui,sans-serif;
+}
+.agency-journey button {
+  appearance:none; padding:10px 14px; min-height:44px; border:0; border-radius:0;
+  font:inherit; background:#fffdfb; color:#654a4e; cursor:pointer;
+}
+.agency-journey button:focus-visible{outline:2px solid #654a4e;outline-offset:-4px}
+.agency-journey button:hover{background:#e3d0d2}
+.agency-journey [hidden]{display:none}
+.journey-sr{position:absolute;clip-path:inset(50%);width:1px;height:1px;overflow:hidden}

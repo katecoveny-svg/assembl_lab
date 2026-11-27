@@ -3,7 +3,7 @@
 const PI=Math.PI, TAU=2*PI;
 const palette={
   oioi:['#424735','#85815a','#bd955f'],
-  hydrangea:['#233c23','#45683a','#6e8b53'],
+  hydrangea:['#263929','#456244','#83916a'], agapanthus:['#24392e','#4d6b46','#89966b'], echinacea:['#30422e','#516746','#8c9163'],
   harakeke:['#244326','#567047','#a2a16d'], platts_black:['#332323','#693f42','#ae7266'],
   silver_spear:['#476158','#7f9a84','#bcc7a1'], rengarenga:['#306132','#5c884a','#c3cc98'],
   libertia:['#546329','#929345','#d7a75a'],
@@ -16,7 +16,7 @@ const palette={
 };
 const clans={
   oioi:'wire-rush',
-  hydrangea:'mophead',
+  hydrangea:'mophead',agapanthus:'umbel',echinacea:'cone',
   harakeke:'fan',platts_black:'fan',silver_spear:'fan',rengarenga:'straps',libertia:'straps',
   toetoe:'grass',red_tussock:'grass',carex_testacea:'grass',poa_cita:'grass',
   ponga:'fern',tikouka:'cabbage',nikau:'palm',pohutukawa:'canopy',manuka:'canopy',kowhai:'canopy',koromiko:'shrub',kakabeak:'shrub',panakenake:'mat',
@@ -43,8 +43,15 @@ export function makeNativeFoliage(species, three,{compact=false}={}){
  const r=rand([...id].reduce((seed,c)=>Math.imul(seed,31)+c.charCodeAt(0),48271));
  const random=(a,b)=>a+(b-a)*r();
  const h=species.matureHeight, spread=species.matureSpread;
- const d=[],rgb=[],uv=[],tip=[],part=[],idx=[];
- const vertex=(p,col,u,v,flex,tag)=>{d.push(...p);rgb.push(...col);uv.push(u,v);tip.push(flex);part.push(tag);};
+ const localBloom=['hydrangea','harakeke','rengarenga','libertia','agapanthus','echinacea'].includes(id);
+ const d=[],rgb=[],uv=[],tip=[],part=[],idx=[],petalOffsets=[];
+ const vertex=(p,col,u,v,flex,tag,attachment)=>{
+  d.push(...p);rgb.push(...col);uv.push(u,v);tip.push(flex);part.push(tag);
+  if(localBloom){
+   if(attachment)petalOffsets.push(p[0]-attachment[0],p[1]-attachment[1],p[2]-attachment[2]);
+   else petalOffsets.push(0,0,0);
+  }
+ };
  function ribbon(fn, axis, width, steps, base, end, flex=1, tag=1, fold=.17){
   if(compact)steps=Math.max(2,Math.ceil(steps*.58));
   const start=d.length/3;
@@ -68,7 +75,7 @@ export function makeNativeFoliage(species, three,{compact=false}={}){
    for(let k=0;k<=sides;k++){
     const a=phase+k*TAU/sides, rough=1+.10*Math.sin(a*5+j*.45)+.04*Math.sin(a*3-j*.8);
     const v=add(mul(radial,Math.cos(a)),mul(binormal,Math.sin(a)));
-    vertex(add(p,mul(v,radius*rough)),mul(col,(.76+.27*t)*(.83+.16*Math.sin(a*3+1)+.13*Math.sin(a*5+.6))),k/sides,t,t*bend,tag);
+    vertex(add(p,mul(v,radius*rough)),mul(col,(.76+.27*t)*(.83+.16*Math.sin(a*3+1)+.13*Math.sin(a*5+.6))),k/sides,t,typeof bend==='function'?bend(t):t*bend,tag);
    }
    if(j)for(let k=0;k<sides;k++){const a=start+(j-1)*(sides+1)+k,b=a+sides+1;idx.push(a,a+1,b,a+1,b+1,b);}
   }
@@ -79,6 +86,83 @@ export function makeNativeFoliage(species, three,{compact=false}={}){
   ribbon(t=>add(start,add(mul(aim,x(t)),[0,y(t),Math.sin(t*3)*radial*.11])),()=>side,
     t=>width*Math.pow(Math.max(0,Math.sin(PI*(.07+.93*t))),inner?.56:.78),7,
     lerp(dark,col,.13),lerp(col,light,random(.14,.63)),inner?.64:.98,1,inner?.29:.17);
+ }
+ // A folded leaf opens progressively from its basal sheath and twists at the tip.
+ function strap(az, root, reach, rise, halfWidth, arch, opening) {
+  const heading=point(az,1,0), across=point(az+PI/2,1,0);
+  const lean=random(-.11,.11)*reach, roll=random(-.57,.57), n=compact?6:clan==='fan'?10:7;
+  const sections=compact||id==='silver_spear'||id==='platts_black'||clan==='umbel'?[-1,0,1]:[-1,-.48,0,.48,1];
+  const base=lerp(dark,middle,random(.12,.32)), body=lerp(middle,light,random(.08,.37));
+  const tipTint=opening>.74?lerp(body,color('#a49b73'),random(.23,.55)):lerp(body,light,.15);
+  const edge=id==='harakeke'?lerp(base,color('#8d6450'),.25):lerp(base,body,.76);
+  const fn=t=>add(root,add(mul(heading,reach*t**1.62),add(mul(across,lean*t*t),[0,rise*t+arch*Math.sin(PI*t),0])));
+  const start=d.length/3;
+  for(let j=0;j<=n;j++){
+   const t=j/n, centre=fn(t), tangent=unit(add(fn(Math.min(1,t+.001)),mul(fn(Math.max(0,t-.001)),-1)));
+   const normal=unit(cross(across,tangent)), twist=roll*t*t;
+   const side=add(mul(across,Math.cos(twist)),mul(normal,Math.sin(twist)));
+   const lift=unit(cross(side,tangent));
+   const width=halfWidth*Math.max(.007,Math.sin(PI*(.13+.87*t))**.63)*(1-.22*t);
+   const leafTone=lerp(lerp(base,body,Math.min(1,t*2.5)),tipTint,t**5);
+   for(const offset of sections){
+    const edgeDistance=Math.abs(offset);
+    const keel=width*edgeDistance**1.45*(.58-.39*t);
+    const position=add(centre,add(mul(side,width*offset),mul(lift,keel)));
+    const tint=offset===0?lerp(leafTone,light,.13):lerp(leafTone,edge,.14*edgeDistance);
+    vertex(position,mul(tint,1+.05*offset),offset*.5+.5,t,t*t*(.70+.24*opening),1);
+   }
+   if(j)for(let k=1;k<sections.length;k++){
+    const a=start+(j-1)*sections.length+k-1,b=a+sections.length;
+    idx.push(a,a+1,b,a+1,b+1,b);
+   }
+  }
+ }
+ // Joined pedicels end in a trumpet or an open flower, with each vertex inheriting
+ // its stalk's wind weight. The rim has one curve per tepal instead of a flat cap.
+ function trumpet(base, direction, length, mouth, lobes, basal, end, weight) {
+  const axis=unit(direction),side=unit(cross(axis,Math.abs(axis[1])>.88?[1,0,0]:[0,1,0])),up=cross(axis,side);
+  const phase=random(0,TAU), slices=lobes*2, start=d.length/3;
+  for(let ring=0;ring<3;ring++){
+   for(let i=0;i<slices;i++){
+    const a=phase+TAU*i/slices, lip=i%2===0;
+    const radius=mouth*(ring===0?.14:ring===1?.46:lip?1:.76);
+    const dist=length*(ring===0?0:ring===1?.62:lip?1:.84);
+    const p=add(base,add(mul(axis,dist),add(mul(side,radius*Math.cos(a)),mul(up,radius*Math.sin(a)))));
+    vertex(p,lerp(basal,end,ring===0?.06:ring===1?.36:lip?.95:.70),i/slices,ring*.5,weight,2,base);
+    if(ring>0){
+     const k=start+(ring-1)*slices+i,next=start+(ring-1)*slices+(i+1)%slices;
+     idx.push(k,next,k+slices,next,next+slices,k+slices);
+    }
+   }
+  }
+ }
+ function openFlower(centre, normal, size, petals, colour, weight) {
+  const axis=unit(normal), side=unit(cross(axis,Math.abs(axis[1])>.88?[1,0,0]:[0,1,0])),up=cross(axis,side);
+  const phase=random(0,TAU), centreColour=color('#cfaa67'), first=d.length/3;
+  vertex(centre,centreColour,.5,.5,weight,2,centre);
+  for(let j=0;j<petals;j++){
+   const a=phase+TAU*j/petals, reach=mul(add(mul(side,Math.cos(a)),mul(up,Math.sin(a))),size*random(.90,1.06));
+   const span=mul(unit(cross(axis,reach)),size*(petals===3?.56:.28));
+   const n=d.length/3;
+   for(const [along,across,height,tint] of [[.11,0,.01,.39],[.49,-.72,.04,.76],[.84,-.64,.18,.94],[1,0,.19,1],[.8,.68,.13,.91],[.43,.64,.06,.73],[.62,0,.09,.93]]){
+    vertex(add(centre,add(mul(reach,along),add(mul(span,across),mul(axis,size*height)))),lerp(centreColour,colour,tint),.5+across*.5,along,weight,2,centre);
+   }
+   idx.push(n,n+1,n+6,n+1,n+2,n+6,n+2,n+3,n+6,n+3,n+4,n+6,n+4,n+5,n+6,n+5,n,n+6);
+   if(j)idx.push(first,n,n-7);
+  }
+  idx.push(first,first+1,first+1+7*(petals-1));
+ }
+ // Two narrow crossed profiles are enough for the sub-millimetre flower stalks.
+ function pedicel(start,end,width,baseTone,baseWind,tipWind){
+  const axis=unit(add(end,mul(start,-1))),across=unit(cross(axis,Math.abs(axis[1])>.88?[1,0,0]:[0,1,0]));
+  for(const side of (compact?[across]:[across,cross(axis,across)])){
+   const n=d.length/3;
+   for(const [p,r,t,w] of [[start,width,0,baseWind],[end,width*.60,1,tipWind]]){
+    vertex(add(p,mul(side,-r)),baseTone,0,t,w,0);
+    vertex(add(p,mul(side,r)),baseTone,1,t,w,0);
+   }
+   idx.push(n,n+1,n+2,n+1,n+3,n+2);
+  }
  }
  function frond(az,start,length,rise,pairs,pinLength,kind){
   const along=point(az,1,0), side=point(az+.5*PI,1,0), palm=kind==='palm';
@@ -95,29 +179,103 @@ export function makeNativeFoliage(species, three,{compact=false}={}){
   }
  }
  if(clan==='fan'||clan==='straps'){
-  const flax=clan==='fan', fans= id==='silver_spear'?5:flax?5:7;
+  const flax=clan==='fan', fans=flax?5:compact?3:4;
   for(let group=0;group<fans;group++){
-   const heading=group*2.39996+random(-.35,.35), cx=point(heading,spread*random(.013,.115),random(.005,.048));
-   const n=flax?8:id==='rengarenga'?5:7;
+   const heading=group*2.39996+random(-.35,.35), cx=point(heading,spread*random(.013,.115),0);
+   const n=flax?8:id==='rengarenga'?4:5;
    for(let j=0;j<n;j++){
     const side=j%2?1:-1, opening=j/(n-1), az=heading+(flax?side*PI*.5+random(-.18,.18):j*2.39996+random(-.25,.25));
     const reachable=spread*(.07+.47*opening)*random(.78,1.19);
-    const height=h*(flax?.93:.85)*(1-.86*opening)*random(.65,1.11);
-    const width=Math.min(flax?.049:.044,spread*(flax?.045:.046))*random(.62,1.24);
-    blade(az,cx,reachable,height,width,h*(.15+.3*opening),opening<.4);
+    const height=h*(flax?.95:.67)*(1-(flax?.75:.82)*opening)*random(.75,1.05);
+    const width=Math.min(flax?.052:.030,spread*(flax?.039:.036))*random(.68,1.19);
+    strap(az,cx,reachable,height,width,h*(.10+.27*opening),opening);
    }
   }
-  if(id==='harakeke'||id==='rengarenga'||id==='libertia') {
-   const count=id==='harakeke'?3:4;
+  if(id==='harakeke'||id==='rengarenga'||id==='libertia'){
+   const flaxFlower=id==='harakeke', iris=id==='libertia', count=flaxFlower?2:compact?2:3;
+   const stemTone=flaxFlower?color('#584637'):lerp(middle,dark,.35);
+   const florets=flaxFlower?4:2;
    for(let i=0;i<count;i++){
-    const a=i*2.4,p=point(a,spread*.035,0),q=point(a,spread*.13,h*(id==='harakeke'?1.19:1.02));
-    tube([p,lerp(p,q,.43),lerp(p,q,.78),q],id==='harakeke'?.014:.004,.002,lerp(bark,middle,.3),5,.48,2);
-    for(let j=0;j<(id==='harakeke'?5:4);j++){
-     const x=lerp(p,q,.59+j*.066), az=j*2.4;
-     const far=add(x,point(az,spread*.083,h*.032));
-     tube([x,far],.005,.002,middle,4,.7,2);
-     for(let k=0;k<(id==='rengarenga'?4:3);k++)bladeFlower(add(far,point(k*TAU/3,.022,0)),az+k*2.1,id==='harakeke'?.045:.038,flower);
+    const a=i*2.4+random(-.38,.38),p=point(a,spread*.053,0);
+    const top=point(a,spread*random(.10,.26),h*random(flaxFlower?1.03:.84,flaxFlower?1.29:1.06));
+    const stem=t=>quad(p,lerp(p,top,.55),top,t);
+    tube([p,stem(.36),stem(.72),top],flaxFlower?.014:.0038,flaxFlower?.003:.0011,stemTone,6,.49,2);
+    for(let j=0;j<(flaxFlower?5:3);j++){
+     const t=.60+j*(flaxFlower?.078:.108),root=stem(t),w=t*.49,az=a+PI*j+random(-.31,.31);
+     const end=add(root,point(az,spread*random(.077,.15),h*random(.036,.08)));
+     tube([root,lerp(root,end,.50),end],flaxFlower?.007:.0024,flaxFlower?.0022:.0008,stemTone,4,v=>w+.055*v,2);
+     for(let k=0;k<florets;k++){
+      const v=(k+.72)/florets,node=lerp(root,end,v),phi=az+(k%2?-.71:.82);
+      const base=add(node,point(phi,flaxFlower?.014:.011,flaxFlower?.005:-.006)),weight=w+.055*v;
+      tube([node,base],flaxFlower?.0026:.0011,flaxFlower?.0023:.0007,stemTone,4,()=>weight,2);
+      if(flaxFlower){
+       const tone=lerp(color('#873a34'),color('#b15b3a'),random(.05,.53));
+       trumpet(base,point(phi,.35,1),random(.027,.050),random(.0045,.007),3,lerp(tone,bark,.36),tone,weight);
+      }else{
+       openFlower(base,point(phi,1,iris?.45:-.53),random(iris?.008:.012,iris?.014:.019),iris?3:6,lerp(color('#d4d0bb'),color('#f3efdf'),r()),weight);
+      }
+     }
     }
+   }
+  }
+ }else if(clan==='umbel'){
+  // Agapanthus is a cultivated ornamental in the existing mixes, separate from the NZ natives.
+  const heads=compact?2:3, flowers=compact?9:11;
+  for(let i=0;i<(compact?12:15);i++){
+   const az=i*2.39996+random(-.18,.18),f=r();
+   strap(az,point(az,.018,0),spread*random(.20,.48),h*(.18+.33*f),random(.009,.017),h*random(.13,.25),f);
+  }
+  const stemTone=color('#5c744c');
+  for(let i=0;i<heads;i++){
+   const az=i*2.39996+random(-.14,.14),root=point(az,spread*.04,0);
+   const crown=point(az,spread*random(.09,.27),h*random(.74,.91)),mid=lerp(root,crown,.48);
+   tube([root,mid,crown],.0052,.0037,stemTone,6,.51,2);
+   const radius=spread*random(.105,.145);
+   const violet=lerp(color('#6075ad'),color('#999bc6'),random(.07,.67));
+   for(let j=0;j<flowers;j++){
+    const a=az+j*2.39996+random(-.17,.17),y=-.25+1.23*(j+.5)/flowers;
+    const axis=point(a,Math.sqrt(1-y*y),y),base=add(crown,mul(axis,radius*random(.77,1.05)));
+    const bend=add(lerp(crown,base,.50),[0,.003,0]);
+    pedicel(crown,bend,.0013,stemTone,.51,.545);
+    pedicel(bend,base,.0010,stemTone,.545,.58);
+    trumpet(base,axis,random(.019,.028),random(.007,.0105),6,lerp(violet,dark,.23),lerp(violet,light,.07),.58);
+   }
+  }
+ }else if(clan==='cone'){
+  // Echinacea is another ornamental in the planted border. Rays hang below
+  // a raised copper receptacle on leafy, irregularly spaced stems.
+  const heads=compact?3:4, rays=compact?11:15;
+  for(let j=0;j<heads;j++){
+   const az=j*2.4+random(-.3,.3),root=point(az,spread*.04,0),head=point(az,spread*random(.18,.36),h*random(.73,.97));
+   const mid=add(lerp(root,head,.54),point(az+.8,.015,0)),fn=t=>quad(root,mid,head,t);
+   tube([root,fn(.42),fn(.72),head],.0045,.0023,middle,5,.46,0);
+   for(let i=0;i<5;i++){
+    const t=.14+.13*i,dir=az+i*2.4,len=spread*(.23-.016*i)*random(.80,1.05),start=fn(t);
+    const end=add(start,point(dir,len,len*.32));
+    ribbon(v=>quad(start,add(lerp(start,end,.53),[0,len*.17,0]),end,v),()=>point(dir+PI/2,1,0),
+      v=>len*.24*Math.sin(PI*v)**.78,4,dark,lerp(middle,light,.24),v=>.46*t+.12*v,1,.31);
+   }
+   const coneR=random(.012,.017),coneH=coneR*1.45,sections=compact?9:13;
+   const base=d.length/3, bronze=color('#754f33'),pollen=color('#b68346');
+   for(let j=0;j<4;j++){
+    const y=[0,.34,.75,.99][j],w=[.84,1,.61,.09][j];
+    for(let i=0;i<sections;i++){
+     const a=TAU*(i+.16*j)/sections;
+     vertex(add(head,point(a,coneR*w,coneH*y)),lerp(bronze,pollen,clamp(.16+.16*j+.10*Math.sin(i*3+j),0,1)),i/sections,y,.46,2,head);
+     if(j){const k=base+(j-1)*sections+i,l=base+(j-1)*sections+(i+1)%sections;
+      idx.push(k,l,k+sections,l,l+sections,k+sections);}
+    }
+   }
+   const rose=lerp(color('#ad7082'),color('#bc8293'),r());
+   for(let i=0;i<rays;i++){
+    const a=az+i*TAU/rays+random(-.07,.07),out=point(a,1,0),side=point(a+PI/2,1,0);
+    const root=add(head,mul(out,coneR*.84)),len=random(.026,.044),drop=random(.46,.97),n=d.length/3;
+    for(const [t,v] of [[0,0],[.48,-.16],[.87,-.16],[1,.01],[.84,.18],[.43,.17],[.56,0]]){
+     const y=len*(.20*Math.sin(PI*t)-drop*t**1.4+.13*Math.abs(v));
+     vertex(add(root,add(mul(out,len*t),add(mul(side,len*v),[0,y,0]))),
+      lerp(mul(rose,.64),rose,.28+.64*t+.05*v),.5+v,t,.46,2,head);
+    }
+    idx.push(n,n+1,n+6,n+1,n+2,n+6,n+2,n+3,n+6,n+3,n+4,n+6,n+4,n+5,n+6,n+5,n,n+6);
    }
   }
  }else if(clan==='wire-rush'){
@@ -177,8 +335,12 @@ export function makeNativeFoliage(species, three,{compact=false}={}){
   }
  }else if(clan==='mophead'){
   // Separate woody canes and individual florets; no crossing atlas cards.
-  const tones=['#344c8c','#4b69af','#6886cf','#8397d8','#a7adde','#9c88c1'].map(color);
-  const count=compact?8:11, flecks=compact?18:27;
+  const tones=['#536996','#7b8fb4','#9c9cba','#adabc3'].map(color);
+  const count=compact?7:8, flecks=compact?20:22;
+  const rim = compact
+   ? [[.05,0,0],[.45,-.67,.07],[.94,-.48,.05],[1.09,.04,.20],[.86,.58,.10],[.40,.68,.07]]
+   : [[.06,0,.02],[.32,-.42,.07],[.60,-.68,.12],[.94,-.59,.10],[1.09,-.23,.13],[1.08,.18,.18],[.87,.60,.14],[.63,.66,.09],[.30,.37,.06]];
+
   for(let i=0;i<count;i++){
    const az=i*2.399963+random(-.18,.18), inner=i%4===0;
    const radius=spread*(inner?random(.064,.15):random(.21,.36));
@@ -191,27 +353,47 @@ export function makeNativeFoliage(species, three,{compact=false}={}){
     const t=.28+j*.165+random(-.047,.045), head=stem(t), a=az+sign*random(.62,1.58)+j*.91;
     const len=spread*random(.105,.202)*(1.04-.13*t), rad=point(a,1,0), across=point(a+PI/2,1,0);
     const start=add(head,mul(rad,len*.17));
-    tube([head,start],len*.035,len*.021,middle,4,.34,1);
+    const leafWeight=t*.32+.04;
+    tube([head,start],len*.035,len*.021,middle,4,v=>t*.32+v*.04,1);
     const fn=v=>add(start,add(mul(rad,len*v),[0,len*(.28*Math.sin(PI*v)-.23*v),0]));
     ribbon(fn,()=>across,v=>len*.43*Math.pow(Math.max(0,Math.sin(PI*v)),.76)*(1-.10*Math.cos(v*PI*12)),
-      10,mul(dark,random(.86,1.15)),lerp(middle,light,random(.11,.49)),v=>.26+.28*v,1,.25);
+      7,mul(dark,random(.86,1.15)),lerp(middle,light,random(.11,.49)),v=>leafWeight+.26*v,1,.25);
    }
-   const radiusHead=spread*random(.066,.106);
+   const radiusHead=spread*random(.070,.104), hue=tones[i%tones.length];
+   const forks=Array.from({length:4},(_,j)=>{
+    const a=j*PI/2+az;
+    const end=add(crown,point(a,radiusHead*.46,radiusHead*.18));
+    tube([crown,end],.0021,.0013,middle,4,t=>.32+.025*t,0);
+    return end;
+   });
    for(let k=0;k<flecks;k++){
-    const az2=k*2.399963+random(-.16,.16), u=(k+.43)/flecks, lift=.12+.86*u;
-    const c=add(crown,point(az2,radiusHead*Math.sqrt(1-lift*lift),radiusHead*lift*.89));
-    const normal=unit(point(az2,Math.sqrt(1-lift*lift),lift));
+    const az2=k*2.399963+random(-.16,.16), u=(k+.43)/flecks, lift=.11+.85*u;
+    const radius=radiusHead*Math.sqrt(1-lift*lift);
+    const c=add(crown,point(az2,radius,radiusHead*lift*.84));
+    const fork=forks[(Math.round((az2-az)/(.5*PI))%4+4)%4];
+    pedicel(fork,c,.0012,lerp(middle,hue,.38),.345,.385);
+    const normal=unit(point(az2+random(-.13,.13),Math.sqrt(1-lift*lift),lift+random(-.12,.12)));
     const x=point(az2+PI/2,1,0), z=unit(cross(normal,x));
-    const scale=radiusHead*random(compact?.29:.23,compact?.40:.32);
-    const base=tones[(i+Math.floor(random(0,tones.length)))%tones.length];
+    const scale=radiusHead*random(compact?.28:.24,compact?.41:.34);
+    const base=lerp(hue,tones[Math.floor(r()*tones.length)],random(.07,.27));
+    const flex=.385,eye=d.length/3;
+    vertex(add(c,mul(normal,scale*.13)),lerp(base,color('#cec5a7'),.51),.5,.5,flex,2,c);
+    for(let j=0;j<5;j++){
+     const phase=j*TAU/5;
+     vertex(add(c,add(mul(x,Math.cos(phase)*.16*scale),mul(z,Math.sin(phase)*.16*scale))),
+       lerp(base,dark,.18),.5,.5,flex,2,c);
+     idx.push(eye,eye+1+j,eye+1+(j+1)%5);
+    }
     for(let j=0;j<4;j++){
-     const a=j*PI/2+i*.38+k*.63, out=add(mul(x,Math.cos(a)),mul(z,Math.sin(a))), side=unit(cross(normal,out));
-     const get=(u,v,up)=>add(c,add(mul(out,u*scale),add(mul(side,v*scale),mul(normal,up*scale))));
-     const n=d.length/3, flex=.33+(i%4)*.035;
-     for(const [u,v,z,tint] of [[.05,0,0,.74],[.42,-.31,.075,.87],[.95,-.24,.10,1.01],[1.18,0,.19,1.16],[.95,.26,.11,1.00],[.42,.31,.068,.91],[.64,0,.21,1.07]]){
-      vertex(get(u,v,z),mul(base,tint),u,.5+v,flex,2);
+     const a=j*PI/2+i*.38+k*.63+random(-.07,.07), out=add(mul(x,Math.cos(a)),mul(z,Math.sin(a))), side=unit(cross(normal,out));
+     const width=random(.58,.72),curl=random(.72,1.28);
+     const get=(u,v,up)=>add(c,add(mul(out,u*scale),add(mul(side,v*width*scale),mul(normal,up*scale*curl))));
+     const n=d.length/3, faded=lerp(base,color('#d9cfd1'),random(.06,.26));
+     vertex(get(.63,0,.10),base,.6,.5,flex,2,c);
+     for(const [v,w,z] of rim){
+      vertex(get(v,w,z),lerp(mul(base,.69),faded,v*.83),v,.5+w*.5,flex,2,c);
      }
-     idx.push(n,n+1,n+6,n+1,n+2,n+6,n+2,n+3,n+6,n+3,n+4,n+6,n+4,n+5,n+6,n+5,n,n+6);
+     for(let k=0;k<rim.length;k++)idx.push(n,n+1+k,n+1+(k+1)%rim.length);
     }
    }
   }
@@ -288,6 +470,8 @@ export function makeNativeFoliage(species, three,{compact=false}={}){
  const g=new Geometry();
  g.setAttribute('position',new Attribute(d,3));g.setAttribute('uv',new Attribute(uv,2));
  g.setAttribute('color',new Attribute(rgb,3));g.setAttribute('aTipness',new Attribute(tip,1));
- g.setAttribute('aPartType',new Attribute(part,1));g.setIndex(idx);g.computeVertexNormals();
+ g.setAttribute('aPartType',new Attribute(part,1));
+ if(localBloom)g.setAttribute('aPetalOffset',new Attribute(petalOffsets,3));
+ g.setIndex(idx);g.computeVertexNormals();
  return g;
 }
