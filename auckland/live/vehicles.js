@@ -144,6 +144,23 @@ export function ferryGeometry() { // a passenger catamaran, about 34 m
   P.push(part(box(7.24, 0.9, 10.0), '#172027', { at: [0, 6.1, 2.6], rough: 0.06 }));
   P.push(part(rbox(4.4, 1.6, 3.6, 0.4), '#f1f3f2', { at: [0, 7.7, -1.2], rough: 0.3 }), part(box(4.45, 0.7, 3.65), '#172027', { at: [0, 7.9, -1.2], rough: 0.06 })); // wheelhouse
   P.push(part(box(0.15, 2.6, 0.15), '#9aa0a3', { at: [0, 9.6, -0.6], rough: 0.4 })); // mast
+  for (const side of [-1,1]) {
+    for (let z=-7.4; z<12; z+=1.9) {
+      P.push(part(box(.075,1.15,.11),'#b8c4c6',{at:[side*4.64,3.75,z],rough:.38}));
+    }
+    for (let z=-1.7; z<8.4; z+=1.64) {
+      P.push(part(box(.08,.94,.095),'#ccd7d5',{at:[side*3.63,6.1,z],rough:.4}));
+    }
+    for (const z of [-12.1,-8.6,-4.4,1.3,7.4,12.9]) {
+      P.push(part(rbox(.26,.40,1.34,.12),'#253239',{at:[side*4.88,1.85,z],rough:.80}));
+    }
+    for (const [z0,z1] of [[-14.4,-9.5],[12.4,15.3]]) {
+      for(let z=z0;z<=z1;z+=.96)P.push(part(box(.056,.90,.056),'#aeb9b6',{at:[side*4.54,2.63,z],rough:.42}));
+      for(const y of [2.58,3.04])P.push(part(box(.056,.06,z1-z0),'#c6d0cd',{at:[side*4.54,y,(z0+z1)/2],rough:.34}));
+    }
+    P.push(part(rbox(.21,.16,.32,.045),side<0?'#913d35':'#43785f',{at:[side*2.22,8.38,-1.7]}));
+  }
+  P.push(part(box(1.45,.08,.13),'#e7eae0',{at:[0,10.81,-.6]}));
   return mergeGeometries(P);
 }
 

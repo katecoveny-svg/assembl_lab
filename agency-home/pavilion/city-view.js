@@ -8,12 +8,29 @@ const canvas=document.querySelector('canvas'),reduced=matchMedia('(prefers-reduc
 const phone=innerWidth<680;
 let world, rows=new Map(),selected=null,timer,stopped=false,firstVisit=true;
 const routes=fetch(base+'data/routes.json').then(r=>r.json()).then(data=>new Map(data.routes.map(r=>[r.id,r])));
-const landing={t:[-1754,19,-378],p:phone?[-1710,65,-504]:[-1719,47,-472]};
 const palette={bus:'#b66143',train:'#52736f',ferry:'#507c98'};
-function flight(){
-  world.unfollow();world.setView(world.views.harbour);
-  if(reduced.matches)world.setView(landing);
-  else world.flyCinematic(landing,{fromHarbour:true});
+let preferred='bus';
+function choose(v) {
+  if(!v)return;
+  selected=v.id;preferred=v.mode;
+  const ground=v.mode==='ferry'?0:world.heightAt(v.x,v.z);
+  const distance={bus:21,ferry:58,train:95}[v.mode]*(phone?1.34:1);
+  world.controls.minDistance=14;
+  world.select(v.id);
+  world.flyTo([v.x,ground+(v.mode==='ferry'?3.5:1.7),v.z],distance,.36,(v.heading||0)+1.84,v.mode==='bus');
+  tell('selection',{selected:v});
+}
+function candidates(mode){
+  return [...rows.values()].filter(v=>v.mode===mode).sort((a,b)=>{
+    const score=v=>Math.hypot(v.x+1754,v.z+378)+Math.max(0,Date.now()/1000-v.ts)*4;
+    return score(a)-score(b);
+  });
+}
+function followMode(mode,cycle=false){
+  const choices=candidates(mode);
+  if(!choices.length)return;
+  const i=cycle?choices.findIndex(v=>v.id===selected):-1;
+  choose(choices[(i+1)%choices.length]);
 }
 async function refresh(){
   try{
@@ -28,16 +45,19 @@ async function refresh(){
     }).filter(([,v])=>v.mode));
     world.setVehicles([...rows.values()]);
     const recent=[...rows.values()].reduce((n,v)=>Math.max(n,v.ts),0);
-    if(selected&&!rows.has(selected)){selected=null;world.unfollow()}
+    if(selected&&!rows.has(selected)){selected=null;world.unfollow();}
+    const modes=Object.fromEntries(['bus','ferry','train'].map(k=>[k,candidates(k).length]));
+    tell('modes',{modes});
+    if(!selected&&rows.size)followMode(modes[preferred]?preferred:Object.keys(modes).find(k=>modes[k]));
     tell('updates',{count:rows.size,ts:recent,selected:selected&&rows.get(selected)});
   }catch(error){console.warn('City position update:',error.message);
-    rows.clear();selected=null;world.setVehicles([]);tell('unavailable');
+    rows.clear();selected=null;world.unfollow();world.setVehicles([]);tell('modes',{modes:{}});tell('unavailable');
   }finally{if(!stopped)timer=setTimeout(refresh,15000)}
 }
 function orbit(angle,zoom=1){
   world.stopFlight();world.unfollow();
   const offset=world.camera.position.clone().sub(world.controls.target);
-  const distance=THREE.MathUtils.clamp(offset.length()*zoom,55,2300);
+  const distance=THREE.MathUtils.clamp(offset.length()*zoom,14,2300);
   offset.applyAxisAngle(new THREE.Vector3(0,1,0),angle).setLength(distance);
   world.camera.position.copy(world.controls.target).add(offset);world.controls.update();
 }
@@ -55,7 +75,7 @@ function installInput(){
   canvas.onpointerup=e=>{if(start?.id!==e.pointerId)return;
     if(!start.dragged&&Math.hypot(e.clientX-start.x,e.clientY-start.y)<9){
       const id=world.pick(e.clientX,e.clientY,phone?32:19),v=rows.get(id);
-      if(v){selected=id;tell('selection',{selected:v});world.stopFlight()}
+      if(v)choose(v)
     }
     start=null;
   };
@@ -117,10 +137,10 @@ async function start(){
   let startTime=performance.now();
   world.onFrame=()=>{
     if(!firstVisit||(!world.stats().aerial&&performance.now()-startTime<2200))return;
-    firstVisit=false;world.onFrame=null;tell('ready');flight();
+    firstVisit=false;world.onFrame=null;tell('ready');
   };
   refresh();
-  addEventListener('message',e=>{if(e.origin===location.origin&&e.source===parent&&e.data?.city==='replay')flight()});
+  addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==parent)return;if(e.data?.city==='next')followMode(preferred,true);if(e.data?.city==='follow'&&['bus','ferry','train'].includes(e.data.mode))followMode(e.data.mode,true)});
   canvas.addEventListener('webglcontextlost',()=>tell('failed'),{once:true});
   window.cityView={world,rows:()=>[...rows.values()]};
 }

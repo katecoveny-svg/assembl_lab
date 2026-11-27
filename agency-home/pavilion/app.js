@@ -14,7 +14,7 @@ function cameraDining(progress){
 }
 import {walkInput} from './house-walk.js?v=ee2f6128a2';
 import {installExplore} from './explore.js?v=832259faaa';
-import {lab} from './lab.js?v=ad470dddf6';
+import {lab} from './lab.js?v=1c59458f19';
 const $=s=>document.querySelector(s);
 const asset=name=>'/pavilion/assets/'+name;
 const pictures=new IntersectionObserver(entries=>{

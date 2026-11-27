@@ -180,6 +180,22 @@ export async function createHarbour(holder){
    float glint=min(ggx*visibility*fresnelLight*nL,.72);
    vec3 outgoingLight=(mix(body,reflected,.065+.76*reflectance)+sunColor*glint*.82)*(1.-contact)+vec3(.16,.20,.19)*min(wake,.18);
   `);
+ // A fixed, illustrative tide staff makes the selected height legible from the same camera.
+ const staff=new T.Group(), datum=-1.65;
+ const wood=new T.MeshStandardMaterial({color:0x60574b,roughness:.86});
+ const pile=new T.Mesh(new T.CylinderGeometry(.185,.23,7.8,12),wood);
+ pile.position.y=datum+.8;staff.add(pile);
+ const marks=document.createElement('canvas');marks.width=160;marks.height=1120;
+ const ink=marks.getContext('2d');ink.fillStyle='#ede7cb';ink.fillRect(0,0,160,1120);
+ ink.font='bold 70px sans-serif';ink.textBaseline='middle';
+ for(let tick=0;tick<=44;tick++){
+   const y=1100-tick*24;ink.fillStyle=tick%10<5?'#943f38':'#373f3d';
+   ink.fillRect(0,y-3,tick%5===0?70:36,tick%5===0?7:4);
+   if(tick%10===0)ink.fillText(String(tick/10),80,y-12);
+ }
+ const scale=new T.CanvasTexture(marks);scale.colorSpace=T.SRGBColorSpace;scale.anisotropy=4;
+ const face=new T.Mesh(new T.PlaneGeometry(.42,1120/240),new T.MeshStandardMaterial({map:scale,roughness:.7,side:T.DoubleSide}));
+ face.position.set(0,datum+(1100-560)/240,.196);staff.add(face);staff.position.set(-2.15,0,-21);scene.add(staff);
  const boat=makeBoat(scene);boat.scale.setScalar(1.36);boat.position.set(5,0,-43);
  const grip=document.createElement('button');grip.className='boat-grip';grip.type='button';
  const hint=document.createElement('span');hint.textContent='Drag boat';grip.append(hint);grip.setAttribute('aria-label','Drag the model boat, or use the arrow keys to move it. Home resets the boat.');

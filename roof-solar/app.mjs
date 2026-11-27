@@ -91,6 +91,14 @@ async function work(site, building, run) {
   badge(site.label || "Chosen roof"); sunChanged(); render(site, plan); $("#roofs").hidden = false; S.ready = true; document.documentElement.dataset.ready = "1";
 }
 /** Default for the bare entry route: a plan study; address and map still use measured LiDAR. */
+// Private messages bridge the homepage controls to the real 16A study.
+const plateOrigin=(()=>{
+ if(!document.documentElement.classList.contains('roof-plate')||parent===window||!document.referrer)return null;
+ const url=new URL(document.referrer);
+ if(url.origin===location.origin)return url.origin;
+ if(url.protocol==='https:'&&(/^(www\.)?assembl\.co\.nz$/.test(url.hostname)||/^[a-z0-9-]+\.assembl-home\.pages\.dev$/.test(url.hostname)))return url.origin;
+ return null;
+})();
 async function show16a(){
  clearProperty(); S.abort?.abort(); const run=++S.run;
  S.study=true; S.site=null; S.plan=null; S.ready=false; S.twin=null;
@@ -115,7 +123,7 @@ async function show16a(){
   $("#sourcesBody").textContent="16A draft resource-consent set, issue A, 12 May 2025; RC-02 survey, RC-05 area plan, RC-06 plans, RC-07 sections. Survey traced, not survey-grade. Approximate Auckland-region sun; no new address or parcel location is included.";
   S.ready=true;document.documentElement.dataset.ready="1";
   if(document.documentElement.classList.contains('roof-plate')){
-   parent.postMessage({type:'assembl:plate-ready'},location.origin);
+   if(plateOrigin)parent.postMessage({type:'assembl:plate-ready',hour:Number($('#studySun').value)},plateOrigin);
   }
  }catch(e){if(run!==S.run)return;$("#twinView").replaceChildren();badge("Could not open 16A");$("#result").innerHTML='<p role="alert">'+esc(e.message)+'</p><p><a href="/plan-studio/twins/16a/">Open the original 16A viewer</a>, or use the address search for an estimate.</p>';}
 }
@@ -217,7 +225,12 @@ $("#landmark").addEventListener("click", () => { choose(LANDMARK.lat, LANDMARK.l
 }
 
 addEventListener('message',event=>{
- if(event.source!==parent||event.origin!==location.origin||!document.documentElement.classList.contains('roof-plate'))return;
+ if(event.source!==parent||event.origin!==plateOrigin||!plateOrigin)return;
+ if(event.data?.type==='assembl:solar-hour' && S.ready && Number.isInteger(event.data.hour) && event.data.hour>=8 && event.data.hour<=18){
+   $("#studySun").value=event.data.hour;
+   $("#studySun").dispatchEvent(new Event('input',{bubbles:true}));
+   parent.postMessage({type:'assembl:solar-hour-set',hour:Number($("#studySun").value)},plateOrigin);
+ }
  if(event.data?.type==='assembl:roof-shot'&&['detail','home','overview'].includes(event.data.view))S.twin?.reset(event.data.view);
 });
 

@@ -56,10 +56,19 @@ window.addEventListener('message', e => {
       range.dispatchEvent(new Event('input', {bubbles:true}));
     }
   }
+  if (e.data.type === 'year' && ['1','4','7','12'].includes(e.data.value)) {
+    document.querySelector('.yr-btn[data-year="'+e.data.value+'"]')?.click();
+  }
   if (e.data.type === 'undo') document.querySelector('#btn-undo')?.click();
   if (e.data.type === 'plant') plant();
 });
 try {
   await studio.present();
   send('ready');
+  const total = document.querySelector('#bom-total');
+  if (total) {
+    const publish = () => send('estimate', {total:total.textContent.trim()});
+    new MutationObserver(publish).observe(total,{subtree:true,childList:true,characterData:true});
+    publish();
+  }
 } catch { send('unavailable'); }
