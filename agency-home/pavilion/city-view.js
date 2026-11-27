@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createWorld} from 'https://lab.assembl.co.nz/auckland/live/scene.js';
+import {createWorld} from 'https://lab.assembl.co.nz/auckland/live/scene.js?v=dd0baa0eb7';
 import {parsePositions,toWorld,inArea,modeOf} from 'https://lab.assembl.co.nz/auckland/live/transit.js';
 const base='https://lab.assembl.co.nz/auckland/live/';
 const endpoint='https://wurwcrgxjjwqdaxqceey.supabase.co/functions/v1/bus-positions';
@@ -27,14 +27,16 @@ function candidates(mode){
   });
 }
 function followMode(mode,cycle=false){
-  const choices=candidates(mode);
+  const available=candidates(mode);
+  const clear=mode==='bus'?available.filter(v=>world.hasStreetView(v)):available;
+  const choices=clear.length?clear:available;
   if(!choices.length)return;
   const i=cycle?choices.findIndex(v=>v.id===selected):-1;
   choose(choices[(i+1)%choices.length]);
 }
 async function refresh(){
   try{
-    const [response,idx]=await Promise.all([fetch(endpoint,{cache:'no-store',signal:AbortSignal.timeout(10000)}),routes]);
+    const [response,idx]=await Promise.all([fetch(endpoint,{cache:'no-store',signal:AbortSignal.timeout(18000)}),routes]);
     if(!response.ok)throw Error('positions');
     const now=Date.now()/1000, parsed=parsePositions(await response.json());
     const vehicles=parsed.vehicles.filter(v=>v.routeId&&inArea(v.lat,v.lon)&&v.ts&&now-v.ts<180&&now-v.ts>=-30);

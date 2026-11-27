@@ -22,7 +22,7 @@ function mount(){
  if(new URLSearchParams(location.search).get('renderer')==='still'||navigator.connection?.saveData){
   status.textContent='City preview · open Auckland Live for transport updates.';return;
  }
- frame=document.createElement('iframe');frame.title='Interactive Auckland Live city and vehicle positions';frame.src='/pavilion/city-view.html?v=233e6f4019';
+ frame=document.createElement('iframe');frame.title='Interactive Auckland Live city and vehicle positions';frame.src='/pavilion/city-view.html?v=02e38905f6';
  host.append(frame);status.textContent='Loading the Auckland waterfront…';
  watchdog=setTimeout(()=>{if(!host.classList.contains('city-ready')){failed=true;clearFrame();status.textContent='The city is taking longer to load. Open Auckland Live below.'}},45000);
 }

@@ -130,26 +130,42 @@ function hull(width, height, length) {
   geometry.computeVertexNormals();
   return geometry;
 }
+function ferryDeck(lower, upper) {
+  const outline = ([w,front,aft,y]) => [
+    [-w*.68,y,front],[w*.68,y,front],[w,y,front+1.65],[w,y,aft-.8],
+    [w*.88,y,aft],[-w*.88,y,aft],[-w,y,aft-.8],[-w,y,front+1.65]
+  ];
+  const points=[...outline(lower),...outline(upper)], ix=[];
+  for(let i=0;i<8;i++){const j=(i+1)%8;ix.push(i,8+i,8+j,i,8+j,j);}
+  for(let i=1;i<7;i++)ix.push(8,8+i+1,8+i,0,i,i+1);
+  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(points.flat(),3));
+  g.setIndex(ix);g.computeVertexNormals();return g;
+}
 export function ferryGeometry() { // a passenger catamaran, about 34 m
   const P = [];
   for (const x of [-3.5, 3.5]) {
     P.push(part(hull(2.6, 1.6, 33.5), '#e9ecec', { at: [x, 0.9, 0], rough: 0.3 }));
     P.push(part(hull(2.62, 0.9, 33.0), '#23292e', { at: [x, 0.05, 0], rough: 0.5 })); // below the boot line
   }
-  P.push(part(box(9.8, 0.5, 31), '#dfe2e2', { at: [0, 1.95, 0.6], rough: 0.4 })); // deck
-  P.push(part(rbox(9.2, 2.6, 21.5, 0.6), '#f1f3f2', { at: [0, 3.5, 1.5], rough: 0.3 })); // main cabin
-  P.push(part(box(9.24, 1.15, 19.5), '#172027', { at: [0, 3.75, 1.6], rough: 0.06 }));
-  P.push(part(box(9.26, 0.26, 21.0), '#c3c7cc', { at: [0, 2.55, 1.5], band: 1, rough: 0.3 }));
-  P.push(part(rbox(7.2, 2.2, 11.5, 0.5), '#f1f3f2', { at: [0, 5.9, 2.5], rough: 0.3 })); // upper deck
-  P.push(part(box(7.24, 0.9, 10.0), '#172027', { at: [0, 6.1, 2.6], rough: 0.06 }));
-  P.push(part(rbox(4.4, 1.6, 3.6, 0.4), '#f1f3f2', { at: [0, 7.7, -1.2], rough: 0.3 }), part(box(4.45, 0.7, 3.65), '#172027', { at: [0, 7.9, -1.2], rough: 0.06 })); // wheelhouse
-  P.push(part(box(0.15, 2.6, 0.15), '#9aa0a3', { at: [0, 9.6, -0.6], rough: 0.4 })); // mast
+  const tiers=[
+    [[4.75,-12.9,15.8,1.6],[4.86,-12.8,15.8,2.19],'#dcd8c8'],
+    [[4.6,-10.8,13.1,2.20],[4.57,-10.35,13.05,3.1],'#e5e9e6'],
+    [[4.57,-10.35,13.05,3.1],[4.38,-9.12,12.94,4.57],'#254654'],
+    [[4.38,-9.12,12.94,4.57],[4.52,-9.18,13.30,4.84],'#dbe5e4'],
+    [[4.43,-8.88,12.85,4.84],[4.38,-8.68,12.65,5.02],'#778582'],
+    [[3.64,-5.88,7.2,5.04],[3.58,-5.64,7.18,5.52],'#e5e9e4'],
+    [[3.58,-5.64,7.18,5.52],[3.43,-4.73,7.02,6.78],'#294853'],
+    [[3.43,-4.73,7.02,6.78],[3.72,-4.93,7.49,7.05],'#e2e8e4']
+  ];
+  for(const [lo,hi,colour] of tiers)P.push(part(ferryDeck(lo,hi),colour,{rough:colour.startsWith('#2')?.18:.46}));
+  P.push(part(rbox(1.38,.64,2.1,.2),'#bdc8c4',{at:[0,7.32,3.3],rough:.55}));
+  P.push(part(box(.13,2.78,.13),'#8f9996',{at:[0,8.43,.4],rough:.38}));
   for (const side of [-1,1]) {
     for (let z=-7.4; z<12; z+=1.9) {
-      P.push(part(box(.075,1.15,.11),'#b8c4c6',{at:[side*4.64,3.75,z],rough:.38}));
+      P.push(part(box(.084,1.44,.11).rotateZ(side*.128),'#aab5b6',{at:[side*4.48,3.83,z],rough:.38}));
     }
     for (let z=-1.7; z<8.4; z+=1.64) {
-      P.push(part(box(.08,.94,.095),'#ccd7d5',{at:[side*3.63,6.1,z],rough:.4}));
+      P.push(part(box(.09,1.26,.095).rotateZ(side*.118),'#ccd7d5',{at:[side*3.50,6.15,z],rough:.4}));
     }
     for (const z of [-12.1,-8.6,-4.4,1.3,7.4,12.9]) {
       P.push(part(rbox(.26,.40,1.34,.12),'#253239',{at:[side*4.88,1.85,z],rough:.80}));
@@ -158,9 +174,9 @@ export function ferryGeometry() { // a passenger catamaran, about 34 m
       for(let z=z0;z<=z1;z+=.96)P.push(part(box(.056,.90,.056),'#aeb9b6',{at:[side*4.54,2.63,z],rough:.42}));
       for(const y of [2.58,3.04])P.push(part(box(.056,.06,z1-z0),'#c6d0cd',{at:[side*4.54,y,(z0+z1)/2],rough:.34}));
     }
-    P.push(part(rbox(.21,.16,.32,.045),side<0?'#913d35':'#43785f',{at:[side*2.22,8.38,-1.7]}));
+    P.push(part(rbox(.21,.16,.32,.045),side<0?'#913d35':'#43785f',{at:[side*3.45,6.93,-3.1]}));
   }
-  P.push(part(box(1.45,.08,.13),'#e7eae0',{at:[0,10.81,-.6]}));
+  P.push(part(box(1.45,.08,.13),'#e7eae0',{at:[0,9.80,.4]}));
   return mergeGeometries(P);
 }
 
