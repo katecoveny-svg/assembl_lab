@@ -53,7 +53,7 @@ test('NZ botanical catalog has 25 genuine Aotearoa entries, 8 compositions, 6 NZ
     }
   }
 
-  assert.equal(NZ_SURFACES.length, 6, '6 NZ supplier hardscape channels (lawn..kwila)');
+  assert.equal(NZ_SURFACES.length, 11, '11 NZ supplier hardscape channels (lawn..kwila)');
   assert.ok(NZ_SURFACES.some((s) => /Daltons/i.test(s.brand)));
   assert.ok(NZ_SURFACES.some((s) => /Firth/i.test(s.brand)));
   assert.ok(NZ_SURFACES.some((s) => /Schist/i.test(s.name)));

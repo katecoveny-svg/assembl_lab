@@ -1,352 +1,267 @@
-// Aotearoa Native 3D Landscape & Site-Plan Painter — Three.js r187 WebGPU + TSL
-// Fuses:
-//   1. WebGPURenderer (automatic WebGL2 fallback), SkyMesh NZ Southern Hemisphere solar slider (06:30–20:30),
-//      5 × 1024px WebP Photorealistic Botanical Atlases, TSL 3-layer wind + SSS + smooth J–D bloom + Yr 1/4/7/12 growth
-//   2. Site Plan + Freehand Garden Bed Brush mode (2048px 1:100 sample plan, multi-page PDF.js / image upload,
-//      2-Point Scale calibration, marching-squares brushed Corten/Macrocarpa beds + 6-channel NZ surface splatmap)
-//   3. Upload-to-Photo Backdrop mode (?mode=photo) with transparent shadow-catcher ground + Horizon/Tilt/Scale controls
-//   4. Real NZ Land mode (1 m LINZ LiDAR DEM+DSM, LINZ Primary Parcel boundary ribbon, AUP zone/overlays/hazards, extruded buildings)
-//   5. Curated 3D Native Manu (Tūī, Kererū, Pīwakawaka), Kaitiakitanga Ecology & NZBC E1 meter,
-//      OS Embed mode (?embed=os&project=&lat=&lon=), and L101 A3 SVG / CSV / 3D .glb exports!
-
+import { ArchitectureEngine, ARCH_PRESETS, CLADDING_FINISHES } from './architectureEngine.js';
+import { PoolEngine, NZ_POOL_PRESETS, POOL_FINISHES, FENCE_TYPES } from './poolEngine.js';
+import { ComplianceEngine } from './complianceEngine.js';
+import { PLANT_MAP } from '../catalog.mjs';
 import * as THREE from 'three';
 import { WebGPURenderer } from 'three/webgpu';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { SkyMesh } from 'three/addons/objects/SkyMesh.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
-import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 import {
-  NZ_MONTHS,
-  NZ_SEASONS,
-  NZ_SPECIES,
-  SPECIES_BY_ID,
-  NZ_SURFACES,
-  EDGING_STYLES,
-  NZ_EDGINGS,
-  MULCH_STYLES,
-  NZ_COMPOSITIONS,
-  stampBrushField,
-  buildPlantingSchedule,
-  exportPlantingCSV,
-  exportPlantingPlanSVG,
-  computeEcologyMetrics,
-  polygonPerimeterM,
+  NZ_PLANTS, NZ_SURFACES, NZ_EDGINGS, NZ_COMPOSITIONS,
+  NZ_MONTHS, NZ_SEASONS
 } from '../catalog.mjs';
-import { createNZSurfaceTextures, drawSampleSitePlanToCanvas } from './proceduralTextures.mjs';
+import { createNZSurfaceTextures, drawSampleSitePlanToCanvas, buildSampleBackyardPhotoDataUrl } from './proceduralTextures.mjs';
 import { createSharedUniforms, createTerrainNodeMaterial } from './tslMaterials.mjs';
+import { TerrainEngine, NZ_TERRAIN_PRESETS } from './terrainEngine.js';
 import { PlantingEngine } from './plantingEngine.mjs';
-import { buildSampleBackyardPhotoDataUrl } from './photoBackdrop.mjs';
-import { readLayer, unpackHeights, heightAt } from '../../roof-solar/linz/ground.js';
-import { toNZTM } from '../../roof-solar/linz/nztm.js';
-import { outlinesUrl, parseOutlines, askAddress } from '../../roof-solar/site.mjs';
+import { GardenPropsEngine, NZ_GARDEN_PROPS } from './gardenProps.js';
+import { PhotoMatchEngine } from './photoMatchEngine.js';
+import { computeClientQuote, exportClientQuoteHTML } from './quoteEngine.js';
 
-// ── ROHE AUTO-SELECTION FROM NZ LATITUDE/LONGITUDE ───────────────────────────
-function inferRoheFromCoords(lat, lon) {
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return { label: 'Tāmaki Makaurau Coastal', compId: 'coastal_native' };
-  if (lat > -37.4) return { label: 'Tāmaki Makaurau Coastal', compId: 'coastal_native' };
-  if (lat > -39.2) return { label: 'Waikato & Bay of Plenty Riparian', compId: 'pollinator_meadow' };
-  if (lat > -41.7) return { label: 'Te Whanganui-a-Tara Wind-Zone', compId: 'coastal_headland' };
-  if (lat > -44.2 && lon > 171.2) return { label: 'Waitaha / Canterbury Plains', compId: 'arch_subtropical' };
-  return { label: 'Central Otago Schist & Alpine', compId: 'alpine_tussock' };
-}
+const TERRAIN_SIZE = 34;
+const LINZ_KEY_STORAGE = 'nz_studio_linz_api_key';
 
-function wireDialogLightDismiss(dlg) {
-  if (!dlg) return;
-  dlg.addEventListener('close', () => { dlg.returnValue = ''; });
-  if ('closedBy' in HTMLDialogElement.prototype) return;
-  let downOut = false;
-  const isOut = (e) => {
-    const r = dlg.getBoundingClientRect();
-    return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
-  };
-  dlg.addEventListener('pointerdown', (e) => { downOut = isOut(e); });
-  dlg.addEventListener('pointerup', (e) => { if (downOut && isOut(e)) dlg.close(); });
-}
-
-function syncSliderFill(input) {
-  if (!input) return;
-  const min = Number(input.min) || 0;
-  const max = Number(input.max) || 100;
-  const val = Number(input.value) || 0;
-  const pct = ((val - min) / Math.max(1e-6, max - min)) * 100;
-  input.style.setProperty('--fill', `${Math.max(0, Math.min(100, pct)).toFixed(1)}%`);
-}
+// ── APP STATE ─────────────────────────────────────────────────────────────────
+const state = {
+  activeStage: 'house', // 'site' | 'house' | 'pool' | 'garden'
+  panelOpen: window.innerWidth >= 720,
+  tool: 'paint-mix', // 'paint-mix' | 'paint-plant' | 'draw-bed' | 'paint-surface' | 'place-prop' | 'erase' | 'orbit'
+  tab: 'compositions', // 'compositions' | 'plants' | 'surfaces' | 'props'
+  plantCat: 'all',
+  surfaceCat: 'all',
+  selectedCompositionId: NZ_COMPOSITIONS[0].id,
+  selectedPlantId: 'nikau',
+  selectedSurfaceChannel: 4, // Crushed Greywacke Chip (14mm)
+  selectedPropId: 'water_bowl',
+  selectedEdgingId: 'corten',
+  brushRadius: 2.2,
+  densityMult: 1.0,
+  clumping: 0.72,
+  windOn: true,
+  handlesVisible: true,
+  viewMode: '3d', // 'plan' | '3d' | 'photo'
+  includeLabour: false,
+  playingSeason: false,
+  sunHour: 14.5,
+  drawPoints: []
+};
 
 async function init() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const isOsEmbed = urlParams.get('embed') === 'os';
-  const embedProject = urlParams.get('project') || '';
-  const embedLat = urlParams.has('lat') ? Number(urlParams.get('lat')) : NaN;
-  const embedLon = urlParams.has('lon') ? Number(urlParams.get('lon')) : NaN;
-  const urlMode = urlParams.get('mode');
+  const container = document.getElementById('canvas-wrap');
 
-  if (isOsEmbed) {
-    document.body.classList.add('is-os-embed');
-  }
-
-  const canvas = document.getElementById('gl');
-  const srStatus = document.getElementById('srStatus');
-  const hudChip = document.getElementById('hudChip');
-  const photoBackdropImg = document.getElementById('photoBackdrop');
-
-  const announce = (msg) => {
-    if (srStatus) srStatus.textContent = msg;
-    if (hudChip) hudChip.textContent = msg;
-  };
-
-  // ── WEBGPU RENDERER (Three.js r187 with automatic WebGL2 fallback & alpha for Photo Backdrop) ─
-  const renderer = new WebGPURenderer({ canvas, antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.setSize(window.innerWidth, window.innerHeight, false);
+  // ── WEBGPU RENDERER (Three.js r187 with bright ACESFilmic exposure 1.26)
+  const renderer = new WebGPURenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0xdce8f2, 1);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 1.26;
+  container.appendChild(renderer.domElement);
+
   await renderer.init();
 
   const isWebGPU = Boolean(renderer.backend && renderer.backend.isWebGPUBackend);
-  const backendBadge = document.getElementById('backendBadge');
-  if (backendBadge) backendBadge.textContent = isWebGPU ? 'WebGPU' : 'WebGL2';
+  const badge = document.getElementById('backend-badge');
+  badge.textContent = isWebGPU ? 'WebGPU' : 'WebGL2';
 
-  // ── SCENE, CAMERA & ORBIT CONTROLS ─────────────────────────────────────────
+  // ── SCENE, CAMERA & ORBIT CONTROLS ──────────────────────────────────────────
   const scene = new THREE.Scene();
-  const baseFog = new THREE.FogExp2(0x8899a4, 0.0085);
-  scene.fog = baseFog;
+  scene.fog = new THREE.FogExp2(0xdce8f2, 0.0065);
 
-  const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.15, 320);
-  camera.position.set(11.8, 9.0, 12.6);
+  const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 240);
+  camera.position.set(11.8, 8.2, 11.8);
 
-  const controls = new OrbitControls(camera, canvas);
+  const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.07;
-  controls.target.set(0, 0.6, 0);
-  controls.maxPolarAngle = Math.PI * 0.488;
-  controls.minDistance = 2.4;
-  controls.maxDistance = 120;
+  controls.target.set(0.2, 0.8, -1.8);
+  controls.maxPolarAngle = Math.PI * 0.485;
+  controls.minDistance = 2.0;
+  controls.maxDistance = 38;
   controls.mouseButtons = {
     LEFT: THREE.MOUSE.ROTATE,
     MIDDLE: THREE.MOUSE.DOLLY,
-    RIGHT: THREE.MOUSE.ROTATE,
+    RIGHT: THREE.MOUSE.ROTATE
   };
 
-  // ── PHYSICAL SKY (SkyMesh) & NZ SOUTHERN HEMISPHERE SOLAR LIGHTING ─────────
+  // ── BRIGHT SUN-DRENCHED AOTEAROA COASTAL DAYLIGHT (SkyMesh + Solar Rig) ─────
   const sharedUniforms = createSharedUniforms();
   const sky = new SkyMesh();
-  sky.scale.setScalar(220);
-  sky.turbidity.value = 3.2;
-  sky.rayleigh.value = 1.65;
-  sky.mieCoefficient.value = 0.0045;
-  sky.mieDirectionalG.value = 0.82;
+  sky.scale.setScalar(180);
+  sky.turbidity.value = 1.8;
+  sky.rayleigh.value = 1.15;
+  sky.mieCoefficient.value = 0.003;
+  sky.mieDirectionalG.value = 0.78;
   scene.add(sky);
 
-  const sunLight = new THREE.DirectionalLight(0xfff5e4, 3.15);
+  const sunLight = new THREE.DirectionalLight(0xfffaf0, 3.6);
   sunLight.castShadow = true;
   sunLight.shadow.mapSize.set(2048, 2048);
   sunLight.shadow.camera.near = 1;
-  sunLight.shadow.camera.far = 90;
-  sunLight.shadow.camera.left = -24;
-  sunLight.shadow.camera.right = 24;
-  sunLight.shadow.camera.top = 24;
-  sunLight.shadow.camera.bottom = -24;
+  sunLight.shadow.camera.far = 65;
+  sunLight.shadow.camera.left = -18;
+  sunLight.shadow.camera.right = 18;
+  sunLight.shadow.camera.top = 18;
+  sunLight.shadow.camera.bottom = -18;
   sunLight.shadow.bias = -0.0004;
-  sunLight.shadow.normalBias = 0.024;
+  sunLight.shadow.normalBias = 0.025;
   scene.add(sunLight);
 
-  const hemiLight = new THREE.HemisphereLight(0xb8d4f0, 0x3b352a, 0.95);
+  const hemiLight = new THREE.HemisphereLight(0xdff0ff, 0x9c927d, 1.55);
   scene.add(hemiLight);
 
-  const fillLight = new THREE.DirectionalLight(0x9ec5e8, 0.48);
-  fillLight.position.set(-10, 8, 12);
+  const fillLight = new THREE.DirectionalLight(0xdbeafe, 0.75);
+  fillLight.position.set(-10, 9, 12);
   scene.add(fillLight);
 
-  // ── APP STATE ──────────────────────────────────────────────────────────────
-  const state = {
-    groundMode: 'studio', // 'studio' | 'siteplan' | 'photo' | 'linz'
-    tool: 'paint-mix',    // 'garden_brush' | 'paint-mix' | 'paint-plant' | 'draw-bed' | 'sculpt' | 'paint-surface' | 'erase' | 'measure' | 'orbit'
-    tab: 'compositions',  // 'compositions' | 'plants' | 'surfaces'
-    plantCat: 'all',
-    selectedCompositionId: NZ_COMPOSITIONS[0].id,
-    selectedPlantId: 'kowhai',
-    selectedSurfaceChannel: 1, // Daltons Black Bark Mulch
-    selectedEdgingId: 'corten',
-    selectedMulchId: 'bark',
-    brushRadius: 2.0,
-    densityMult: 1.05,
-    clumping: 0.72,
-    sunHour: 14.5,
-    windOn: true,
-    handlesVisible: true,
-    uplightsOn: true,
-    manuOn: true,
-    isPlanView: false,
-    playingSeason: false,
-    showSampleMassing: true,
-    siteLabel: embedProject || 'Tāmaki Makaurau Coastal Studio',
-    rohe: 'Tāmaki Makaurau Coastal',
-    siteFactsSummary: null,
-    drawPoints: [],
-    planMeta: { widthM: 28, depthM: 20, aspect: 20 / 28, isSample: true, label: 'Proposed Coastal Site Plan · 1:100' },
-    twoPtCalib: null,
-    photoSettings: { horizonPct: 50, tiltDeg: 14, scaleMult: 1.0, loadedUrl: null },
-  };
+  // ── TERRAIN, PLANTING & GARDEN PROPS ENGINES ────────────────────────────────
+  const terrainEngine = new TerrainEngine(scene, TERRAIN_SIZE, 96);
+  const engine = new PlantingEngine(scene, sharedUniforms, TERRAIN_SIZE, 512, terrainEngine);
+  const propsEngine = new GardenPropsEngine(scene, terrainEngine);
+  engine.setPropsEngine(propsEngine);
 
-  // ── SHARED PROCEDURAL TEXTURES & FIXED 2048×2048 SITE PLAN CANVAS TEXTURE ──
   const surfaceTextures = createNZSurfaceTextures();
-  const planCanvas = document.createElement('canvas');
-  planCanvas.width = 2048;
-  planCanvas.height = 2048;
-  drawSampleSitePlanToCanvas(planCanvas);
-  const planTex = new THREE.CanvasTexture(planCanvas);
-  planTex.colorSpace = THREE.SRGBColorSpace;
-  planTex.anisotropy = 8;
-  planTex.needsUpdate = true;
-
-  // ── PLANTING ENGINE & UNIFIED TSL TERRAIN MESH ─────────────────────────────
-  const STUDIO_SIZE = 34;
-  const engine = new PlantingEngine(scene, sharedUniforms, surfaceTextures, {
-    terrainWidth: STUDIO_SIZE,
-    terrainDepth: STUDIO_SIZE,
-    splatRes: 512,
-  });
-
-  const { mat: terrainMat, uPlanMix, uContourMix } = createTerrainNodeMaterial(
+  const terrainMat = createTerrainNodeMaterial(
     engine.splatTexA,
     engine.splatTexB,
+    engine.splatTexC,
     surfaceTextures,
-    planTex
+    TERRAIN_SIZE,
+    sharedUniforms
   );
-
-  const terrainMesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(STUDIO_SIZE, STUDIO_SIZE, 64, 64).rotateX(-Math.PI * 0.5),
-    terrainMat
-  );
+  const terrainMesh = new THREE.Mesh(terrainEngine.geometry, terrainMat);
   terrainMesh.receiveShadow = true;
   scene.add(terrainMesh);
 
-  // Seamless outer NZ landscape horizon skirt (shown in Studio & LINZ modes)
+  // Seamless outer NZ landscape horizon skirt
   const skirtTex = surfaceTextures.lawn.clone();
   skirtTex.repeat.set(42, 42);
   skirtTex.needsUpdate = true;
+  const skirtGeom = new THREE.PlaneGeometry(240, 240);
+  skirtGeom.rotateX(-Math.PI * 0.5);
   const skirtMesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(240, 240).rotateX(-Math.PI * 0.5),
+    skirtGeom,
     new THREE.MeshStandardMaterial({ map: skirtTex, roughness: 0.94, metalness: 0.0 })
   );
-  skirtMesh.position.y = -0.04;
   skirtMesh.receiveShadow = true;
   scene.add(skirtMesh);
 
-  // Dark studio board surround beneath 2D Site Plan sheet
-  const boardMesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(260, 260).rotateX(-Math.PI * 0.5),
-    new THREE.MeshStandardMaterial({ color: 0x19131b, roughness: 0.94 })
-  );
-  boardMesh.position.y = -0.05;
-  boardMesh.visible = false;
-  scene.add(boardMesh);
+  // Terrain-conformed stepping pavers context (hide legacy deck box since ArchitectureEngine renders pavilion deck)
+  const deckContext = createArchitecturalDeckContext(scene, surfaceTextures, terrainEngine);
+  deckContext.group.children.slice(0, 3).forEach(c => { c.visible = false; });
 
-  // Transparent shadow-catcher ground plane for Photo Backdrop mode (?mode=photo)
-  const photoShadowPlane = new THREE.Mesh(
-    new THREE.PlaneGeometry(60, 60).rotateX(-Math.PI * 0.5),
-    new THREE.ShadowMaterial({ opacity: 0.36 })
-  );
-  photoShadowPlane.receiveShadow = true;
-  photoShadowPlane.visible = false;
-  scene.add(photoShadowPlane);
+  const archEngine = new ArchitectureEngine(scene, terrainEngine, surfaceTextures);
+  const poolEngine = new PoolEngine(scene, terrainEngine, sharedUniforms);
+  const complianceEngine = new ComplianceEngine(scene, terrainEngine, 30);
+  poolEngine.updateConfig({
+    presetId: 'plunge',
+    x: 5.8,
+    z: -7.8,
+    finishId: 'aqua_quartzon',
+    fenceType: 'frameless_glass'
+  });
 
-  // Context groups (Studio Kwila Terrace, Sample Site Plan 3D Massing, LINZ Buildings & Parcel Ribbon)
-  const studioContextGroup = new THREE.Group();
-  const sampleMassingGroup = new THREE.Group();
-  const linzContextGroup = new THREE.Group();
-  const manuGroup = new THREE.Group();
-  const helpersGroup = new THREE.Group();
-  scene.add(studioContextGroup, sampleMassingGroup, linzContextGroup, manuGroup, helpersGroup);
+  // ── 4-STAGE DESIGN LOOP NAVIGATION ──────────────────────────────────────────
+  const stagePanel = document.getElementById('inspector-panel');
+  function syncStageUI() {
+    stagePanel.classList.toggle('hidden', !state.panelOpen);
+    document.querySelectorAll('.stage-pill').forEach(btn => {
+      btn.classList.toggle('active', state.panelOpen && btn.dataset.stage === state.activeStage);
+    });
+    document.querySelectorAll('.stage-pane').forEach(pane => {
+      pane.classList.toggle('active', pane.dataset.pane === state.activeStage);
+    });
+  }
 
-  function buildStudioDeckContext() {
-    const deckMat = new THREE.MeshStandardMaterial({ map: surfaceTextures.kwila, roughness: 0.58, metalness: 0.04 });
-    const deckMesh = new THREE.Mesh(new THREE.BoxGeometry(9.5, 0.16, 3.6), deckMat);
-    deckMesh.position.set(-6.5, 0.08, -7.8);
-    deckMesh.receiveShadow = true;
-    deckMesh.castShadow = true;
-    studioContextGroup.add(deckMesh);
-
-    const wallMat = new THREE.MeshStandardMaterial({ color: 0x2a2429, roughness: 0.85 });
-    const wallMesh = new THREE.Mesh(new THREE.BoxGeometry(9.6, 1.85, 0.24), wallMat);
-    wallMesh.position.set(-6.5, 0.92, -9.65);
-    wallMesh.castShadow = true;
-    wallMesh.receiveShadow = true;
-    studioContextGroup.add(wallMesh);
-
-    const paverMat = new THREE.MeshStandardMaterial({ map: surfaceTextures.pavers, roughness: 0.78, metalness: 0.02 });
-    const stepPositions = [
-      [-4.8, -5.2], [-4.5, -4.1], [-4.1, -3.0], [-3.6, -1.9],
-      [-3.1, -0.8], [-2.7, 0.3], [-2.5, 1.4], [-2.6, 2.5], [-3.0, 3.6],
-    ];
-    const paverGeo = new THREE.BoxGeometry(0.85, 0.055, 0.48);
-    for (let i = 0; i < stepPositions.length; i++) {
-      const [sx, sz] = stepPositions[i];
-      const m = new THREE.Mesh(paverGeo, paverMat);
-      m.position.set(sx, 0.028, sz);
-      m.rotation.y = Math.sin(i * 0.4) * 0.12;
-      m.receiveShadow = true;
-      m.castShadow = true;
-      studioContextGroup.add(m);
+  function setStage(stageId, forceOpen = true) {
+    if (!forceOpen && state.panelOpen && state.activeStage === stageId) {
+      state.panelOpen = false;
+    } else {
+      state.activeStage = stageId;
+      state.panelOpen = true;
     }
+    syncStageUI();
   }
-  buildStudioDeckContext();
 
-  function buildSamplePlan3DMassing() {
-    const wallMat = new THREE.MeshStandardMaterial({ color: 0xf4efe8, roughness: 0.78, transparent: true, opacity: 0.92 });
-    const roofTrimMat = new THREE.MeshStandardMaterial({ color: 0x2c2628, roughness: 0.42, metalness: 0.45 });
-    const glassMat = new THREE.MeshPhysicalMaterial({ color: 0xcbe0e4, transparent: true, opacity: 0.28, roughness: 0.05 });
-    const deckMat = new THREE.MeshStandardMaterial({ map: surfaceTextures.kwila, roughness: 0.64 });
+  document.querySelectorAll('.stage-pill').forEach(btn => {
+    btn.addEventListener('click', () => setStage(btn.dataset.stage, false));
+  });
 
-    const house = new THREE.Mesh(new THREE.BoxGeometry(11.0, 3.1, 5.0), wallMat);
-    house.position.set(-2.0, 1.55, -3.7);
-    house.castShadow = true;
-    house.receiveShadow = true;
-    sampleMassingGroup.add(house);
+  document.getElementById('btn-quote-pill').addEventListener('click', () => {
+    setStage('garden', true);
+  });
 
-    const roof = new THREE.Mesh(new THREE.BoxGeometry(11.9, 0.22, 5.9), roofTrimMat);
-    roof.position.set(-2.0, 3.2, -3.7);
-    roof.castShadow = true;
-    sampleMassingGroup.add(roof);
+  syncStageUI();
 
-    const glazing = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 2.5), glassMat);
-    glazing.position.set(0.1, 1.45, -1.18);
-    sampleMassingGroup.add(glazing);
+  // ── SITE PHOTO-MATCH & HORIZON/LINZ ALIGNMENT AGENT ─────────────────────────
+  const backdropEl = document.getElementById('photo-backdrop');
+  const photoMatch = new PhotoMatchEngine({
+    renderer,
+    scene,
+    camera,
+    controls,
+    sharedUniforms,
+    terrainEngine,
+    sky,
+    skirtMesh,
+    deckContext,
+    backdropEl,
+    onStateChange: syncPhotoMatchUI
+  });
 
-    const deck = new THREE.Mesh(new THREE.BoxGeometry(10.6, 0.28, 4.2), deckMat);
-    deck.position.set(3.5, 0.14, -0.7);
-    deck.castShadow = true;
-    deck.receiveShadow = true;
-    sampleMassingGroup.add(deck);
-    sampleMassingGroup.visible = false;
-  }
-  buildSamplePlan3DMassing();
-
-  function rebuildTerrainGeometry(widthM, depthM, segsX, segsZ, heightFn = null) {
-    if (terrainMesh.geometry) terrainMesh.geometry.dispose();
-    const geom = new THREE.PlaneGeometry(widthM, depthM, segsX, segsZ);
-    geom.rotateX(-Math.PI * 0.5);
-    if (heightFn) {
-      const pos = geom.attributes.position;
-      for (let i = 0; i < pos.count; i++) {
-        pos.setY(i, heightFn(pos.getX(i), pos.getZ(i)));
-      }
-      geom.computeVertexNormals();
+  function syncPhotoMatchUI(pmState) {
+    document.getElementById('btn-photo-match').classList.toggle('active', pmState.active);
+    if (pmState.active) {
+      state.viewMode = 'photo';
+      document.getElementById('btn-plan').classList.remove('active');
+      document.getElementById('btn-3d').classList.remove('active');
+    } else if (state.viewMode === 'photo') {
+      state.viewMode = '3d';
+      document.getElementById('btn-3d').classList.add('active');
     }
-    terrainMesh.geometry = geom;
-    engine.setTerrainDimensions(widthM, depthM);
-    engine.setGroundHeightFn(heightFn || (() => 0));
+
+    const badgeEl = document.getElementById('photo-status-badge');
+    if (pmState.active && pmState.hasPhoto) {
+      badgeEl.textContent = `Horizon ${Math.round(pmState.detectedHorizonRatio * 100)}%`;
+    } else if (pmState.active) {
+      badgeEl.textContent = 'Photo Active';
+    } else {
+      badgeEl.textContent = '3D Sky';
+    }
+
+    document.getElementById('photo-eye-height').value = pmState.eyeHeight.toFixed(2);
+    document.getElementById('lbl-eye-height').textContent = `${pmState.eyeHeight.toFixed(2)} m`;
+    document.getElementById('photo-horizon-pitch').value = pmState.horizonPitchDeg.toFixed(1);
+    document.getElementById('lbl-horizon-pitch').textContent = `${pmState.horizonPitchDeg.toFixed(1)}°`;
+    document.getElementById('photo-lens-fov').value = Math.round(pmState.lensFov);
+    document.getElementById('lbl-lens-fov').textContent = `${Math.round(pmState.lensFov)}°`;
+    document.getElementById('photo-parcel-bearing').value = Math.round(pmState.parcelBearingDeg);
+    document.getElementById('lbl-parcel-bearing').textContent = `${Math.round(pmState.parcelBearingDeg)}°`;
   }
 
-  // ── SOLAR LIGHTING & SKY CONTROLLER ────────────────────────────────────────
-  function updateNZSun(hour, moodOverride = null) {
+  function updateSkirtElevation() {
+    let minH = Infinity;
+    for (let i = 0; i < terrainEngine.heights.length; i++) {
+      if (terrainEngine.heights[i] < minH) minH = terrainEngine.heights[i];
+    }
+    skirtMesh.position.y = Math.min(-0.04, minH - 0.18);
+  }
+
+  function updateSlopeReadout() {
+    document.getElementById('slope-readout').textContent =
+      `Avg ${terrainEngine.avgSlopeDeg.toFixed(1)}°`;
+    document.getElementById('site-status').textContent = terrainEngine.siteLabel;
+  }
+
+  function updateNZSun(hour) {
     state.sunHour = hour;
-    const dayProgress = Math.max(0.01, Math.min(0.99, (hour - 6.0) / 14.5));
-    const elevation = Math.max(0.07, Math.sin(dayProgress * Math.PI) * 1.12);
+    const latRad = Math.abs(terrainEngine.siteLat) * (Math.PI / 180);
+    const maxElev = Math.max(0.58, Math.min(1.26, 1.48 - latRad * 0.58));
+    const dayProgress = (hour - 6.0) / 14.5;
+    const elevation = Math.max(0.06, Math.sin(Math.max(0, Math.min(1, dayProgress)) * Math.PI) * maxElev);
     const azimuth = (dayProgress - 0.5) * Math.PI * 1.18;
     const sunDir = new THREE.Vector3(
       -Math.sin(azimuth) * Math.cos(elevation),
@@ -355,158 +270,79 @@ async function init() {
     ).normalize();
 
     sky.sunPosition.value.copy(sunDir);
-    sunLight.position.copy(sunDir).multiplyScalar(32);
+    sunLight.position.copy(sunDir).multiplyScalar(26);
     sharedUniforms.uSunDir.value.copy(sunDir);
 
-    const golden = 1.0 - Math.min(1.0, elevation / 0.45);
-    const isDusk = hour >= 19.6 || hour <= 6.8 || moodOverride === 'dusk';
+    const sinE = Math.sin(elevation);
+    const golden = 1.0 - Math.min(1.0, elevation / 0.42);
+    const dusk = 1.0 - Math.min(1.0, Math.max(0, (elevation - 0.06) / 0.26));
 
-    sunLight.color.setRGB(1.0, 0.95 - golden * 0.24, 0.88 - golden * 0.44);
-    sunLight.intensity = isDusk ? 1.15 : 2.1 + Math.sin(elevation) * 1.65;
-    hemiLight.intensity = isDusk ? 0.45 : 0.58 + Math.sin(elevation) * 0.52;
+    // Bright sunlit Auckland / Waiheke summer afternoon lighting
+    sunLight.color.setRGB(1.0, 0.98 - golden * 0.18, 0.94 - golden * 0.36);
+    sunLight.intensity = 1.15 + sinE * 2.65;
+    hemiLight.intensity = 0.65 + sinE * 0.98;
+    fillLight.intensity = 0.32 + sinE * 0.48;
 
-    if (state.groundMode !== 'photo') {
-      baseFog.color.setRGB(
-        0.38 + (1 - golden) * 0.28,
-        0.42 + (1 - golden) * 0.29,
-        0.48 + (1 - golden) * 0.30
+    if (scene.fog) {
+      // Crisp bright coastal sky horizon (#dce8f2 in daylight, warm apricot at sunset)
+      const dayR = 0.863, dayG = 0.910, dayB = 0.949;
+      const goldR = 0.84, goldG = 0.72, goldB = 0.66;
+      const gMix = golden * 0.55;
+      scene.fog.color.setRGB(
+        dayR * (1 - gMix) + goldR * gMix,
+        dayG * (1 - gMix) + goldG * gMix,
+        dayB * (1 - gMix) + goldB * gMix
       );
-      scene.fog = baseFog;
     }
 
-    const wantUplight = isDusk ? 3.8 : golden > 0.55 ? 1.6 : 0.0;
-    if (Math.abs(engine.uplightIntensity - wantUplight) > 0.35) {
-      engine.uplightIntensity = wantUplight;
-      engine.rebuildBeds3D(state.tool === 'sculpt');
-    }
+    propsEngine.updateDuskLighting(dusk);
+    poolEngine.updateDuskLighting(hour);
 
     const hh = Math.floor(hour);
     const mm = Math.round((hour - hh) * 60);
-    const lbl = document.getElementById('sunTimeOut');
-    if (lbl) lbl.textContent = `${String(hh).padStart(2, '0')}:${String(mm === 60 ? 0 : mm).padStart(2, '0')}`;
+    document.getElementById('sun-time-lbl').textContent =
+      `${String(hh).padStart(2, '0')}:${String(mm === 60 ? 0 : mm).padStart(2, '0')}`;
   }
 
-  // ── CURATED 3D NATIVE MANU (Tūī, Kererū, Pīwakawaka from /plan-studio/library/glb/) ─
-  const manuPrototypes = new Map();
-  const animatedManu = [];
+  terrainEngine.onChange(() => {
+    updateSkirtElevation();
+    deckContext.conformToTerrain();
+    archEngine.reprojectToTerrain();
+    poolEngine.rebuild();
+    complianceEngine.rebuildHIRB();
+    engine.rebuildEdgingMeshes();
+    engine.syncInstances();
+    propsEngine.regroundAll();
+    updateNZSun(state.sunHour);
+    updateSlopeReadout();
+    updateStatsUI();
+  });
 
-  async function loadCuratedManu() {
-    try {
-      await MeshoptDecoder.ready;
-      const loader = new GLTFLoader();
-      loader.setMeshoptDecoder(MeshoptDecoder);
-      const specs = [
-        ['tui', '/plan-studio/library/glb/manu-tui.glb', 1.45],
-        ['kereru', '/plan-studio/library/glb/manu-kereru.glb', 1.65],
-        ['piwakawaka', '/plan-studio/library/glb/manu-piwakawaka.glb', 1.25],
-      ];
-      await Promise.all(
-        specs.map(async ([key, url, scaleMult]) => {
-          const gltf = await loader.loadAsync(url);
-          const root = gltf.scene;
-          const box = new THREE.Box3().setFromObject(root);
-          const sz = box.getSize(new THREE.Vector3());
-          const maxDim = Math.max(sz.x, sz.y, sz.z, 0.001);
-          root.scale.setScalar((0.24 * scaleMult) / maxDim);
-          root.traverse((o) => {
-            if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; }
-          });
-          manuPrototypes.set(key, root);
-        })
-      );
-      syncManu3D();
-    } catch {
-      /* optional 3D native bird enhancement */
+  // ── TERRAIN-CONFORMED 3D BRUSH CURSOR & POLYGON BED PREVIEW ─────────────────
+  const CURSOR_SEGS = 48;
+  const brushLinePositions = new Float32Array((CURSOR_SEGS + 1) * 3);
+  const brushCursorGeom = new THREE.BufferGeometry();
+  brushCursorGeom.setAttribute('position', new THREE.BufferAttribute(brushLinePositions, 3));
+  const brushCursorMat = new THREE.LineBasicMaterial({ color: 0x240b21 });
+  const brushCursor = new THREE.Line(brushCursorGeom, brushCursorMat);
+  brushCursor.visible = false;
+  brushCursor.frustumCulled = false;
+  scene.add(brushCursor);
+
+  function updateTerrainBrushCursor(cx, cz, radius) {
+    const pos = brushCursorGeom.attributes.position;
+    for (let i = 0; i <= CURSOR_SEGS; i++) {
+      const a = (i / CURSOR_SEGS) * Math.PI * 2;
+      const wx = cx + Math.cos(a) * radius;
+      const wz = cz + Math.sin(a) * radius;
+      const wy = terrainEngine.getHeight(wx, wz) + 0.06;
+      pos.setXYZ(i, wx, wy, wz);
     }
+    pos.needsUpdate = true;
   }
-  void loadCuratedManu();
-
-  function syncManu3D() {
-    while (manuGroup.children.length) manuGroup.remove(manuGroup.children[0]);
-    animatedManu.length = 0;
-    if (!state.manuOn || !manuPrototypes.size) return;
-
-    const yr = sharedUniforms.uYear.value;
-    const perches = engine.plants.filter((p) =>
-      ['pohutukawa', 'kowhai', 'tikouka', 'harakeke', 'ponga', 'manuka', 'titoki', 'nikau'].includes(p.speciesId)
-    );
-    const maxBirds = Math.min(7, perches.length);
-    for (let i = 0; i < maxBirds; i++) {
-      const host = perches[(i * 5) % perches.length];
-      const sp = SPECIES_BY_ID[host.speciesId];
-      if (!sp) continue;
-      const birdKey = (host.speciesId === 'tikouka' || host.speciesId === 'nikau' || host.speciesId === 'titoki')
-        ? 'kereru'
-        : (host.speciesId === 'ponga' || host.speciesId === 'manuka')
-          ? 'piwakawaka'
-          : 'tui';
-      const proto = manuPrototypes.get(birdKey) ?? [...manuPrototypes.values()][0];
-      if (!proto) continue;
-
-      const bird = proto.clone(true);
-      const yrFrac = Math.min(1, 0.35 + (yr / 12) * 0.65);
-      const perchH = sp.matureHeight * (host.scale || 1) * yrFrac * 0.72;
-      const baseY = engine.plantSupportHeightAt(host.x, host.z) + perchH;
-      bird.position.set(host.x + 0.22, baseY, host.z + 0.14);
-      bird.rotation.y = (i * 2.1) % (Math.PI * 2);
-      manuGroup.add(bird);
-      animatedManu.push({ node: bird, baseY, phase: i * 1.7 });
-    }
-  }
-
-  // ── 3D BRUSH RING CURSOR, DRAW-BED PREVIEW & MEASURE LINE ──────────────────
-  const RING_SEG = 56;
-  const ringPositions = new Float32Array((RING_SEG + 1) * 3);
-  const ringGeo = new THREE.BufferGeometry();
-  ringGeo.setAttribute('position', new THREE.BufferAttribute(ringPositions, 3));
-  const ringMat = new THREE.LineBasicMaterial({ color: 0xf9f6f2, transparent: true, opacity: 0.92 });
-  const brushRing = new THREE.Line(ringGeo, ringMat);
-  brushRing.visible = false;
-
-  const centerDot = new THREE.Mesh(
-    new THREE.SphereGeometry(0.075, 12, 12),
-    new THREE.MeshBasicMaterial({ color: 0xf9f6f2 })
-  );
-  centerDot.visible = false;
-
-  const measurePositions = new Float32Array(6);
-  const measureGeo = new THREE.BufferGeometry();
-  measureGeo.setAttribute('position', new THREE.BufferAttribute(measurePositions, 3));
-  const measureLine = new THREE.Line(measureGeo, new THREE.LineBasicMaterial({ color: 0xe8b732 }));
-  measureLine.visible = false;
 
   const drawPreviewGroup = new THREE.Group();
-  helpersGroup.add(brushRing, centerDot, measureLine, drawPreviewGroup);
-
-  function updateBrushRing(wx, wz) {
-    const show = ['garden_brush', 'paint-mix', 'paint-plant', 'paint-surface', 'erase', 'draw-bed'].includes(state.tool);
-    brushRing.visible = show;
-    centerDot.visible = show || state.tool === 'measure' || Boolean(state.twoPtCalib);
-    if (!show && state.tool !== 'measure' && !state.twoPtCalib) return;
-
-    centerDot.position.set(wx, engine.plantSupportHeightAt(wx, wz) + 0.08, wz);
-    const colMap = {
-      garden_brush: 0xb5df9e,
-      'paint-mix': 0xf9f6f2,
-      'paint-plant': 0xd9bacb,
-      'paint-surface': 0xe8b732,
-      'draw-bed': 0xe8b732,
-      erase: 0xe68888,
-    };
-    ringMat.color.setHex(colMap[state.tool] || 0xf9f6f2);
-
-    const rad = state.tool === 'draw-bed' ? 0.36 : state.brushRadius;
-    for (let i = 0; i <= RING_SEG; i++) {
-      const a = (i / RING_SEG) * Math.PI * 2;
-      const rx = wx + Math.cos(a) * rad;
-      const rz = wz + Math.sin(a) * rad;
-      ringPositions[i * 3] = rx;
-      ringPositions[i * 3 + 1] = engine.plantSupportHeightAt(rx, rz) + 0.06;
-      ringPositions[i * 3 + 2] = rz;
-    }
-    ringGeo.attributes.position.needsUpdate = true;
-    ringGeo.computeBoundingSphere();
-  }
+  scene.add(drawPreviewGroup);
 
   function rebuildDrawPreview(hoverPt = null) {
     while (drawPreviewGroup.children.length) {
@@ -516,638 +352,103 @@ async function init() {
     }
     const pts = [...state.drawPoints];
     if (hoverPt) pts.push(hoverPt);
-    if (!pts.length) return;
+    if (pts.length === 0) return;
 
     const dotGeom = new THREE.SphereGeometry(0.11, 12, 10);
-    const dotMat = new THREE.MeshBasicMaterial({ color: 0xe8b732 });
+    const dotMat = new THREE.MeshBasicMaterial({ color: 0x240b21 });
     for (const p of state.drawPoints) {
       const m = new THREE.Mesh(dotGeom, dotMat);
-      m.position.set(p.x, engine.groundHeightAt(p.x, p.z) + 0.1, p.z);
+      m.position.set(p.x, terrainEngine.getHeight(p.x, p.z) + 0.09, p.z);
       drawPreviewGroup.add(m);
     }
+
     if (pts.length >= 2) {
-      const linePts = pts.map((p) => new THREE.Vector3(p.x, engine.groundHeightAt(p.x, p.z) + 0.1, p.z));
+      const linePts = pts.map(p => new THREE.Vector3(p.x, terrainEngine.getHeight(p.x, p.z) + 0.09, p.z));
       if (state.drawPoints.length >= 3) linePts.push(linePts[0].clone());
-      drawPreviewGroup.add(new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints(linePts),
-        new THREE.LineBasicMaterial({ color: 0xf9f6f2 })
-      ));
+      const lineGeom = new THREE.BufferGeometry().setFromPoints(linePts);
+      const lineMat = new THREE.LineBasicMaterial({ color: 0xd9bacb });
+      drawPreviewGroup.add(new THREE.Line(lineGeom, lineMat));
     }
   }
 
-  function finishDrawingBed() {
-    if (state.drawPoints.length < 3) return;
-    engine.pushUndoState();
-    const comp = NZ_COMPOSITIONS.find((c) => c.id === state.selectedCompositionId) || NZ_COMPOSITIONS[0];
-    engine.createSplineBed(state.drawPoints, comp, {
-      edging: state.selectedEdgingId,
-      mulch: state.selectedMulchId,
-      densityMult: state.densityMult,
-      clumping: state.clumping,
-    });
-    state.drawPoints = [];
-    rebuildDrawPreview(null);
-    syncManu3D();
-    updateInspectorAndStats();
-    announce('Created sculpted NZ native bed — drag vertices or brush extra species anytime.');
-  }
+  // ── POPULATE SHOWCASE NZ ARCHITECTURAL GARDEN (ZERO F9 CLASHES AT STARTUP) ──
+  updateSkirtElevation();
+  deckContext.conformToTerrain();
+  buildShowcaseNZGarden(engine, propsEngine);
+  updateNZSun(state.sunHour);
+  updateSlopeReadout();
 
-  // ── POPULATE SHOWCASE STUDIO GARDEN ────────────────────────────────────────
-  function buildShowcaseStudioGarden() {
-    engine.clearAll(false);
-    engine.undoStack.length = 0;
-    engine.redoStack.length = 0;
-
-    // Waikato river pebble path under Firth stepping pavers
-    for (let z = -5.4; z <= 4.0; z += 0.7) {
-      const x = -4.6 + Math.sin((z + 5.4) * 0.32) * 1.9;
-      engine.paintSurfaceDisc(x, z, 1.35, 3, 0.95, 0.55);
-    }
-    // Firth Piazza courtyard terrace around the Kwila deck
-    engine.paintSurfacePolygon([
-      [-11.5, -10.0], [-1.5, -10.0], [-1.5, -5.4], [-11.5, -5.4],
-    ], 2, 0.15);
-
-    // Organic hero coastal island bed (Straightcurve Corten 150 mm + Daltons Black Bark Mulch)
-    const heroBedPts = [
-      [-1.2, -4.2], [2.2, -4.8], [5.8, -3.6], [7.4, -0.6],
-      [6.4, 3.1], [3.0, 4.8], [-0.6, 4.2], [-1.8, 1.4], [-1.9, -1.6],
-    ];
-    engine.createSplineBed(heroBedPts, NZ_COMPOSITIONS[0], {
-      edging: 'corten',
-      mulch: 'bark',
-      densityMult: 1.22,
-      clumping: 0.72,
-      name: 'Tāmaki Coastal Hero Bed',
-      seed: 108,
-    });
-
-    // Sheltered Nīkau & Ponga bush glade beside the Kwila deck (Macrocarpa Sleepers)
-    const fernBedPts = [
-      [-9.8, -4.2], [-6.2, -4.4], [-5.4, -1.4],
-      [-6.5, 2.2], [-9.6, 1.8], [-10.6, -1.2],
-    ];
-    engine.createSplineBed(fernBedPts, NZ_COMPOSITIONS[2], {
-      edging: 'macrocarpa',
-      mulch: 'bark',
-      densityMult: 1.15,
-      clumping: 0.68,
-      name: 'Nīkau & Ponga Fern Glade',
-      seed: 204,
-    });
-    engine.activeBedId = engine.splineBeds[0].id;
-    syncManu3D();
-  }
-
-  // ── GROUND MODE SWITCHING (Studio | Site Plan + Brush | Photo Backdrop | LINZ) ─
-  const sitePlanStrip = document.getElementById('sitePlanStrip');
-  const photoStrip = document.getElementById('photoStrip');
-  const pdfPageSelect = document.getElementById('pdfPageSelect');
-  let activePdfDoc = null;
-
-  function setGroundModeUI(mode) {
-    state.groundMode = mode;
-    document.getElementById('modeStudioBtn')?.setAttribute('aria-pressed', String(mode === 'studio'));
-    document.getElementById('modeSitePlanBtn')?.setAttribute('aria-pressed', String(mode === 'siteplan'));
-    document.getElementById('modePhotoBtn')?.setAttribute('aria-pressed', String(mode === 'photo'));
-    document.getElementById('modeLinzBtn')?.setAttribute('aria-pressed', String(mode === 'linz'));
-
-    sitePlanStrip.hidden = mode !== 'siteplan';
-    photoStrip.hidden = mode !== 'photo';
-    document.body.classList.toggle('has-substrip', mode === 'siteplan' || mode === 'photo');
-
-    photoBackdropImg.hidden = mode !== 'photo';
-    sky.visible = mode !== 'photo';
-    terrainMesh.visible = mode !== 'photo';
-    photoShadowPlane.visible = mode === 'photo';
-    skirtMesh.visible = mode === 'studio' || mode === 'linz';
-    boardMesh.visible = mode === 'siteplan';
-    studioContextGroup.visible = mode === 'studio';
-    sampleMassingGroup.visible = mode === 'siteplan' && state.planMeta.isSample && state.showSampleMassing;
-    linzContextGroup.visible = mode === 'linz';
-
-    uPlanMix.value = mode === 'siteplan' ? 1.0 : 0.0;
-    uContourMix.value = mode === 'linz' ? 1.0 : 0.0;
-
-    if (mode === 'photo') {
-      scene.fog = null;
-      scene.background = null;
-      renderer.setClearColor(0x000000, 0);
-    } else {
-      scene.fog = baseFog;
-      renderer.setClearColor(0x150e16, 1);
-    }
-  }
-
-  function enterStudioMode() {
-    setGroundModeUI('studio');
-    state.siteLabel = embedProject || 'Tāmaki Makaurau Coastal Studio';
-    state.siteFactsSummary = null;
-    rebuildTerrainGeometry(STUDIO_SIZE, STUDIO_SIZE, 64, 64, null);
-    buildShowcaseStudioGarden();
-    setTool('paint-mix');
-    updateNZSun(14.5);
-    transitionCamera(new THREE.Vector3(11.8, 9.0, 12.6), new THREE.Vector3(0, 0.6, 0));
-    updateInspectorAndStats();
-    announce('Studio Garden · WebGPU botanical atlas active — paint mixes, surfaces, or scrub J–D seasons!');
-  }
-
-  function mountSitePlan({ widthM, aspect, label, isSample = false, resetBeds = false }) {
-    const depthM = widthM * aspect;
-    state.planMeta = { widthM, depthM, aspect, isSample, label };
-    const wInput = document.getElementById('planWidthInput');
-    if (wInput) wInput.value = String(Math.round(widthM * 10) / 10);
-    const massBtn = document.getElementById('planMassingBtn');
-    if (massBtn) massBtn.hidden = !isSample;
-
-    rebuildTerrainGeometry(widthM, depthM, 48, 48, null);
-    setGroundModeUI('siteplan');
-    state.siteLabel = label;
-    state.siteFactsSummary = null;
-    if (resetBeds) {
-      engine.clearAll(false);
-    } else {
-      engine.resetSplatmap(true);
-    }
-
-    setTool('garden_brush');
-    updateNZSun(13.5);
-    transitionCamera(
-      new THREE.Vector3(1.4, Math.max(13.5, widthM * 0.56), Math.max(12.2, depthM * 0.68)),
-      new THREE.Vector3(0.8, 0.25, 1.2)
-    );
-    updateInspectorAndStats();
-  }
-
-  function enterSampleSitePlanMode() {
-    const sample = drawSampleSitePlanToCanvas(planCanvas);
-    planTex.needsUpdate = true;
-    mountSitePlan({
-      widthM: sample.widthM,
-      aspect: sample.aspect,
-      label: 'Proposed Coastal Site Plan · 1:100',
-      isSample: true,
-      resetBeds: true,
-    });
-    // Pre-brush a starter curved border bed along the Kwila deck & sunny lawn so it looks immediately alive!
-    const comp = NZ_COMPOSITIONS.find((c) => c.id === state.selectedCompositionId) || NZ_COMPOSITIONS[0];
-    for (let x = -0.4; x <= 8.2; x += 0.6) {
-      const z = 3.2 + Math.sin(x * 0.45) * 0.85;
-      stampBrushField(engine.brushField, x, z, 1.55, +1);
-      engine.paintSurfaceDisc(x, z, 1.45, 1, 0.65, 0.6);
-    }
-    engine.syncBrushedBedsFromField();
-    if (engine.brushedBeds[0]) {
-      engine.regenerateBed(engine.brushedBeds[0].id, comp, 1.15, state.clumping);
-    }
-    syncManu3D();
-    updateInspectorAndStats();
-    announce('Site Plan + Brush · Drag directly across the 2D site plan to brush 3D Corten beds & NZ natives!');
-  }
-
-  function enterPhotoBackdropMode(photoDataUrl = null, label = 'Backyard Photo Backdrop') {
-    if (photoDataUrl) {
-      state.photoSettings.loadedUrl = photoDataUrl;
-    } else if (!state.photoSettings.loadedUrl) {
-      state.photoSettings.loadedUrl = buildSampleBackyardPhotoDataUrl();
-    }
-    photoBackdropImg.src = state.photoSettings.loadedUrl;
-    rebuildTerrainGeometry(44, 44, 16, 16, null);
-    setGroundModeUI('photo');
-    state.siteLabel = label;
-    state.siteFactsSummary = null;
-    engine.clearAll(false);
-
-    // Pre-brush a curved native border in the mid-foreground of the backyard photo
-    const comp = NZ_COMPOSITIONS.find((c) => c.id === state.selectedCompositionId) || NZ_COMPOSITIONS[0];
-    for (let x = -4.2; x <= 4.4; x += 0.65) {
-      const z = -1.6 + Math.sin(x * 0.42) * 0.9;
-      stampBrushField(engine.brushField, x, z, 1.45, +1);
-    }
-    engine.syncBrushedBedsFromField();
-    if (engine.brushedBeds[0]) {
-      engine.regenerateBed(engine.brushedBeds[0].id, comp, 1.15, state.clumping);
-    }
-    syncManu3D();
-    applyPhotoCameraCalibration();
-    setTool('garden_brush');
-    updateNZSun(15.2);
-    updateInspectorAndStats();
-    announce('Photo Backdrop active — upload your own backyard photo or drag Garden Bed Brush (G) directly onto the lawn!');
-  }
-
-  function applyPhotoCameraCalibration() {
-    const { horizonPct, tiltDeg, scaleMult } = state.photoSettings;
-    photoBackdropImg.style.objectPosition = `50% ${horizonPct}%`;
-    photoBackdropImg.style.transform = `scale(${scaleMult.toFixed(2)})`;
-    const dist = 13.5 / Math.max(0.45, scaleMult);
-    const rad = (tiltDeg * Math.PI) / 180;
-    camera.position.set(0, Math.max(1.2, Math.sin(rad) * dist), Math.cos(rad) * dist);
-    controls.target.set(0, 0.55, -1.2);
-    controls.update();
-  }
-
-  // ── UPLOAD SITE PLAN (MULTI-PAGE PDF / PNG / JPG / WEBP) & PHOTO BACKDROP ──
-  async function handleUploadedPlanFile(file) {
-    if (!file) return;
-    if (state.groundMode === 'photo' && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = () => enterPhotoBackdropMode(String(reader.result), `${file.name} (Photo)`);
-      reader.readAsDataURL(file);
-      return;
-    }
-
-    const isPdf = /\.pdf$/i.test(file.name) || file.type === 'application/pdf';
-    if (isPdf) {
-      announce(`Rendering PDF site plan ${file.name}…`);
-      try {
-        const pdfjs = await import(/* @vite-ignore */ '/architecture/vendor/pdfjs/pdf.min.mjs');
-        pdfjs.GlobalWorkerOptions.workerSrc = '/architecture/vendor/pdfjs/pdf.worker.min.mjs';
-        const bytes = new Uint8Array(await file.arrayBuffer());
-        activePdfDoc = await pdfjs.getDocument({ data: bytes, isEvalSupported: false, verbosity: 0 }).promise;
-        if (activePdfDoc.numPages > 1) {
-          pdfPageSelect.hidden = false;
-          pdfPageSelect.innerHTML = Array.from({ length: activePdfDoc.numPages }, (_, i) =>
-            `<option value="${i + 1}">Sheet p.${i + 1}/${activePdfDoc.numPages}</option>`
-          ).join('');
-        } else {
-          pdfPageSelect.hidden = true;
-        }
-        await renderPdfSitePlanPage(1, file.name);
-      } catch (err) {
-        announce(`Could not render PDF: ${err?.message || err}`);
-      }
-      return;
-    }
-
-    activePdfDoc = null;
-    pdfPageSelect.hidden = true;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        const tctx = planCanvas.getContext('2d');
-        tctx.fillStyle = '#ffffff';
-        tctx.fillRect(0, 0, planCanvas.width, planCanvas.height);
-        tctx.drawImage(img, 0, 0, planCanvas.width, planCanvas.height);
-        planTex.needsUpdate = true;
-        const widthM = Math.max(4, Number(document.getElementById('planWidthInput')?.value) || 28);
-        mountSitePlan({
-          widthM,
-          aspect: img.naturalHeight / Math.max(1, img.naturalWidth),
-          label: `${file.name} (Site Plan)`,
-          isSample: false,
-          resetBeds: true,
-        });
-        syncManu3D();
-        announce(`Loaded ${file.name} — drag Garden Bed Brush (G) across the drawing or calibrate with 2-Pt Scale!`);
-      };
-      img.src = String(reader.result);
-    };
-    reader.readAsDataURL(file);
-  }
-
-  async function renderPdfSitePlanPage(pageNum, titleBase = 'Site Plan PDF') {
-    if (!activePdfDoc) return;
-    const pg = await activePdfDoc.getPage(pageNum);
-    const v1 = pg.getViewport({ scale: 1 });
-    const scale = Math.min(3.5, 2048 / Math.max(v1.width, v1.height));
-    const vp = pg.getViewport({ scale });
-    const tmp = document.createElement('canvas');
-    tmp.width = Math.ceil(vp.width);
-    tmp.height = Math.ceil(vp.height);
-    const tg = tmp.getContext('2d');
-    tg.fillStyle = '#ffffff';
-    tg.fillRect(0, 0, tmp.width, tmp.height);
-    await pg.render({ canvasContext: tg, viewport: vp }).promise;
-    pg.cleanup();
-
-    const tctx = planCanvas.getContext('2d');
-    tctx.clearRect(0, 0, planCanvas.width, planCanvas.height);
-    tctx.drawImage(tmp, 0, 0, planCanvas.width, planCanvas.height);
-    planTex.needsUpdate = true;
-
-    const widthM = Math.max(4, Number(document.getElementById('planWidthInput')?.value) || 32);
-    mountSitePlan({
-      widthM,
-      aspect: tmp.height / Math.max(1, tmp.width),
-      label: `${titleBase} · p.${pageNum}`,
-      isSample: false,
-      resetBeds: true,
-    });
-    syncManu3D();
-    announce(`Rendered ${titleBase} (p.${pageNum}) — drag Garden Bed Brush (G) or calibrate with 2-Pt Scale.`);
-  }
-
-  // ── REAL NEW ZEALAND LAND: LINZ 1 m LiDAR + PRIMARY PARCEL RIBBON + AUP + BUILDINGS ─
-  const siteModal = document.getElementById('siteModal');
-  wireDialogLightDismiss(siteModal);
-  const siteModalMsg = document.getElementById('siteModalMsg');
-
-  function clearLinzContext() {
-    while (linzContextGroup.children.length) {
-      const c = linzContextGroup.children.pop();
-      if (c.geometry) c.geometry.dispose();
-      if (c.material) {
-        if (Array.isArray(c.material)) c.material.forEach((m) => m.dispose());
-        else c.material.dispose();
-      }
-    }
-  }
-
-  function addDrapedParcelRibbon(outlineGeoJson, e0, n0, groundFn) {
-    if (!outlineGeoJson) return;
-    const rings = [];
-    if (outlineGeoJson.type === 'Polygon' && Array.isArray(outlineGeoJson.coordinates?.[0])) {
-      rings.push(outlineGeoJson.coordinates[0]);
-    } else if (outlineGeoJson.type === 'MultiPolygon' && Array.isArray(outlineGeoJson.coordinates)) {
-      for (const poly of outlineGeoJson.coordinates) {
-        if (Array.isArray(poly?.[0])) rings.push(poly[0]);
-      }
-    }
-
-    const ribbonMat = new THREE.MeshBasicMaterial({
-      color: 0xd9bacb,
-      transparent: true,
-      opacity: 0.85,
-      side: THREE.DoubleSide,
-    });
-    const lineMat = new THREE.LineBasicMaterial({ color: 0xf9f6f2 });
-
-    for (const ring of rings) {
-      if (ring.length < 4) continue;
-      const pts = ring.map(([pLon, pLat]) => {
-        const { e, n } = toNZTM(pLat, pLon);
-        return [e - e0, -(n - n0)];
-      });
-      // Build subtle vertical parcel boundary ribbon (0.28 m high) draped onto LiDAR contours
-      const pos = [];
-      const idx = [];
-      const linePts = [];
-      for (let i = 0; i < pts.length; i++) {
-        const [x, z] = pts[i];
-        const y = groundFn(x, z);
-        pos.push(x, y + 0.02, z, x, y + 0.30, z);
-        linePts.push(new THREE.Vector3(x, y + 0.31, z));
-      }
-      for (let i = 0; i < pts.length - 1; i++) {
-        const a = i * 2, b = (i + 1) * 2;
-        idx.push(a, a + 1, b + 1, a, b + 1, b);
-      }
-      const rGeo = new THREE.BufferGeometry();
-      rGeo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-      rGeo.setIndex(idx);
-      linzContextGroup.add(new THREE.Mesh(rGeo, ribbonMat.clone()));
-      linzContextGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(linePts), lineMat.clone()));
-    }
-  }
-
-  async function loadRealNzLand(lat, lon, label) {
-    if (siteModalMsg) siteModalMsg.textContent = `Streaming Toitū Te Whenua LINZ 1 m LiDAR, Primary Parcel & buildings for ${label}…`;
-    announce(`Loading LINZ 1 m LiDAR & parcel for ${label}…`);
-    try {
-      const radiusM = 40;
-      const [groundRes, surfaceRes, siteApiRes, outlinesJson] = await Promise.all([
-        readLayer('ground', { lat, lon, radius: radiusM }).catch(() => null),
-        readLayer('surface', { lat, lon, radius: radiusM }).catch(() => null),
-        fetch(`/api/live/?feeds=site,footprint&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`)
-          .then((r) => (r.ok ? r.json() : null))
-          .catch(() => null),
-        fetch(outlinesUrl(lat, lon, 75)).then((r) => (r.ok ? r.json() : null)).catch(() => null),
-      ]);
-
-      clearLinzContext();
-      const { e: e0, n: n0 } = toNZTM(lat, lon);
-      let dem = null, dsm = null, baseElev = 0;
-      let groundFn;
-
-      if (groundRes?.status === 'live' && groundRes.values?.heights) {
-        dem = unpackHeights(groundRes.values.heights);
-        if (surfaceRes?.status === 'live' && surfaceRes.values?.heights) dsm = unpackHeights(surfaceRes.values.heights);
-        const cH = heightAt(dem, e0, n0);
-        baseElev = Number.isFinite(cH) ? cH : groundRes.value || 0;
-        groundFn = (wx, wz) => {
-          const h = heightAt(dem, e0 + wx, n0 - wz);
-          return Number.isFinite(h) ? h - baseElev : 0;
-        };
-      } else {
-        groundFn = (wx, wz) => Math.sin(wx * 0.06) * 0.85 - wz * 0.04;
-      }
-
-      rebuildTerrainGeometry(80, 80, 80, 80, groundFn);
-      engine.resetSplatmap(true);
-
-      // Parse LINZ Primary Parcel & AUP Planning facts from /api/live/?feeds=site
-      const siteFacts = siteApiRes?.feeds?.site?.facts || null;
-      const parcelFact = siteFacts?.parcel;
-      const zoneFact = siteFacts?.zone;
-      const overlaysFact = siteFacts?.overlays;
-      const floodFact = siteFacts?.floodPlain;
-      if (parcelFact?.values?.outline) {
-        addDrapedParcelRibbon(parcelFact.values.outline, e0, n0, groundFn);
-      }
-
-      const roheInfo = inferRoheFromCoords(lat, lon);
-      state.rohe = roheInfo.label;
-      state.selectedCompositionId = roheInfo.compId;
-      state.siteFactsSummary = {
-        rohe: roheInfo.label,
-        parcelM2: parcelFact?.values?.calcAreaM2 || null,
-        zone: zoneFact?.value || null,
-        overlayCount: typeof overlaysFact?.value === 'number' ? overlaysFact.value : null,
-        floodNote: floodFact?.values?.insideMapped ? 'Mapped 1% AEP Flood Plain' : null,
-        lidarLive: Boolean(dem),
-      };
-
-      // Extrude LINZ NZ Building Outlines onto the LiDAR slope
-      const buildings = outlinesJson ? parseOutlines(outlinesJson) : [];
-      const wallMat = new THREE.MeshStandardMaterial({ color: 0xebe5dc, roughness: 0.84 });
-      const roofMat = new THREE.MeshStandardMaterial({ color: 0x45474b, roughness: 0.52, metalness: 0.35 });
-      let bestSpot = { x: 0, z: 5.5 }, closestD = Infinity;
-
-      for (const b of buildings) {
-        const ring = b.rings?.[0];
-        if (!ring || ring.length < 4) continue;
-        let cx = 0, cz = 0;
-        const pts2d = ring.slice(0, -1).map(([be, bn]) => {
-          const wx = be - e0, wz = -(bn - n0);
-          cx += wx; cz += wz;
-          return [wx, wz];
-        });
-        cx /= pts2d.length; cz /= pts2d.length;
-        if (Math.hypot(cx, cz) > 39) continue;
-
-        const gy = groundFn(cx, cz);
-        let wallH = 4.6;
-        if (dsm && dem) {
-          const surfY = heightAt(dsm, e0 + cx, n0 - cz);
-          const demY = heightAt(dem, e0 + cx, n0 - cz);
-          if (Number.isFinite(surfY) && Number.isFinite(demY) && surfY - demY > 2.4) {
-            wallH = Math.min(13.5, surfY - demY);
-          }
-        }
-
-        const bShape = new THREE.Shape();
-        bShape.moveTo(pts2d[0][0], -pts2d[0][1]);
-        for (let i = 1; i < pts2d.length; i++) bShape.lineTo(pts2d[i][0], -pts2d[i][1]);
-        bShape.closePath();
-
-        const extGeo = new THREE.ExtrudeGeometry(bShape, { depth: wallH + 1.4, bevelEnabled: false });
-        extGeo.rotateX(-Math.PI * 0.5);
-        extGeo.translate(0, gy - 1.4, 0);
-        const bMesh = new THREE.Mesh(extGeo, [roofMat, wallMat]);
-        bMesh.castShadow = true;
-        bMesh.receiveShadow = true;
-        linzContextGroup.add(bMesh);
-
-        const dCenter = Math.hypot(cx, cz);
-        if (dCenter < closestD) {
-          closestD = dCenter;
-          bestSpot = { x: Math.max(-14, Math.min(14, cx + 8.0)), z: Math.max(-14, Math.min(14, cz + 6.8)) };
-        }
-      }
-
-      setGroundModeUI('linz');
-      state.siteLabel = label;
-      updateNZSun(14.0);
-      engine.rebuildBeds3D(state.tool === 'sculpt');
-      engine.syncInstances();
-      syncManu3D();
-      setTool('garden_brush');
-      renderCardsRail();
-      updateInspectorAndStats();
-
-      const focusY = groundFn(bestSpot.x, bestSpot.z);
-      transitionCamera(
-        new THREE.Vector3(bestSpot.x + 11.5, focusY + 10.5, bestSpot.z + 15.0),
-        new THREE.Vector3(bestSpot.x, focusY + 0.8, bestSpot.z)
-      );
-
-      if (siteModal?.open) siteModal.close();
-      if (siteModalMsg) siteModalMsg.textContent = '';
-      announce(`${label} · LINZ 1 m LiDAR${state.siteFactsSummary.parcelM2 ? ` · ${state.siteFactsSummary.parcelM2} m² parcel` : ''} — drag Garden Bed Brush (G) onto the slope!`);
-    } catch (err) {
-      if (siteModalMsg) siteModalMsg.textContent = `Could not load site: ${err?.message || err}`;
-      announce(`Could not load LINZ site: ${err?.message || err}`);
-    }
-  }
-
-  // ── RAYCASTING & POINTER INTERACTIONS ──────────────────────────────────────
+  // ── RAYCASTING & INTERACTIVE PAINTING / PROP PLACEMENT ──────────────────────
   const raycaster = new THREE.Raycaster();
-  const pointerNdc = new THREE.Vector2();
-  const fallbackPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-  const fallbackVec = new THREE.Vector3();
+  const pointer = new THREE.Vector2();
+  let isPainting = false;
+  let lastPaintPos = new THREE.Vector3(999, 0, 999);
 
-  function raycastGround(ev) {
-    const rect = canvas.getBoundingClientRect();
-    pointerNdc.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
-    pointerNdc.y = -((ev.clientY - rect.top) / rect.height) * 2 + 1;
-    raycaster.setFromCamera(pointerNdc, camera);
-    const target = state.groundMode === 'photo' ? photoShadowPlane : terrainMesh;
-    const hits = raycaster.intersectObject(target, false);
-    if (hits.length) return hits[0].point;
-    if (raycaster.ray.intersectPlane(fallbackPlane, fallbackVec)) return fallbackVec.clone();
-    return null;
+  function raycastTerrain(clientX, clientY) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    pointer.y = -((clientY - rect.height) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(pointer, camera);
+    const hits = raycaster.intersectObject(terrainMesh, false);
+    return hits.length > 0 ? hits[0].point : null;
   }
 
-  function raycastHandle(ev) {
-    if (!engine.handleGroup.visible || !engine.handleGroup.children.length) return null;
-    const rect = canvas.getBoundingClientRect();
-    pointerNdc.x = ((ev.clientX - rect.left) / rect.width) * 2 - 1;
-    pointerNdc.y = -((ev.clientY - rect.top) / rect.height) * 2 + 1;
-    raycaster.setFromCamera(pointerNdc, camera);
-    const hits = raycaster.intersectObjects(engine.handleGroup.children, false);
-    return hits.length ? hits[0].object.userData : null;
-  }
-
-  function avoidSampleHouse(x, z) {
-    return (
-      state.groundMode === 'siteplan' &&
-      state.planMeta.isSample &&
-      state.showSampleMassing &&
-      x > -7.7 && x < 3.7 && z > -6.4 && z < -1.0
-    );
-  }
-
-  function applyActiveBrush(pt, altErase = false) {
-    const comp = NZ_COMPOSITIONS.find((c) => c.id === state.selectedCompositionId) || NZ_COMPOSITIONS[0];
-    if (state.tool === 'garden_brush') {
-      engine.applyGardenBedStroke(pt.x, pt.z, state.brushRadius, {
-        composition: comp,
-        singleSpeciesId: state.tab === 'plants' ? state.selectedPlantId : null,
-        densityMult: state.densityMult,
-        clumping: state.clumping,
-        erase: altErase,
-        avoidFn: avoidSampleHouse,
-      });
-    } else if (state.tool === 'paint-mix') {
-      engine.paintCompositionBrush(
-        pt.x, pt.z, state.brushRadius, comp, state.densityMult, state.clumping,
-        state.groundMode !== 'photo', avoidSampleHouse
-      );
+  function applyBrushAt(pt) {
+    if (state.tool === 'paint-mix') {
+      const comp = NZ_COMPOSITIONS.find(c => c.id === state.selectedCompositionId) || NZ_COMPOSITIONS[0];
+      engine.paintCompositionBrush(pt.x, pt.z, state.brushRadius, comp, state.densityMult, state.clumping);
     } else if (state.tool === 'paint-plant') {
-      engine.paintSpeciesBrush(
-        pt.x, pt.z, state.brushRadius, state.selectedPlantId, state.densityMult,
-        state.groundMode !== 'photo', avoidSampleHouse
-      );
+      engine.paintSpeciesBrush(pt.x, pt.z, state.brushRadius, state.selectedPlantId, state.densityMult, true);
     } else if (state.tool === 'paint-surface') {
       engine.paintSurfaceDisc(pt.x, pt.z, state.brushRadius, state.selectedSurfaceChannel, 0.88, 0.6);
     } else if (state.tool === 'erase') {
-      engine.erasePlantsInRadius(pt.x, pt.z, state.brushRadius, true);
+      engine.erasePlantsInRadius(pt.x, pt.z, state.brushRadius);
     }
-    syncManu3D();
-    updateInspectorAndStats();
+    updateStatsUI();
   }
 
-  let activeStroke = null;
-  let lastPaintPos = new THREE.Vector3(999, 0, 999);
-  let lastStrokeMs = 0;
+  function updateCursorStyle() {
+    const isOrbit = state.tool === 'orbit';
+    controls.mouseButtons.LEFT = isOrbit ? THREE.MOUSE.ROTATE : null;
+    renderer.domElement.style.cursor = isOrbit ? 'grab' : 'crosshair';
+    const colors = {
+      'paint-mix': 0x240b21,
+      'paint-plant': 0x916a70,
+      'paint-surface': 0xb47b32,
+      'place-prop': 0x654a4e,
+      'erase': 0x9b2c2c,
+      'draw-bed': 0x240b21,
+      'orbit': 0xffffff
+    };
+    brushCursorMat.color.setHex(colors[state.tool] || 0x240b21);
+    document.getElementById('draw-hint').classList.toggle('hidden', state.tool !== 'draw-bed');
+  }
 
-  canvas.addEventListener('pointerdown', (ev) => {
-    if (ev.button !== 0 || state.tool === 'orbit') return;
-
-    // 2-Point Site Plan Scale calibration
-    if (state.twoPtCalib) {
-      const pt = raycastGround(ev);
-      if (!pt) return;
-      if (state.twoPtCalib.step === 1) {
-        state.twoPtCalib.p1 = pt.clone();
-        state.twoPtCalib.step = 2;
-        measureLine.visible = true;
-        measurePositions.set([pt.x, 0.08, pt.z, pt.x, 0.08, pt.z]);
-        measureGeo.attributes.position.needsUpdate = true;
-        announce('Point 1 set — click the second end of the known boundary or wall dimension.');
-        return;
-      }
-      const distCur = Math.hypot(pt.x - state.twoPtCalib.p1.x, pt.z - state.twoPtCalib.p1.z);
-      measureLine.visible = false;
-      document.getElementById('twoPtScaleBtn')?.setAttribute('aria-pressed', 'false');
-      state.twoPtCalib = null;
-      if (distCur > 0.05) {
-        const ans = window.prompt('Enter real-world length between those two points (metres):', distCur.toFixed(1));
-        const realM = Number(ans);
-        if (Number.isFinite(realM) && realM > 0.2) {
-          const factor = realM / distCur;
-          const newWidthM = Math.max(4, Math.min(350, state.planMeta.widthM * factor));
-          mountSitePlan({ ...state.planMeta, widthM: newWidthM, resetBeds: false });
-          announce(`Calibrated site plan width to ${newWidthM.toFixed(1)} m (1:1 metres).`);
-        }
-      }
+  renderer.domElement.addEventListener('pointermove', (e) => {
+    const pt = raycastTerrain(e.clientX, e.clientY);
+    if (!pt || state.tool === 'orbit') {
+      brushCursor.visible = false;
       return;
     }
+    brushCursor.visible = true;
+    const cursorR = state.tool === 'draw-bed' ? 0.35 : state.tool === 'place-prop' ? 0.65 : state.brushRadius;
+    updateTerrainBrushCursor(pt.x, pt.z, cursorR);
 
-    // Spline bed vertex handle drag (always grab-ready when handles are visible!)
-    const handleHit = raycastHandle(ev);
-    if (handleHit?.isSplineHandle) {
-      engine.pushUndoState();
-      engine.activeBedId = handleHit.bedId;
-      controls.enabled = false;
-      canvas.setPointerCapture(ev.pointerId);
-      activeStroke = { kind: 'handle', bedId: handleHit.bedId, pointIndex: handleHit.pointIndex };
-      return;
+    if (state.tool === 'draw-bed' && state.drawPoints.length > 0) {
+      rebuildDrawPreview(pt);
     }
+    if (isPainting && state.tool !== 'place-prop') {
+      const step = state.tool === 'paint-surface' ? state.brushRadius * 0.22 : state.brushRadius * 0.42;
+      if (pt.distanceTo(lastPaintPos) >= step) {
+        applyBrushAt(pt);
+        lastPaintPos.copy(pt);
+      }
+    }
+  });
 
-    const pt = raycastGround(ev);
+  renderer.domElement.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 || state.tool === 'orbit') return;
+    const pt = raycastTerrain(e.clientX, e.clientY);
     if (!pt) return;
 
     if (state.tool === 'draw-bed') {
@@ -1156,782 +457,743 @@ async function init() {
       return;
     }
 
-    if (state.tool === 'measure') {
-      controls.enabled = false;
-      canvas.setPointerCapture(ev.pointerId);
-      measureLine.visible = true;
-      activeStroke = { kind: 'measure', start: pt.clone() };
-      measurePositions.set([pt.x, pt.y + 0.08, pt.z, pt.x, pt.y + 0.08, pt.z]);
-      measureGeo.attributes.position.needsUpdate = true;
+    if (state.tool === 'place-prop') {
+      engine.pushUndoState();
+      propsEngine.addProp(state.selectedPropId, pt.x, pt.z);
+      updateStatsUI();
       return;
     }
-
-    if (state.tool === 'sculpt') return;
 
     engine.pushUndoState();
-    controls.enabled = false;
-    canvas.setPointerCapture(ev.pointerId);
-    activeStroke = { kind: 'brush', erase: ev.altKey };
+    isPainting = true;
     lastPaintPos.copy(pt);
-    lastStrokeMs = performance.now();
-    applyActiveBrush(pt, ev.altKey);
+    applyBrushAt(pt);
   });
 
-  canvas.addEventListener('pointermove', (ev) => {
-    const pt = raycastGround(ev);
-    if (pt) {
-      updateBrushRing(pt.x, pt.z);
-      if (state.tool === 'draw-bed' && state.drawPoints.length > 0) rebuildDrawPreview(pt);
-      if (state.twoPtCalib?.step === 2 && state.twoPtCalib.p1) {
-        const s = state.twoPtCalib.p1;
-        measurePositions.set([s.x, 0.08, s.z, pt.x, 0.08, pt.z]);
-        measureGeo.attributes.position.needsUpdate = true;
-      }
-    }
-    if (!activeStroke || !pt) return;
+  window.addEventListener('pointerup', () => { isPainting = false; });
 
-    if (activeStroke.kind === 'handle') {
-      const bed = engine.splineBeds.find((b) => b.id === activeStroke.bedId);
-      if (!bed) return;
-      bed.points[activeStroke.pointIndex] = [+pt.x.toFixed(2), +pt.z.toFixed(2)];
-      engine.rebuildBeds3D(state.tool === 'sculpt');
-      engine.syncInstances();
-      syncManu3D();
-      updateInspectorAndStats();
-      return;
-    }
-
-    if (activeStroke.kind === 'measure') {
-      const s = activeStroke.start;
-      measurePositions.set([s.x, s.y + 0.08, s.z, pt.x, pt.y + 0.08, pt.z]);
-      measureGeo.attributes.position.needsUpdate = true;
-      const horiz = Math.hypot(pt.x - s.x, pt.z - s.z);
-      const dy = pt.y - s.y;
-      const slopePct = horiz > 0.05 ? Math.abs((dy / horiz) * 100) : 0;
-      const ratio = Math.abs(dy) > 0.02 ? `1:${(horiz / Math.abs(dy)).toFixed(1)}` : 'Level';
-      if (hudChip) {
-        hudChip.textContent = `Measured: ${horiz.toFixed(2)} m · Δz ${dy >= 0 ? '+' : ''}${dy.toFixed(2)} m · Grade ${slopePct.toFixed(1)}% (${ratio})`;
-      }
-      return;
-    }
-
-    const now = performance.now();
-    if (now - lastStrokeMs < 38) return;
-    const step = state.tool === 'paint-surface' ? state.brushRadius * 0.22 : state.brushRadius * 0.34;
-    if (pt.distanceTo(lastPaintPos) >= step) {
-      lastStrokeMs = now;
-      lastPaintPos.copy(pt);
-      applyActiveBrush(pt, activeStroke.erase || ev.altKey);
-    }
-  });
-
-  const endStroke = () => {
-    if (activeStroke) {
-      activeStroke = null;
-      controls.enabled = true;
-    }
-  };
-  canvas.addEventListener('pointerup', endStroke);
-  canvas.addEventListener('pointercancel', endStroke);
-
-  canvas.addEventListener('dblclick', () => {
+  renderer.domElement.addEventListener('dblclick', () => {
     if (state.tool === 'draw-bed' && state.drawPoints.length >= 3) {
       finishDrawingBed();
     }
   });
 
-  // Drag-and-drop any PDF site plan or image / backyard photo right onto the canvas!
-  window.addEventListener('dragover', (e) => e.preventDefault());
-  window.addEventListener('drop', (e) => {
+  function finishDrawingBed() {
+    if (state.drawPoints.length < 3) return;
+    engine.pushUndoState();
+    const comp = NZ_COMPOSITIONS.find(c => c.id === state.selectedCompositionId) || NZ_COMPOSITIONS[0];
+    engine.createBed(state.drawPoints, comp, state.selectedEdgingId, state.densityMult, state.clumping);
+    state.drawPoints = [];
+    rebuildDrawPreview(null);
+    updateStatsUI();
+  }
+
+  // ── SITE PHOTO-MATCH CONTROLS & VIEWPORT DRAG-AND-DROP ──────────────────────
+  const photoFileInput = document.getElementById('file-site-photo');
+  const dropOverlay = document.getElementById('photo-drop-overlay');
+  const siteStatusEl = document.getElementById('site-status');
+
+  document.getElementById('btn-load-photo').addEventListener('click', () => photoFileInput.click());
+  photoFileInput.addEventListener('change', async () => {
+    const f = photoFileInput.files && photoFileInput.files[0];
+    if (!f) return;
+    try {
+      const res = await photoMatch.loadPhotoFile(f);
+      siteStatusEl.textContent = `Photo Match: ${res.name} (Horizon ${Math.round(res.horizonRatio * 100)}%)`;
+    } catch (err) {
+      siteStatusEl.textContent = `Photo error: ${err.message}`;
+    }
+    photoFileInput.value = '';
+  });
+
+  document.getElementById('btn-auto-horizon').addEventListener('click', () => {
+    const res = photoMatch.autoAlignHorizon();
+    siteStatusEl.textContent = `Horizon aligned (${Math.round(res.horizonRatio * 100)}%, Pitch ${res.horizonPitchDeg.toFixed(1)}°, FOV ${res.lensFov}°)`;
+  });
+
+  document.getElementById('btn-clear-photo').addEventListener('click', () => {
+    photoMatch.clearPhoto();
+    siteStatusEl.textContent = terrainEngine.siteLabel;
+  });
+
+  let dragDepth = 0;
+  window.addEventListener('dragenter', (e) => {
+    if (e.dataTransfer && Array.from(e.dataTransfer.types).includes('Files')) {
+      e.preventDefault();
+      dragDepth++;
+      dropOverlay.classList.remove('hidden');
+    }
+  });
+  window.addEventListener('dragover', (e) => { e.preventDefault(); });
+  window.addEventListener('dragleave', () => {
+    dragDepth = Math.max(0, dragDepth - 1);
+    if (dragDepth === 0) dropOverlay.classList.add('hidden');
+  });
+  window.addEventListener('drop', async (e) => {
     e.preventDefault();
-    const f = e.dataTransfer?.files?.[0];
-    if (f && (/\.pdf$/i.test(f.name) || f.type.startsWith('image/'))) {
-      void handleUploadedPlanFile(f);
+    dragDepth = 0;
+    dropOverlay.classList.add('hidden');
+    const files = e.dataTransfer && e.dataTransfer.files;
+    if (!files || files.length === 0) return;
+    const f = files[0];
+    if (/image\/(jpeg|png|webp)/i.test(f.type) || /\.(jpe?g|png|webp)$/i.test(f.name)) {
+      try {
+        const res = await photoMatch.loadPhotoFile(f);
+        siteStatusEl.textContent = `Photo Match: ${res.name} (Horizon ${Math.round(res.horizonRatio * 100)}%)`;
+      } catch (err) {
+        siteStatusEl.textContent = `Photo drop error: ${err.message}`;
+      }
     }
   });
 
-  // ── UI TOOLS, TABS & PALETTE RAIL ──────────────────────────────────────────
+  // ── TERRAIN PRESET, NZ ADDRESS + LINZ WFS & FILE IMPORTERS ──────────────────
+  const presetSelect = document.getElementById('terrain-preset');
+  for (const preset of NZ_TERRAIN_PRESETS) {
+    const opt = document.createElement('option');
+    opt.value = preset.id;
+    opt.textContent = preset.name;
+    presetSelect.appendChild(opt);
+  }
+  presetSelect.value = terrainEngine.currentPresetId;
+  presetSelect.addEventListener('change', () => {
+    terrainEngine.applyPreset(presetSelect.value, true);
+  });
+
+  const linzKeyInput = document.getElementById('linz-api-key');
+  try {
+    const savedKey = localStorage.getItem(LINZ_KEY_STORAGE);
+    if (savedKey) linzKeyInput.value = savedKey;
+  } catch { /* ignore storage errors */ }
+  linzKeyInput.addEventListener('input', () => {
+    try { localStorage.setItem(LINZ_KEY_STORAGE, linzKeyInput.value.trim()); } catch { /* ignore */ }
+  });
+
+  const addressInput = document.getElementById('nz-address');
+  const loadAddrBtn = document.getElementById('btn-load-address');
+
+  async function handleLoadAddress() {
+    const q = addressInput.value.trim();
+    if (!q) {
+      siteStatusEl.textContent = 'Enter an NZ address to fetch elevation…';
+      return;
+    }
+    loadAddrBtn.disabled = true;
+    loadAddrBtn.textContent = '…';
+    try {
+      const res = await terrainEngine.loadNZAddress(q, linzKeyInput.value.trim(), (msg) => {
+        siteStatusEl.textContent = msg;
+      });
+      siteStatusEl.textContent = res.summary;
+    } catch (err) {
+      siteStatusEl.textContent = `Error: ${err.message}`;
+    } finally {
+      loadAddrBtn.disabled = false;
+      loadAddrBtn.textContent = 'Load';
+    }
+  }
+  loadAddrBtn.addEventListener('click', handleLoadAddress);
+  addressInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleLoadAddress();
+  });
+
+  const geoFileInput = document.getElementById('file-geojson');
+  document.getElementById('btn-import-geojson').addEventListener('click', () => geoFileInput.click());
+  geoFileInput.addEventListener('change', async () => {
+    const f = geoFileInput.files && geoFileInput.files[0];
+    if (!f) return;
+    try {
+      const text = await f.text();
+      const res = terrainEngine.importGeoJSON(text);
+      siteStatusEl.textContent = `Loaded ${res.count} LINZ parcel(s) · ${res.crs}`;
+    } catch (err) {
+      siteStatusEl.textContent = `GeoJSON error: ${err.message}`;
+    }
+    geoFileInput.value = '';
+  });
+
+  const glbFileInput = document.getElementById('file-glb');
+  document.getElementById('btn-import-glb').addEventListener('click', () => glbFileInput.click());
+  glbFileInput.addEventListener('change', async () => {
+    const f = glbFileInput.files && glbFileInput.files[0];
+    if (!f) return;
+    try {
+      const buf = await f.arrayBuffer();
+      const res = await terrainEngine.importGLBArrayBuffer(buf, f.name, 0, 0);
+      siteStatusEl.textContent = `Imported 3D model: ${res.filename}`;
+    } catch (err) {
+      siteStatusEl.textContent = `GLB error: ${err.message}`;
+    }
+    glbFileInput.value = '';
+  });
+
+  // ── EDGING, TOOL MODES & BOTTOM TABS ────────────────────────────────────────
+  const edgingSelect = document.getElementById('edging-select');
+  for (const ed of NZ_EDGINGS) {
+    const opt = document.createElement('option');
+    opt.value = ed.id;
+    opt.textContent = ed.pricePerM > 0 ? `${ed.name} (~$${ed.pricePerM}/m)` : ed.name;
+    edgingSelect.appendChild(opt);
+  }
+  edgingSelect.addEventListener('change', () => {
+    state.selectedEdgingId = edgingSelect.value;
+    if (engine.beds.length > 0) {
+      engine.setBedEdging(engine.beds[engine.beds.length - 1].id, state.selectedEdgingId);
+      updateStatsUI();
+    }
+  });
+
   function setTool(toolId) {
     state.tool = toolId;
-    if (toolId !== 'draw-bed') {
-      state.drawPoints = [];
-      rebuildDrawPreview(null);
-    }
-    const isOrbit = toolId === 'orbit';
-    controls.mouseButtons.LEFT = isOrbit ? THREE.MOUSE.ROTATE : null;
-    canvas.classList.toggle('is-orbit', isOrbit);
-    canvas.classList.toggle('is-sculpt', toolId === 'sculpt');
-    measureLine.visible = false;
-    if (!['garden_brush', 'paint-mix', 'paint-plant', 'paint-surface', 'erase', 'draw-bed'].includes(toolId)) {
-      brushRing.visible = false;
-    }
-    document.querySelectorAll('[data-tool]').forEach((b) => {
-      b.setAttribute('aria-pressed', String(b.dataset.tool === toolId));
-    });
-    document.getElementById('drawHint')?.classList.toggle('hidden', toolId !== 'draw-bed');
-
+    if (toolId !== 'draw-bed') { state.drawPoints = []; rebuildDrawPreview(null); }
+    document.querySelectorAll('.tool-btn').forEach(b => b.classList.toggle('active', b.dataset.tool === toolId));
     if (toolId === 'paint-mix' || toolId === 'draw-bed') setTab('compositions');
     if (toolId === 'paint-plant') setTab('plants');
     if (toolId === 'paint-surface') setTab('surfaces');
-    engine.rebuildBeds3D(toolId === 'sculpt');
+    if (toolId === 'place-prop') setTab('props');
+    updateCursorStyle();
   }
+  document.querySelectorAll('.tool-btn').forEach(btn => {
+    btn.addEventListener('click', () => setTool(btn.dataset.tool));
+  });
 
   function setTab(tabId) {
     state.tab = tabId;
-    document.querySelectorAll('[data-tab]').forEach((t) => {
-      const on = t.dataset.tab === tabId;
-      t.setAttribute('aria-selected', String(on));
-      t.tabIndex = on ? 0 : -1;
-    });
-    document.getElementById('plantCatRow')?.classList.toggle('hidden', tabId !== 'plants');
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
+    document.getElementById('plant-cat-row').classList.toggle('hidden', tabId !== 'plants');
+    document.getElementById('surface-cat-row').classList.toggle('hidden', tabId !== 'surfaces');
     renderCardsRail();
   }
-
-  function renderCardsRail() {
-    const rail = document.getElementById('paletteRail');
-    if (!rail) return;
-
-    if (state.tab === 'compositions') {
-      rail.innerHTML = NZ_COMPOSITIONS.map((c) => {
-        const on = c.id === state.selectedCompositionId;
-        return `
-          <button type="button" class="ls-card" data-comp="${c.id}" aria-pressed="${on}">
-            <div class="ls-spectrum" aria-hidden="true">
-              ${c.swatches.map((hex) => `<span style="background:${hex}"></span>`).join('')}
-            </div>
-            <div class="ls-card-title">${c.title}</div>
-            <div class="ls-card-sub">${c.subtitle}</div>
-            <div class="ls-card-meta">
-              <span>${c.mix.length} natives · ${c.density}/m²</span>
-              ${on ? '<span class="ls-fill-chip" data-fill-comp="1">↻ Fill Bed</span>' : '<span>Select</span>'}
-            </div>
-          </button>`;
-      }).join('');
-
-      rail.querySelectorAll('[data-comp]').forEach((card) => {
-        card.addEventListener('click', (e) => {
-          const cid = card.dataset.comp;
-          const clickedFill = Boolean(e.target.closest('[data-fill-comp]'));
-          state.selectedCompositionId = cid;
-          if (!['garden_brush', 'paint-mix', 'draw-bed'].includes(state.tool)) {
-            setTool(state.groundMode === 'studio' ? 'paint-mix' : 'garden_brush');
-          }
-          const comp = NZ_COMPOSITIONS.find((x) => x.id === cid);
-          if (clickedFill && comp) {
-            engine.pushUndoState();
-            const beds = engine.getAllBeds();
-            for (const b of beds) engine.regenerateBed(b.id, comp, state.densityMult, state.clumping);
-            syncManu3D();
-            updateInspectorAndStats();
-            announce(`Filled ${beds.length} bed(s) with ${comp.title}.`);
-          }
-          renderCardsRail();
-        });
-      });
-    } else if (state.tab === 'plants') {
-      const list = state.plantCat === 'all'
-        ? NZ_SPECIES
-        : NZ_SPECIES.filter((p) => p.category === state.plantCat);
-      rail.innerHTML = list.map((p) => {
-        const on = p.id === state.selectedPlantId;
-        const bloomStr = p.bloomStart < 12.2
-          ? `${NZ_MONTHS[Math.floor(p.bloomStart) % 12]}–${NZ_MONTHS[Math.floor(p.bloomEnd) % 12]}`
-          : p.tier === 'stone' ? 'Habitat Stone' : 'Evergreen';
-        return `
-          <button type="button" class="ls-card" data-sp="${p.id}" aria-pressed="${on}">
-            <div class="ls-spectrum" aria-hidden="true">
-              <span style="background:${p.swatch};flex:3"></span>
-              <span style="background:${p.foliageColor};flex:2"></span>
-              <span style="background:${p.flowerColor};flex:2"></span>
-            </div>
-            <div class="ls-card-title">${p.maori}</div>
-            <div class="ls-card-sub"><em>${p.botanical}</em> · ${p.nursery}</div>
-            <div class="ls-card-meta">
-              <span>${bloomStr}</span>
-              <span>${p.grade} · $${p.rateNzd}</span>
-            </div>
-          </button>`;
-      }).join('');
-
-      rail.querySelectorAll('[data-sp]').forEach((card) => {
-        card.addEventListener('click', () => {
-          state.selectedPlantId = card.dataset.sp;
-          if (state.tool !== 'garden_brush' && state.tool !== 'paint-plant') setTool('paint-plant');
-          renderCardsRail();
-        });
-      });
-    } else {
-      rail.innerHTML = NZ_SURFACES.map((s) => {
-        const on = s.channel === state.selectedSurfaceChannel;
-        return `
-          <button type="button" class="ls-card" data-surf="${s.channel}" aria-pressed="${on}">
-            <div class="ls-surface-bar" style="background:${s.swatch}"></div>
-            <div class="ls-card-title">${s.name}</div>
-            <div class="ls-card-sub">${s.spec}</div>
-            <div class="ls-card-meta">
-              <span>${s.brand}</span>
-              <span>~$${s.pricePerM2}/m²</span>
-            </div>
-          </button>`;
-      }).join('');
-
-      rail.querySelectorAll('[data-surf]').forEach((card) => {
-        card.addEventListener('click', () => {
-          state.selectedSurfaceChannel = Number(card.dataset.surf);
-          setTool('paint-surface');
-          renderCardsRail();
-        });
-      });
-    }
-  }
-
-  // ── INSPECTOR, SCHEDULE, ECOLOGY & OS POSTMESSAGE BRIDGE ───────────────────
-  const bedSelect = document.getElementById('bedSelect');
-  const edgingSelect = document.getElementById('edgingSelect');
-  const mulchSelect = document.getElementById('mulchSelect');
-
-  if (edgingSelect) {
-    edgingSelect.innerHTML = NZ_EDGINGS.map((e) =>
-      `<option value="${e.id}">${e.label}${e.ratePerM ? ` (~$${e.ratePerM}/m)` : ''}</option>`
-    ).join('');
-  }
-  if (mulchSelect) {
-    mulchSelect.innerHTML = Object.values(MULCH_STYLES).map((m) =>
-      `<option value="${m.id}">${m.label}</option>`
-    ).join('');
-  }
-
-  function updateInspectorAndStats() {
-    const allBeds = engine.getAllBeds();
-    const activeBed = allBeds.find((b) => b.id === engine.activeBedId) || allBeds[0];
-    if (bedSelect) {
-      bedSelect.innerHTML = allBeds.length
-        ? allBeds.map((b) => `<option value="${b.id}"${b.id === activeBed?.id ? ' selected' : ''}>${b.name}</option>`).join('')
-        : '<option value="">Open Site Canvas</option>';
-    }
-    if (activeBed) {
-      if (edgingSelect) edgingSelect.value = activeBed.edging;
-      if (mulchSelect) mulchSelect.value = activeBed.mulch;
-    }
-
-    const surfaceAreas = state.groundMode === 'photo' ? null : engine.getSurfaceAreasM2();
-    const sched = buildPlantingSchedule(allBeds, engine.plants, surfaceAreas);
-    const eco = computeEcologyMetrics(allBeds, engine.plants);
-    const totalPerim = allBeds.reduce((s, b) => s + polygonPerimeterM(engine.cachedPolys.get(b.id) ?? b.points), 0);
-
-    document.getElementById('statArea').textContent = `${sched.totalAreaM2.toFixed(1)} m²`;
-    document.getElementById('statPerim').textContent = `${totalPerim.toFixed(1)} m`;
-    document.getElementById('statPlants').textContent = String(sched.totalPlants);
-    document.getElementById('schedDensity').textContent = `${sched.densityPerM2} / m²`;
-    document.getElementById('statTotalNzd').textContent = `$${sched.totalNzd.toLocaleString('en-NZ')} NZD`;
-
-    const pillArea = document.getElementById('dockStatArea');
-    const pillPlants = document.getElementById('dockStatPlants');
-    const pillCost = document.getElementById('dockStatCost');
-    if (pillArea) pillArea.textContent = `${sched.totalAreaM2.toFixed(1)} m²`;
-    if (pillPlants) pillPlants.textContent = `${sched.totalPlants} plants`;
-    if (pillCost) pillCost.textContent = `$${sched.totalNzd.toLocaleString('en-NZ')} NZD`;
-
-    document.getElementById('ecoTui').textContent = `${eco.tuiAttractionPct}%`;
-    document.getElementById('ecoTuiBar').style.width = `${eco.tuiAttractionPct}%`;
-    const kCombo = Math.min(100, Math.round(eco.kereruAttractionPct * 0.6 + eco.skinkHabitatPct * 0.4));
-    document.getElementById('ecoKereru').textContent = `${kCombo}%`;
-    document.getElementById('ecoKereruBar').style.width = `${kCombo}%`;
-    document.getElementById('ecoStorm').textContent = `${eco.stormwaterLitresHr.toLocaleString('en-NZ')} L/hr`;
-
-    // Live LINZ Parcel / AUP Site Facts Card (shown when Real NZ Land is loaded)
-    const factsCard = document.getElementById('siteFactsCard');
-    if (factsCard) {
-      if (state.siteFactsSummary) {
-        const f = state.siteFactsSummary;
-        factsCard.hidden = false;
-        factsCard.innerHTML = `
-          <div class="ls-eco-row"><span>Rohe</span><strong>${f.rohe}</strong></div>
-          ${f.parcelM2 ? `<div class="ls-eco-row"><span>LINZ Primary Parcel</span><strong>${f.parcelM2.toLocaleString('en-NZ')} m²</strong></div>` : ''}
-          ${f.zone ? `<div class="ls-eco-row"><span>AUP Base Zone</span><strong>${f.zone}</strong></div>` : ''}
-          ${f.overlayCount != null ? `<div class="ls-eco-row"><span>AUP Overlays</span><strong>${f.overlayCount} hit(s)</strong></div>` : ''}
-          ${f.floodNote ? `<div class="ls-eco-row"><span>Hazard Note</span><strong>${f.floodNote}</strong></div>` : ''}
-        `;
-      } else {
-        factsCard.hidden = true;
-      }
-    }
-
-    const listEl = document.getElementById('schedList');
-    if (listEl) {
-      if (!sched.rows.length && !(sched.surfaceRows && sched.surfaceRows.length)) {
-        listEl.innerHTML = '<li style="font-size:12px;color:#654a4e;padding:8px 2px">Drag Garden Bed Brush (G) or Paint Mix (B) to populate your NZ supplier schedule.</li>';
-      } else {
-        const plantHtml = sched.rows.map((r) => `
-          <li class="ls-sched-item">
-            <span class="ls-dot" style="background:${r.swatch}"></span>
-            <div>
-              <span class="ls-sp-name">${r.maori}</span>
-              <span class="ls-sp-bot">${r.botanical} · ${r.grade} · ${r.nursery}</span>
-            </div>
-            <div class="ls-sp-qty">${r.qty}×<br/><span style="color:#654a4e">$${r.subtotalNzd.toLocaleString('en-NZ')}</span></div>
-          </li>`).join('');
-        const surfHtml = (sched.surfaceRows || []).map((sr) => `
-          <li class="ls-sched-item">
-            <span class="ls-dot" style="background:${sr.swatch}"></span>
-            <div>
-              <span class="ls-sp-name">${sr.name}</span>
-              <span class="ls-sp-bot">${sr.brand} · $${sr.rateNzd}/m²</span>
-            </div>
-            <div class="ls-sp-qty">${sr.areaM2} m²<br/><span style="color:#654a4e">$${sr.subtotalNzd.toLocaleString('en-NZ')}</span></div>
-          </li>`).join('');
-        listEl.innerHTML = plantHtml + surfHtml;
-      }
-    }
-
-    document.getElementById('undoBtn')?.setAttribute('aria-disabled', String(engine.undoStack.length === 0));
-    document.getElementById('redoBtn')?.setAttribute('aria-disabled', String(engine.redoStack.length === 0));
-
-    // OS Embed postMessage telemetry bridge
-    if (isOsEmbed && window.parent && window.parent !== window) {
-      window.parent.postMessage({
-        type: 'assembl:planting-stats',
-        project: embedProject || state.siteLabel,
-        rohe: state.rohe,
-        bedCount: sched.bedCount,
-        totalAreaM2: sched.totalAreaM2,
-        totalPlants: sched.totalPlants,
-        totalNzd: sched.totalNzd,
-        ecology: eco,
-      }, '*');
-    }
-  }
-
-  // ── CAMERA TRANSITIONS ─────────────────────────────────────────────────────
-  let camAnim = null;
-  const saved3DCam = { pos: new THREE.Vector3(11.8, 9.0, 12.6), target: new THREE.Vector3(0, 0.6, 0) };
-  function transitionCamera(toPos, toTarget) {
-    camAnim = {
-      startPos: camera.position.clone(),
-      startTarget: controls.target.clone(),
-      endPos: toPos.clone(),
-      endTarget: toTarget.clone(),
-      t: 0,
-    };
-  }
-
-  // ── BIND ALL UI CONTROLS ───────────────────────────────────────────────────
-  document.querySelectorAll('[data-tool]').forEach((b) => b.addEventListener('click', () => setTool(b.dataset.tool)));
-  document.querySelectorAll('[data-tab]').forEach((t) => {
-    t.addEventListener('click', () => {
-      setTab(t.dataset.tab);
-      if (t.dataset.tab === 'compositions' && !['garden_brush', 'draw-bed'].includes(state.tool)) setTool('paint-mix');
-      if (t.dataset.tab === 'plants' && state.tool !== 'garden_brush') setTool('paint-plant');
-      if (t.dataset.tab === 'surfaces') setTool('paint-surface');
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      setTab(btn.dataset.tab);
+      if (btn.dataset.tab === 'compositions' && state.tool !== 'draw-bed') setTool('paint-mix');
+      if (btn.dataset.tab === 'plants') setTool('paint-plant');
+      if (btn.dataset.tab === 'surfaces') setTool('paint-surface');
+      if (btn.dataset.tab === 'props') setTool('place-prop');
     });
   });
-  document.querySelectorAll('.ls-cat-pill').forEach((btn) => {
+
+  document.querySelectorAll('.cat-pill').forEach(btn => {
     btn.addEventListener('click', () => {
       state.plantCat = btn.dataset.cat;
-      document.querySelectorAll('.ls-cat-pill').forEach((x) => x.classList.toggle('is-active', x === btn));
+      document.querySelectorAll('.cat-pill').forEach(b => b.classList.toggle('active', b === btn));
       renderCardsRail();
     });
   });
 
-  // Ground modes
-  document.getElementById('modeStudioBtn')?.addEventListener('click', enterStudioMode);
-  document.getElementById('modeSitePlanBtn')?.addEventListener('click', enterSampleSitePlanMode);
-  document.getElementById('modePhotoBtn')?.addEventListener('click', () => enterPhotoBackdropMode());
-  document.getElementById('modeLinzBtn')?.addEventListener('click', () => siteModal?.showModal());
-
-  // Solar time slider (06:30–20:30)
-  const sunSlider = document.getElementById('sunSlider');
-  if (sunSlider) {
-    syncSliderFill(sunSlider);
-    sunSlider.addEventListener('input', () => {
-      syncSliderFill(sunSlider);
-      updateNZSun(parseFloat(sunSlider.value));
+  document.querySelectorAll('.surf-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.surfaceCat = btn.dataset.surfcat;
+      document.querySelectorAll('.surf-pill').forEach(b => b.classList.toggle('active', b === btn));
+      renderCardsRail();
     });
+  });
+
+  function renderCardsRail() {
+    const rail = document.getElementById('cards-rail');
+    rail.innerHTML = '';
+
+    if (state.tab === 'compositions') {
+      for (const comp of NZ_COMPOSITIONS) {
+        const card = document.createElement('div');
+        card.className = 'card' + (comp.id === state.selectedCompositionId ? ' active' : '');
+        card.innerHTML = `
+          <div class="palette-bar">${comp.palette.map(c => `<span style="background:${c}"></span>`).join('')}</div>
+          <div class="card-title">${comp.name}</div>
+          <div class="card-sub">${comp.subtitle}</div>
+          <div class="card-meta"><span>${comp.soil}</span><span>${comp.density}/m²</span></div>
+        `;
+        card.addEventListener('click', () => {
+          state.selectedCompositionId = comp.id;
+          renderCardsRail();
+        });
+        rail.appendChild(card);
+      }
+    } else if (state.tab === 'plants') {
+      const list = state.plantCat === 'all'
+        ? NZ_PLANTS
+        : NZ_PLANTS.filter(p => p.category === state.plantCat);
+      for (const p of list) {
+        const card = document.createElement('div');
+        card.className = 'card' + (p.id === state.selectedPlantId ? ' active' : '');
+        const bloomStr = p.bloomStart < 12.5
+          ? `${NZ_MONTHS[Math.floor(p.bloomStart) % 12]}–${NZ_MONTHS[Math.floor(p.bloomEnd) % 12]}`
+          : 'Evergreen';
+        card.innerHTML = `
+          <div class="plant-swatch-row">
+            <span class="plant-dot" style="background:${p.swatch}"></span>
+            <span class="card-title">${p.maori}</span>
+          </div>
+          <div class="card-sub"><em>${p.botanical}</em></div>
+          <div class="card-meta"><span>${bloomStr}</span><span>$${p.priceNZD.toFixed(0)}</span></div>
+        `;
+        card.addEventListener('click', () => {
+          state.selectedPlantId = p.id;
+          setTool('paint-plant');
+          renderCardsRail();
+        });
+        rail.appendChild(card);
+      }
+    } else if (state.tab === 'surfaces') {
+      const list = state.surfaceCat === 'all'
+        ? NZ_SURFACES
+        : NZ_SURFACES.filter(s => s.category === state.surfaceCat);
+      for (const s of list) {
+        const card = document.createElement('div');
+        card.className = 'card' + (s.channel === state.selectedSurfaceChannel ? ' active' : '');
+        const priceTag = s.depth > 0 ? `$${s.pricePerM3}/m³` : `$${s.pricePerM2}/m²`;
+        card.innerHTML = `
+          <div class="surface-preview" style="background:${s.swatch}"></div>
+          <div class="card-title">${s.name}</div>
+          <div class="card-sub">${s.spec}</div>
+          <div class="card-meta"><span>${s.brand}</span><span>${priceTag}</span></div>
+        `;
+        card.addEventListener('click', () => {
+          state.selectedSurfaceChannel = s.channel;
+          setTool('paint-surface');
+          renderCardsRail();
+        });
+        rail.appendChild(card);
+      }
+    } else {
+      for (const pr of NZ_GARDEN_PROPS) {
+        const card = document.createElement('div');
+        card.className = 'card' + (pr.id === state.selectedPropId ? ' active' : '');
+        card.innerHTML = `
+          <div class="plant-swatch-row">
+            <span class="plant-dot" style="background:${pr.swatch}"></span>
+            <span class="card-title">${pr.name}</span>
+          </div>
+          <div class="card-sub">${pr.subtitle}</div>
+          <div class="card-meta"><span>${pr.category}</span><span>$${pr.priceNZD}</span></div>
+        `;
+        card.addEventListener('click', () => {
+          state.selectedPropId = pr.id;
+          setTool('place-prop');
+          renderCardsRail();
+        });
+        rail.appendChild(card);
+      }
+    }
   }
 
-  // Smooth Seasonal Timeline (J–D) + Play animation
-  const seasonSlider = document.getElementById('seasonSlider');
-  const seasonOut = document.getElementById('seasonOut');
+  // Inspector sliders
+  const bindSlider = (id, lblId, fmt, fn) => {
+    const el = document.getElementById(id);
+    const lbl = document.getElementById(lblId);
+    el.addEventListener('input', () => {
+      const v = parseFloat(el.value);
+      lbl.textContent = fmt(v);
+      fn(v);
+    });
+  };
+  bindSlider('brush-size', 'lbl-brush', v => `${v.toFixed(1)} m`, v => { state.brushRadius = v; });
+  bindSlider('density-mult', 'lbl-density', v => `${v.toFixed(1)}×`, v => { state.densityMult = v; });
+  bindSlider('clump-slider', 'lbl-clump', v => `${Math.round(v * 100)}%`, v => { state.clumping = v; });
+
+  bindSlider('photo-eye-height', 'lbl-eye-height', v => `${v.toFixed(2)} m`, v => photoMatch.setEyeHeight(v));
+  bindSlider('photo-horizon-pitch', 'lbl-horizon-pitch', v => `${v.toFixed(1)}°`, v => photoMatch.setHorizonPitch(v));
+  bindSlider('photo-lens-fov', 'lbl-lens-fov', v => `${Math.round(v)}°`, v => photoMatch.setLensFov(v));
+  bindSlider('photo-parcel-bearing', 'lbl-parcel-bearing', v => `${Math.round(v)}°`, v => photoMatch.setParcelBearing(v));
+
+  document.getElementById('btn-regenerate').addEventListener('click', () => {
+    if (engine.beds.length === 0) return;
+    engine.pushUndoState();
+    const comp = NZ_COMPOSITIONS.find(c => c.id === state.selectedCompositionId) || NZ_COMPOSITIONS[0];
+    engine.regenerateBed(engine.beds[engine.beds.length - 1].id, comp, true);
+    updateStatsUI();
+  });
+  document.getElementById('btn-reshuffle').addEventListener('click', () => {
+    if (engine.beds.length === 0) return;
+    engine.pushUndoState();
+    const lastBed = engine.beds[engine.beds.length - 1];
+    const comp = NZ_COMPOSITIONS.find(c => c.id === lastBed.compositionId) || NZ_COMPOSITIONS[0];
+    engine.regenerateBed(lastBed.id, comp, true);
+    updateStatsUI();
+  });
+
+  // Labour toggle & Export Client Quote
+  const labourChk = document.getElementById('chk-include-labour');
+  labourChk.addEventListener('change', () => {
+    state.includeLabour = labourChk.checked;
+    updateStatsUI();
+  });
+
+  document.getElementById('btn-export-quote').addEventListener('click', () => {
+    const poolQ = poolEngine.getQuantities();
+    const q = computeClientQuote(engine, propsEngine, { includeLabour: state.includeLabour, poolQuantities: poolQ });
+    updateStatsUI();
+    const yrBtn = document.querySelector('.yr-btn.active');
+    exportClientQuoteHTML(q, {
+      siteLabel: terrainEngine.siteLabel,
+      slopeLabel: document.getElementById('slope-readout').textContent,
+      seasonLabel: document.getElementById('season-label').textContent,
+      yearLabel: yrBtn ? `Yr ${yrBtn.dataset.year}` : 'Yr 4'
+    });
+  });
+
+  // Seasonal timeline
+  const seasonSlider = document.getElementById('season-slider');
+  const seasonLabel = document.getElementById('season-label');
   function updateSeason(val) {
     const m = ((val % 12) + 12) % 12;
     sharedUniforms.uMonth.value = m;
     const idx = Math.floor(m);
     const frac = m - idx;
     const prefix = frac < 0.33 ? 'Early' : frac < 0.67 ? 'Mid' : 'Late';
-    if (seasonOut) seasonOut.textContent = `${prefix}-${NZ_MONTHS[idx]} · ${NZ_SEASONS[idx].split(' · ')[0]}`;
-    if (seasonSlider) syncSliderFill(seasonSlider);
+    seasonLabel.textContent = `${prefix}-${NZ_MONTHS[idx]} · ${NZ_SEASONS[idx]}`;
   }
-  if (seasonSlider) {
-    seasonSlider.addEventListener('input', () => updateSeason(parseFloat(seasonSlider.value)));
-    updateSeason(parseFloat(seasonSlider.value));
-  }
+  seasonSlider.addEventListener('input', () => updateSeason(parseFloat(seasonSlider.value)));
+  updateSeason(parseFloat(seasonSlider.value));
 
-  const btnPlaySeason = document.getElementById('btnPlaySeason');
-  btnPlaySeason?.addEventListener('click', () => {
+  const playBtn = document.getElementById('btn-play-season');
+  playBtn.addEventListener('click', () => {
     state.playingSeason = !state.playingSeason;
-    btnPlaySeason.setAttribute('aria-pressed', String(state.playingSeason));
-    btnPlaySeason.textContent = state.playingSeason ? '❚❚' : '▶';
+    playBtn.classList.toggle('playing', state.playingSeason);
+    playBtn.textContent = state.playingSeason ? '❚❚' : '▶';
   });
 
-  // Multi-Year Maturity Projection (Yr 1 / 4 / 7 / 12)
-  document.querySelectorAll('.ls-yr-btn').forEach((btn) => {
+  // Multi-year projection
+  document.querySelectorAll('.yr-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.ls-yr-btn').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+      document.querySelectorAll('.yr-btn').forEach(b => b.classList.toggle('active', b === btn));
       sharedUniforms.uYear.value = parseFloat(btn.dataset.year);
-      syncManu3D();
     });
   });
 
-  // 2D Plan / 3D toggle
-  document.getElementById('topViewBtn')?.addEventListener('click', (e) => {
-    state.isPlanView = !state.isPlanView;
-    e.currentTarget.setAttribute('aria-pressed', String(state.isPlanView));
-    if (state.isPlanView) {
-      saved3DCam.pos.copy(camera.position);
-      saved3DCam.target.copy(controls.target);
-      transitionCamera(new THREE.Vector3(controls.target.x, 24.0, controls.target.z + 0.15), controls.target.clone());
-    } else {
-      transitionCamera(saved3DCam.pos, saved3DCam.target);
-    }
-  });
+  // Sun, Plan/3D/PhotoMatch, Undo/Redo
+  document.getElementById('sun-slider').addEventListener('input', (e) => updateNZSun(parseFloat(e.target.value)));
 
-  // Inspector drawer toggle
-  const inspectorPane = document.getElementById('inspectorPane');
-  const inspectorToggleBtn = document.getElementById('inspectorToggleBtn');
-  const setInspectorOpen = (open) => {
-    inspectorPane.hidden = !open;
-    document.body.classList.toggle('has-inspector', open);
-    inspectorToggleBtn?.setAttribute('aria-pressed', String(open));
-  };
-  inspectorToggleBtn?.addEventListener('click', () => setInspectorOpen(inspectorPane.hidden));
-  document.getElementById('inspCloseBtn')?.addEventListener('click', () => setInspectorOpen(false));
-  if (window.innerWidth < 960) setInspectorOpen(false);
-
-  // Brush Radius / Density / Oudolf Clumping sliders
-  const bindSlider = (id, outId, fmt, fn) => {
-    const el = document.getElementById(id);
-    const out = document.getElementById(outId);
-    if (!el) return;
-    syncSliderFill(el);
-    el.addEventListener('input', () => {
-      const v = parseFloat(el.value);
-      syncSliderFill(el);
-      if (out) out.textContent = fmt(v);
-      fn(v);
-    });
-  };
-  bindSlider('brushRange', 'brushOut', (v) => `${v.toFixed(1)} m`, (v) => { state.brushRadius = v; });
-  bindSlider('densityRange', 'densityOut', (v) => `${v.toFixed(1)}×`, (v) => { state.densityMult = v; });
-  bindSlider('clumpRange', 'clumpOut', (v) => `${Math.round(v * 100)}%`, (v) => { state.clumping = v; });
-
-  // Active Bed / Edging / Mulch / Toggles
-  bedSelect?.addEventListener('change', () => {
-    engine.activeBedId = bedSelect.value;
-    engine.rebuildBeds3D(state.tool === 'sculpt');
-    updateInspectorAndStats();
-  });
-  edgingSelect?.addEventListener('change', () => {
-    state.selectedEdgingId = edgingSelect.value;
-    engine.brushedEdging = edgingSelect.value;
-    for (const b of engine.brushedBeds) b.edging = edgingSelect.value;
-    const sb = engine.splineBeds.find((x) => x.id === engine.activeBedId);
-    if (sb) sb.edging = edgingSelect.value;
-    engine.rebuildBeds3D(state.tool === 'sculpt');
-    updateInspectorAndStats();
-  });
-  mulchSelect?.addEventListener('change', () => {
-    state.selectedMulchId = mulchSelect.value;
-    engine.brushedMulch = mulchSelect.value;
-    for (const b of engine.brushedBeds) b.mulch = mulchSelect.value;
-    const sb = engine.splineBeds.find((x) => x.id === engine.activeBedId);
-    if (sb) sb.mulch = mulchSelect.value;
-    engine.rebuildBeds3D(state.tool === 'sculpt');
-    updateInspectorAndStats();
-  });
-
-  document.getElementById('windToggle')?.addEventListener('change', (e) => {
-    state.windOn = e.currentTarget.checked;
-    sharedUniforms.uWindStrength.value = state.windOn ? 0.85 : 0.0;
-  });
-  document.getElementById('handlesToggle')?.addEventListener('change', (e) => {
-    state.handlesVisible = e.currentTarget.checked;
-    engine.handleGroup.visible = state.handlesVisible;
-  });
-  document.getElementById('uplightsToggle')?.addEventListener('change', (e) => {
-    state.uplightsOn = e.currentTarget.checked;
-    engine.uplightsOn = state.uplightsOn;
-    engine.rebuildBeds3D(state.tool === 'sculpt');
-  });
-  document.getElementById('manuToggle')?.addEventListener('change', (e) => {
-    state.manuOn = e.currentTarget.checked;
-    syncManu3D();
-  });
-
-  document.getElementById('regenBedBtn')?.addEventListener('click', () => {
-    if (!engine.getAllBeds().length) return;
-    engine.pushUndoState();
-    const comp = NZ_COMPOSITIONS.find((c) => c.id === state.selectedCompositionId) || NZ_COMPOSITIONS[0];
-    engine.regenerateBed(engine.activeBedId, comp, state.densityMult, state.clumping);
-    syncManu3D();
-    updateInspectorAndStats();
-  });
-  document.getElementById('reshuffleBtn')?.addEventListener('click', () => {
-    const beds = engine.getAllBeds();
-    if (!beds.length) return;
-    engine.pushUndoState();
-    const active = beds.find((b) => b.id === engine.activeBedId) || beds[0];
-    const comp = NZ_COMPOSITIONS.find((c) => c.id === active.compositionId) || NZ_COMPOSITIONS[0];
-    engine.regenerateBed(active.id, comp, state.densityMult, state.clumping);
-    syncManu3D();
-    updateInspectorAndStats();
-  });
-  document.getElementById('clearBedBtn')?.addEventListener('click', () => {
-    engine.clearAll(false);
-    syncManu3D();
-    updateInspectorAndStats();
-    announce('Cleared canvas — use Garden Bed Brush (G), Draw Bed (D), or Paint Mix (B).');
-  });
-
-  const addNewSplineBed = () => {
-    engine.pushUndoState();
-    const idx = engine.splineBeds.length + 1;
-    const ox = ((idx % 3) - 1) * 4.5;
-    const oz = (idx % 2 === 0 ? -1 : 1) * 4.6;
-    const pts = [
-      [-2.4 + ox, 1.1 + oz], [0.0 + ox, 1.6 + oz], [2.5 + ox, 1.0 + oz],
-      [2.2 + ox, -1.1 + oz], [-0.1 + ox, -1.4 + oz], [-2.5 + ox, -0.8 + oz],
-    ];
-    const comp = NZ_COMPOSITIONS.find((c) => c.id === state.selectedCompositionId) || NZ_COMPOSITIONS[0];
-    engine.createSplineBed(pts, comp, {
-      edging: state.selectedEdgingId,
-      mulch: state.selectedMulchId,
-      densityMult: state.densityMult,
-      clumping: state.clumping,
-    });
-    syncManu3D();
-    updateInspectorAndStats();
-  };
-  document.getElementById('addBedBtn')?.addEventListener('click', addNewSplineBed);
-  document.getElementById('inspAddBedBtn')?.addEventListener('click', addNewSplineBed);
-
-  document.getElementById('undoBtn')?.addEventListener('click', () => {
-    if (engine.undo()) { syncManu3D(); updateInspectorAndStats(); }
-  });
-  document.getElementById('redoBtn')?.addEventListener('click', () => {
-    if (engine.redo()) { syncManu3D(); updateInspectorAndStats(); }
-  });
-
-  // Site Plan Strip controls
-  document.getElementById('planFileInput')?.addEventListener('change', (e) => {
-    const f = e.currentTarget.files?.[0];
-    if (f) void handleUploadedPlanFile(f);
-  });
-  pdfPageSelect?.addEventListener('change', () => {
-    void renderPdfSitePlanPage(Number(pdfPageSelect.value) || 1, state.siteLabel.split(' · ')[0]);
-  });
-  document.getElementById('planWidthInput')?.addEventListener('change', (e) => {
-    const w = Math.max(4, Math.min(350, Number(e.currentTarget.value) || 28));
-    mountSitePlan({ ...state.planMeta, widthM: w, resetBeds: false });
-  });
-  document.getElementById('twoPtScaleBtn')?.addEventListener('click', (e) => {
-    state.twoPtCalib = state.twoPtCalib ? null : { step: 1, p1: null };
-    e.currentTarget.setAttribute('aria-pressed', String(Boolean(state.twoPtCalib)));
-    if (state.twoPtCalib) announce('2-Point Scale: click the start of any known dimension on the plan.');
-  });
-  document.getElementById('planMassingBtn')?.addEventListener('click', (e) => {
-    state.showSampleMassing = !state.showSampleMassing;
-    e.currentTarget.setAttribute('aria-pressed', String(state.showSampleMassing));
-    sampleMassingGroup.visible = state.groundMode === 'siteplan' && state.planMeta.isSample && state.showSampleMassing;
-  });
-  document.getElementById('samplePlanBtn')?.addEventListener('click', enterSampleSitePlanMode);
-
-  // Photo Backdrop Strip controls
-  document.getElementById('photoFileInput')?.addEventListener('change', (e) => {
-    const f = e.currentTarget.files?.[0];
-    if (!f) return;
-    const reader = new FileReader();
-    reader.onload = () => enterPhotoBackdropMode(String(reader.result), `${f.name} (Photo)`);
-    reader.readAsDataURL(f);
-  });
-  bindSlider('photoHorizonRange', 'photoHorizonOut', (v) => `${Math.round(v)}%`, (v) => {
-    state.photoSettings.horizonPct = v;
-    applyPhotoCameraCalibration();
-  });
-  bindSlider('photoTiltRange', 'photoTiltOut', (v) => `${Math.round(v)}°`, (v) => {
-    state.photoSettings.tiltDeg = v;
-    applyPhotoCameraCalibration();
-  });
-  bindSlider('photoScaleRange', 'photoScaleOut', (v) => `${v.toFixed(2)}×`, (v) => {
-    state.photoSettings.scaleMult = v;
-    applyPhotoCameraCalibration();
-  });
-  document.getElementById('samplePhotoBtn')?.addEventListener('click', () => {
-    enterPhotoBackdropMode(buildSampleBackyardPhotoDataUrl(), 'Coastal Backyard Sample Photo');
-  });
-
-  // LINZ Address Search & Benchmark Presets
-  const addrInput = document.getElementById('addrInput');
-  const addrResults = document.getElementById('addrResults');
-  let addrTimer = 0;
-  let addrAbort = null;
-  addrInput?.addEventListener('input', () => {
-    clearTimeout(addrTimer);
-    const q = addrInput.value.trim();
-    if (q.length < 4) { if (addrResults) addrResults.innerHTML = ''; return; }
-    addrTimer = window.setTimeout(async () => {
-      addrAbort?.abort();
-      addrAbort = new AbortController();
-      try {
-        const { matches } = await askAddress(q, addrAbort.signal);
-        if (!addrResults) return;
-        addrResults.innerHTML = matches.map((m) =>
-          `<li><button type="button" class="ls-addr-btn" data-lat="${m.lat}" data-lon="${m.lon}" data-label="${m.address.replace(/"/g, '&quot;')}"><strong>${m.address}</strong>${m.suburb || m.town ? ` · <span style="color:#654a4e">${[m.suburb, m.town].filter(Boolean).join(', ')}</span>` : ''}</button></li>`
-        ).join('');
-        addrResults.querySelectorAll('[data-lat]').forEach((b) => {
-          b.addEventListener('click', () => void loadRealNzLand(Number(b.dataset.lat), Number(b.dataset.lon), b.dataset.label));
-        });
-      } catch (err) {
-        if (err?.name !== 'AbortError' && siteModalMsg) {
-          siteModalMsg.textContent = err.message || 'Address search unavailable — choose a benchmark NZ site below.';
-        }
-      }
-    }, 240);
-  });
-  siteModal?.querySelectorAll('[data-preset-lat]').forEach((btn) => {
-    btn.addEventListener('click', () => void loadRealNzLand(
-      Number(btn.dataset.presetLat),
-      Number(btn.dataset.presetLon),
-      btn.dataset.presetName
-    ));
-  });
-
-  // Exports: L101 A3 Vector SVG, CSV Schedule, 3D .glb
-  function triggerDownload(filename, blob) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.append(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  let camAnim = null;
+  function transitionCamera(toPos, toTarget) {
+    camAnim = {
+      startPos: camera.position.clone(),
+      startTarget: controls.target.clone(),
+      endPos: toPos.clone(),
+      endTarget: toTarget.clone(),
+      t: 0
+    };
   }
-
-  document.getElementById('exportSvgBtn')?.addEventListener('click', () => {
-    const beds = engine.getAllBeds();
-    const sched = buildPlantingSchedule(beds, engine.plants, state.groundMode === 'photo' ? null : engine.getSurfaceAreasM2());
-    const svg = exportPlantingPlanSVG({ beds, plants: engine.plants, schedule: sched, siteLabel: state.siteLabel });
-    triggerDownload('L101-nz-native-planting-plan.svg', new Blob([svg], { type: 'image/svg+xml' }));
-    announce('Downloaded scaled A3 L101 vector planting plan SVG.');
+  document.getElementById('btn-plan').addEventListener('click', () => {
+    if (photoMatch.active) photoMatch.setActive(false);
+    state.viewMode = 'plan';
+    document.getElementById('btn-plan').classList.add('active');
+    document.getElementById('btn-3d').classList.remove('active');
+    document.getElementById('btn-photo-match').classList.remove('active');
+    transitionCamera(new THREE.Vector3(0, 23.0, 0.25), new THREE.Vector3(0, 0, -2.0));
   });
-
-  document.getElementById('exportCsvBtn')?.addEventListener('click', () => {
-    const sched = buildPlantingSchedule(engine.getAllBeds(), engine.plants, state.groundMode === 'photo' ? null : engine.getSurfaceAreasM2());
-    const csv = exportPlantingCSV(sched, state.siteLabel);
-    triggerDownload('nz-native-nursery-schedule.csv', new Blob([csv], { type: 'text/csv' }));
-    announce('Downloaded NZ nursery & supplier CSV schedule.');
+  document.getElementById('btn-3d').addEventListener('click', () => {
+    if (photoMatch.active) photoMatch.setActive(false);
+    state.viewMode = '3d';
+    document.getElementById('btn-3d').classList.add('active');
+    document.getElementById('btn-plan').classList.remove('active');
+    document.getElementById('btn-photo-match').classList.remove('active');
+    transitionCamera(new THREE.Vector3(11.8, 8.2, 11.8), new THREE.Vector3(0.2, 0.8, -1.8));
   });
-
-  document.getElementById('exportGlbBtn')?.addEventListener('click', () => {
-    announce('Exporting 3D .glb landscape model…');
-    const exportRoot = new THREE.Group();
-    exportRoot.add(engine.bedsGroup.clone(true));
-    // Convert active WebGPU NodeMaterial instanced species into clean standard-material meshes for universal GLB export
-    const m4 = new THREE.Matrix4();
-    for (const [, pool] of engine.speciesMeshes.entries()) {
-      if (pool.mesh.count <= 0) continue;
-      const stdMat = new THREE.MeshStandardMaterial({
-        color: pool.plant.foliageHex || 0x4f6e39,
-        roughness: 0.7,
-        side: THREE.DoubleSide,
-      });
-      const inst = new THREE.InstancedMesh(pool.mesh.geometry.clone(), stdMat, pool.mesh.count);
-      for (let i = 0; i < pool.mesh.count; i++) {
-        pool.mesh.getMatrixAt(i, m4);
-        inst.setMatrixAt(i, m4);
-      }
-      inst.name = pool.plant.id;
-      exportRoot.add(inst);
+  document.getElementById('btn-photo-match').addEventListener('click', () => {
+    camAnim = null;
+    if (photoMatch.active) {
+      photoMatch.setActive(false);
+      document.getElementById('btn-3d').classList.add('active');
+    } else {
+      photoMatch.setActive(true);
     }
-    new GLTFExporter().parse(
-      exportRoot,
-      (res) => {
-        const blob = res instanceof ArrayBuffer
-          ? new Blob([res], { type: 'model/gltf-binary' })
-          : new Blob([JSON.stringify(res)], { type: 'model/gltf+json' });
-        triggerDownload('nz-native-landscape-3d.glb', blob);
-        announce('Downloaded 3D .glb landscape model.');
-      },
-      () => announce('3D .glb export failed.'),
-      { binary: true }
-    );
   });
+
+  document.getElementById('btn-undo').addEventListener('click', () => { if (engine.undo()) updateStatsUI(); });
+  document.getElementById('btn-redo').addEventListener('click', () => { if (engine.redo()) updateStatsUI(); });
 
   // Keyboard shortcuts
   window.addEventListener('keydown', (e) => {
-    if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName ?? '')) return;
+    if (document.activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+    if (e.key === '1') setTool('paint-mix');
+    if (e.key === '2') setTool('paint-plant');
+    if (e.key === '3') setTool('draw-bed');
+    if (e.key === '4') setTool('paint-surface');
+    if (e.key === '5') setTool('place-prop');
+    if (e.key === '6') setTool('erase');
+    if (e.key === '7') setTool('orbit');
+    if (e.key === 'Enter' && state.tool === 'draw-bed') finishDrawingBed();
+    if (e.key === 'Escape' && state.tool === 'draw-bed') { state.drawPoints = []; rebuildDrawPreview(null); }
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
       e.preventDefault();
-      if (e.shiftKey ? engine.redo() : engine.undo()) { syncManu3D(); updateInspectorAndStats(); }
-      return;
+      if (e.shiftKey ? engine.redo() : engine.undo()) updateStatsUI();
     }
-    const k = e.key.toLowerCase();
-    if (k === 'g' || k === '1') setTool('garden_brush');
-    else if (k === 'b' || k === '2') setTool('paint-mix');
-    else if (k === 'p' || k === '3') setTool('paint-plant');
-    else if (k === 'd' || k === '4') setTool('draw-bed');
-    else if (k === 'v' || k === '5') setTool('sculpt');
-    else if (k === 's' || k === '6') setTool('paint-surface');
-    else if (k === 'e' || k === '7') setTool('erase');
-    else if (k === 'm' || k === '8') setTool('measure');
-    else if (k === 'o' || k === '9') setTool('orbit');
-    else if (e.key === 'Enter' && state.tool === 'draw-bed') finishDrawingBed();
-    else if (e.key === 'Escape' && state.tool === 'draw-bed') { state.drawPoints = []; rebuildDrawPreview(null); }
-    else if (e.key === '[') {
-      state.brushRadius = Math.max(0.6, +(state.brushRadius - 0.3).toFixed(1));
-      const r = document.getElementById('brushRange');
-      if (r) { r.value = String(state.brushRadius); syncSliderFill(r); }
-      const o = document.getElementById('brushOut');
-      if (o) o.textContent = `${state.brushRadius.toFixed(1)} m`;
-    } else if (e.key === ']') {
-      state.brushRadius = Math.min(5.5, +(state.brushRadius + 0.3).toFixed(1));
-      const r = document.getElementById('brushRange');
-      if (r) { r.value = String(state.brushRadius); syncSliderFill(r); }
-      const o = document.getElementById('brushOut');
-      if (o) o.textContent = `${state.brushRadius.toFixed(1)} m`;
+    if (e.key === '[') {
+      state.brushRadius = Math.max(0.6, state.brushRadius - 0.3);
+      document.getElementById('brush-size').value = state.brushRadius;
+      document.getElementById('lbl-brush').textContent = `${state.brushRadius.toFixed(1)} m`;
+    }
+    if (e.key === ']') {
+      state.brushRadius = Math.min(5.5, state.brushRadius + 0.3);
+      document.getElementById('brush-size').value = state.brushRadius;
+      document.getElementById('lbl-brush').textContent = `${state.brushRadius.toFixed(1)} m`;
     }
   });
 
-  // ── INITIAL BOOT ROUTE (?mode=siteplan | ?mode=photo | ?embed=os&lat=&lon= | default Studio) ─
+  function fmtMoney(v) {
+    return `$${Math.round(v).toLocaleString('en-NZ')}`;
+  }
+
+  function fmtCompactMoney(v) {
+    if (v >= 1000) return `$${(v / 1000).toFixed(1)}k incl. GST`;
+    return `$${Math.round(v)} incl. GST`;
+  }
+
+  function updateStatsUI() {
+    const poolQ = poolEngine.getQuantities();
+    const q = computeClientQuote(engine, propsEngine, { includeLabour: state.includeLabour, poolQuantities: poolQ });
+    const f9 = poolEngine.checkF9Compliance(engine.plants, PLANT_MAP, propsEngine.props);
+    const f9El = document.getElementById('f9-badge');
+    const poolLbl = document.getElementById('pool-metrics-lbl');
+    const consentChip = document.getElementById('pool-consent-chip');
+    if (f9El && poolLbl) {
+      if (!f9.active) {
+        f9El.textContent = 'NONE';
+        f9El.className = 'mono-chip subtle';
+        if (consentChip) {
+          consentChip.textContent = 'NO POOL';
+          consentChip.className = 'mono-chip subtle';
+        }
+        poolLbl.textContent = 'Select an NZ pool preset above';
+      } else {
+        f9El.textContent = f9.clashes > 0 ? `F9 CLASH (${f9.clashes})` : 'F9 PASS ✓';
+        f9El.className = 'mono-chip ' + (f9.clashes > 0 ? 'warn' : 'pass');
+        const consentTxt = f9.over35kL ? 'Shell + Fence Consent (>35kL)' : 'Fence Consent Only (≤35kL)';
+        if (consentChip) {
+          consentChip.textContent = f9.over35kL ? '>35KL SHELL + FENCE' : '≤35KL FENCE ONLY';
+          consentChip.className = 'mono-chip ' + (f9.over35kL ? 'warn' : 'pass');
+        }
+        poolLbl.textContent = `${f9.volumeL.toLocaleString()} L · Cut ${poolQ.excavationM3} m³ · ${consentTxt}`;
+      }
+    }
+
+    const archM = archEngine.getMetrics();
+    const hardPavingM2 = (q.pavingItems || []).reduce((a, b) => a + b.areaM2, 0);
+    const comp = complianceEngine.evaluate({
+      parcelAreaM2: 900,
+      roofAreaM2: archM.roofAreaM2,
+      poolFootprintM2: poolQ.footprintM2,
+      hardPavingM2
+    });
+    const impPctEl = document.getElementById('lbl-imp-pct');
+    const impBarEl = document.getElementById('imp-bar');
+    const impBadgeEl = document.getElementById('imp-badge');
+    const nzsEl = document.getElementById('nzs3604-badge');
+    if (impPctEl) impPctEl.textContent = `${comp.imperviousPct.toFixed(1)}% (${Math.round(comp.imperviousM2)} m²)`;
+    if (impBarEl) {
+      impBarEl.style.width = `${Math.min(100, comp.imperviousPct)}%`;
+      impBarEl.classList.toggle('over', !comp.compliant);
+    }
+    if (impBadgeEl) {
+      impBadgeEl.textContent = comp.compliant ? 'AUP OK ✓' : 'OVER 60% ⚠';
+      impBadgeEl.className = 'mono-chip ' + (comp.compliant ? 'pass' : 'warn');
+    }
+    if (nzsEl) nzsEl.textContent = archM.nzs3604;
+
+    document.getElementById('top-quote-val').textContent = fmtCompactMoney(q.grandTotalInclGst);
+    document.getElementById('bom-total').textContent = `${fmtMoney(q.grandTotalInclGst)}`;
+
+    // Quote breakdown summary
+    const summaryEl = document.getElementById('quote-summary');
+    summaryEl.innerHTML = `
+      <div class="q-row"><span>Plants (${q.totalPlants})</span><strong>${fmtMoney(q.plantsSubtotal)}</strong></div>
+      <div class="q-row"><span>Bulk Bark &amp; Chip (${q.bulkItems.reduce((a, b) => a + b.volumeM3, 0).toFixed(1)} m³)</span><strong>${fmtMoney(q.bulkSubtotal)}</strong></div>
+      <div class="q-row"><span>Paving &amp; Edging</span><strong>${fmtMoney(q.pavingAndEdgingSubtotal)}</strong></div>
+      ${q.poolSubtotal > 0 ? `<div class="q-row"><span>NZ Pool, F9 &amp; Consent</span><strong>${fmtMoney(q.poolSubtotal)}</strong></div>` : ''}
+      ${q.featuresSubtotal > 0 ? `<div class="q-row"><span>NZ Features (${q.totalProps})</span><strong>${fmtMoney(q.featuresSubtotal)}</strong></div>` : ''}
+      ${q.includeLabour ? `<div class="q-row"><span>Install Labour (${q.labourHours}h)</span><strong>${fmtMoney(q.labourSubtotal)}</strong></div>` : ''}
+      <div class="q-row q-gst"><span>15% NZ GST</span><span>${fmtMoney(q.gstAmount)}</span></div>
+      <div class="q-row q-grand"><span>Total incl. GST</span><span>${fmtMoney(q.grandTotalInclGst)}</span></div>
+    `;
+
+    // Itemized BOM list
+    const bom = document.getElementById('bom-list');
+    if (q.plantItems.length === 0 && q.bulkItems.length === 0 && q.pavingItems.length === 0) {
+      bom.innerHTML = '<div class="meta-note">Paint supplies or plants on the terrain to build your NZ Client Quote.</div>';
+      return;
+    }
+
+    const supplyHtml = q.bulkItems.map(r => `
+      <div class="bom-item">
+        <span class="bom-swatch" style="background:${r.surface.swatch}"></span>
+        <div class="bom-info">
+          <div class="bom-name">${r.surface.name}</div>
+          <div class="bom-sub">${r.areaM2.toFixed(1)} m² · ${r.volumeM3.toFixed(2)} m³</div>
+        </div>
+        <div class="bom-qty">${fmtMoney(r.cost)}</div>
+      </div>
+    `).join('');
+
+    const pavingHtml = q.pavingItems.map(r => `
+      <div class="bom-item">
+        <span class="bom-swatch" style="background:${r.surface.swatch}"></span>
+        <div class="bom-info">
+          <div class="bom-name">${r.surface.name}</div>
+          <div class="bom-sub">${r.areaM2.toFixed(1)} m² @ $${r.surface.pricePerM2}/m²</div>
+        </div>
+        <div class="bom-qty">${fmtMoney(r.cost)}</div>
+      </div>
+    `).join('');
+
+    const plantHtml = q.plantItems.map(row => `
+      <div class="bom-item">
+        <span class="bom-swatch" style="background:${row.plant.swatch}"></span>
+        <div class="bom-info">
+          <div class="bom-name">${row.plant.maori}</div>
+          <div class="bom-sub">${row.plant.grade} · $${row.plant.priceNZD.toFixed(0)}</div>
+        </div>
+        <div class="bom-qty">${row.count}×</div>
+      </div>
+    `).join('');
+
+    bom.innerHTML = supplyHtml + pavingHtml + plantHtml;
+  }
+
+  // ── ARCHITECTURE, HIRB & POOL CONTROLS ──────────────────────────────────────
+  const archSel = document.getElementById('arch-preset');
+  ARCH_PRESETS.forEach(p => { const o = document.createElement('option'); o.value = p.id; o.textContent = p.name; archSel.appendChild(o); });
+  archSel.value = archEngine.presetId;
+  archSel.addEventListener('change', () => { archEngine.buildPreset(archSel.value); updateStatsUI(); });
+
+  const cladSel = document.getElementById('cladding-select');
+  Object.entries(CLADDING_FINISHES).forEach(([k, v]) => { const o = document.createElement('option'); o.value = k; o.textContent = v.name; cladSel.appendChild(o); });
+  cladSel.addEventListener('change', () => archEngine.setCladding(cladSel.value));
+
+  const planInput = document.getElementById('plan-file-input');
+  document.getElementById('btn-import-plan').addEventListener('click', () => planInput.click());
+  planInput.addEventListener('change', () => {
+    const file = planInput.files && planInput.files[0];
+    if (!file) return;
+    if (file.name.toLowerCase().endsWith('.dxf')) {
+      const r = new FileReader();
+      r.onload = () => { try { archEngine.importDXFFloorPlan(String(r.result), file.name); archSel.value = 'none'; updateStatsUI(); } catch (err) { alert(err.message); } };
+      r.readAsText(file);
+    } else {
+      const r = new FileReader();
+      r.onload = () => archEngine.importPlanImage(String(r.result), file.name);
+      r.readAsDataURL(file);
+    }
+    planInput.value = '';
+  });
+
+  const toggleHIRB = () => {
+    const next = !complianceEngine.hirbGroup.visible;
+    complianceEngine.setHIRBVisible(next);
+    document.getElementById('btn-hirb').classList.toggle('active', next);
+  };
+  document.getElementById('btn-hirb').addEventListener('click', toggleHIRB);
+  document.getElementById('btn-toggle-hirb').addEventListener('click', toggleHIRB);
+
+  const poolSel = document.getElementById('pool-preset');
+  NZ_POOL_PRESETS.forEach(p => { const o = document.createElement('option'); o.value = p.id; o.textContent = p.name; poolSel.appendChild(o); });
+  poolSel.value = poolEngine.config.presetId;
+  poolSel.addEventListener('change', () => { poolEngine.updateConfig({ presetId: poolSel.value }); updateStatsUI(); });
+
+  const finSel = document.getElementById('pool-finish');
+  Object.entries(POOL_FINISHES).forEach(([k, v]) => { const o = document.createElement('option'); o.value = k; o.textContent = v.name; finSel.appendChild(o); });
+  finSel.value = poolEngine.config.finishId;
+  finSel.addEventListener('change', () => { poolEngine.updateConfig({ finishId: finSel.value }); updateStatsUI(); });
+
+  const fenSel = document.getElementById('pool-fence');
+  Object.entries(FENCE_TYPES).forEach(([k, v]) => { const o = document.createElement('option'); o.value = k; o.textContent = v.name; fenSel.appendChild(o); });
+  fenSel.value = poolEngine.config.fenceType;
+  fenSel.addEventListener('change', () => { poolEngine.updateConfig({ fenceType: fenSel.value }); updateStatsUI(); });
+
+  const poolX = document.getElementById('pool-x');
+  const poolZ = document.getElementById('pool-z');
+  const poolPosLbl = document.getElementById('lbl-pool-pos');
+  const onPoolMove = () => {
+    const x = parseFloat(poolX.value), z = parseFloat(poolZ.value);
+    poolPosLbl.textContent = `${x.toFixed(1)}, ${z.toFixed(1)} m`;
+    poolEngine.updateConfig({ x, z });
+    updateStatsUI();
+  };
+  poolX.addEventListener('input', onPoolMove);
+  poolZ.addEventListener('input', onPoolMove);
+
+  document.getElementById('chk-f9-zone').addEventListener('change', (e) => poolEngine.updateConfig({ showF9Zone: e.target.checked }));
+  document.getElementById('chk-heat-pump').addEventListener('change', (e) => { poolEngine.updateConfig({ heatPump: e.target.checked }); updateStatsUI(); });
+
   renderCardsRail();
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (prefersReducedMotion) {
-    state.windOn = false;
-    sharedUniforms.uWindStrength.value = 0.0;
-  }
+  updateCursorStyle();
+  updateStatsUI();
 
-  if (urlMode === 'siteplan') {
-    enterSampleSitePlanMode();
-  } else if (urlMode === 'photo') {
-    enterPhotoBackdropMode();
-  } else if (Number.isFinite(embedLat) && Number.isFinite(embedLon) && embedLat <= -34 && embedLat >= -47.5) {
-    enterStudioMode();
-    void loadRealNzLand(embedLat, embedLon, embedProject || 'Project Site');
-  } else {
-    enterStudioMode();
-  }
+  // Expose lightweight API for verification/testing
+  window.__nzStudio = {
+    terrainEngine,
+    engine,
+    propsEngine,
+    archEngine,
+    poolEngine,
+    complianceEngine,
+    photoMatch,
+    camera,
+    controls,
+    getQuote: () => computeClientQuote(engine, propsEngine, { includeLabour: state.includeLabour, poolQuantities: poolEngine.getQuantities() }),
+    updateStatsUI,
+    setStage,
+    setCamera: (px, py, pz, tx, ty, tz) => {
+      camAnim = null;
+      camera.position.set(px, py, pz);
+      controls.target.set(tx, ty, tz);
+      engine.updateHeroTrees(performance.now() * 0.001, state.windOn ? 0.85 : 0.0);
+    controls.update();
+    },
+    setPreset: (id) => { presetSelect.value = id; terrainEngine.applyPreset(id, true); },
+    placeProp: (typeId, x, z) => { engine.pushUndoState(); propsEngine.addProp(typeId, x, z); updateStatsUI(); },
+    setSunHour: (h) => { document.getElementById('sun-slider').value = h; updateNZSun(h); },
+    setTab,
+    setTool
+  };
 
-  // ── RESIZE & ANIMATION LOOP ────────────────────────────────────────────────
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight, false);
+    renderer.setSize(window.innerWidth, window.innerHeight);
   });
 
-  let frames = 0;
-  let lastFpsTime = performance.now();
   let lastFrameTime = performance.now();
-  const fpsBadge = document.getElementById('fpsBadge');
+
+  
+  // URL modes (?embed=os, ?mode=siteplan, ?mode=photo, ?lat=&lon=) + OS postMessage bridge
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("embed") === "os") {
+    document.body.classList.add("is-os-embed");
+  }
+  const initMode = params.get("mode");
+  if (initMode === "siteplan" || initMode === "plan") {
+    sharedUniforms.uPlanMix.value = 1.0;
+    document.getElementById("view-plan-btn")?.click();
+  } else if (initMode === "photo") {
+    photoMatch.loadPhotoDataURL(buildSampleBackyardPhotoDataUrl(), "NZ Coastal Backyard Sample").catch(() => {});
+  }
+  const qLat = parseFloat(params.get("lat"));
+  const qLon = parseFloat(params.get("lon"));
+  if (Number.isFinite(qLat) && Number.isFinite(qLon)) {
+    terrainEngine.loadKeylessNZSite(params.get("project") || "Project Site", { lat: qLat, lon: qLon, label: params.get("project") || "Project Site" }).catch(() => {});
+  }
+  window.addEventListener("message", (ev) => {
+    const d = ev?.data;
+    if (!d || typeof d !== "object") return;
+    if (d.type === "assembl:set-view") {
+      if (d.mode === "siteplan" || d.mode === "plan") {
+        sharedUniforms.uPlanMix.value = 1.0;
+        document.getElementById("view-plan-btn")?.click();
+      } else if (d.mode === "photo") {
+        if (!photoMatch.hasPhoto) {
+          photoMatch.loadPhotoDataURL(buildSampleBackyardPhotoDataUrl(), "NZ Coastal Backyard Sample").catch(() => {});
+        } else {
+          photoMatch.setActive(true);
+        }
+      } else {
+        sharedUniforms.uPlanMix.value = 0.0;
+        photoMatch.setActive(false);
+        document.getElementById("view-3d-btn")?.click();
+      }
+    }
+  });
+  window.__assemblStudio = { scene, camera, controls, terrainEngine, engine, archEngine, poolEngine, complianceEngine, photoMatch, sharedUniforms };
 
   renderer.setAnimationLoop(() => {
     const now = performance.now();
@@ -1940,7 +1202,7 @@ async function init() {
 
     if (state.playingSeason) {
       const nextM = (sharedUniforms.uMonth.value + dt * 1.15) % 12;
-      if (seasonSlider) seasonSlider.value = nextM.toFixed(2);
+      seasonSlider.value = nextM.toFixed(2);
       updateSeason(nextM);
     }
 
@@ -1952,29 +1214,157 @@ async function init() {
       if (camAnim.t >= 1) camAnim = null;
     }
 
-    if (!prefersReducedMotion && animatedManu.length) {
-      const sec = now * 0.001;
-      for (const m of animatedManu) {
-        m.node.position.y = m.baseY + Math.sin(sec * 2.3 + m.phase) * 0.025;
-        m.node.rotation.z = Math.sin(sec * 1.6 + m.phase) * 0.035;
-      }
-    }
-
     controls.update();
     renderer.render(scene, camera);
-
-    frames++;
-    if (now - lastFpsTime >= 600) {
-      const fps = Math.round((frames * 1000) / (now - lastFpsTime));
-      if (fpsBadge) fpsBadge.textContent = `${fps} fps`;
-      frames = 0;
-      lastFpsTime = now;
-    }
   });
 }
 
-init().catch((err) => {
-  console.error('Aotearoa Landscape Studio init error:', err);
-  const badge = document.getElementById('backendBadge');
-  if (badge) badge.textContent = 'Init Error';
+// ── TERRAIN-CONFORMED ARCHITECTURAL NZ TERRACE (Stepping Pavers) ──────────────
+function createArchitecturalDeckContext(scene, surfaceTextures, terrainEngine) {
+  const deckGroup = new THREE.Group();
+
+  const deckMat = new THREE.MeshStandardMaterial({
+    map: surfaceTextures.kwila, roughness: 0.58, metalness: 0.04
+  });
+  const plinthMat = new THREE.MeshStandardMaterial({ color: 0x26292c, roughness: 0.88 });
+
+  const deckMesh = new THREE.Mesh(new THREE.BoxGeometry(9.5, 0.16, 3.6), deckMat);
+  deckMesh.receiveShadow = true;
+  deckMesh.castShadow = true;
+  deckGroup.add(deckMesh);
+
+  const plinthMesh = new THREE.Mesh(new THREE.BoxGeometry(9.35, 3.2, 3.45), plinthMat);
+  plinthMesh.receiveShadow = true;
+  plinthMesh.castShadow = true;
+  deckGroup.add(plinthMesh);
+
+  const wallMesh = new THREE.Mesh(new THREE.BoxGeometry(9.6, 1.8, 0.24), plinthMat);
+  wallMesh.castShadow = true;
+  wallMesh.receiveShadow = true;
+  deckGroup.add(wallMesh);
+
+  const paverMat = new THREE.MeshStandardMaterial({
+    map: surfaceTextures.pavers, roughness: 0.76, metalness: 0.02
+  });
+  const stepPositions = [
+    [-4.8, -5.2], [-4.5, -4.1], [-4.1, -3.0], [-3.6, -1.9],
+    [-3.1, -0.8], [-2.7, 0.3], [-2.5, 1.4], [-2.6, 2.5], [-3.0, 3.6]
+  ];
+  const paverGeo = new THREE.BoxGeometry(0.85, 0.08, 0.48);
+  const pavers = [];
+  for (let i = 0; i < stepPositions.length; i++) {
+    const [sx, sz] = stepPositions[i];
+    const m = new THREE.Mesh(paverGeo, paverMat);
+    m.rotation.y = Math.sin(i * 0.4) * 0.12;
+    m.receiveShadow = true;
+    m.castShadow = true;
+    deckGroup.add(m);
+    pavers.push({ mesh: m, x: sx, z: sz });
+  }
+  scene.add(deckGroup);
+
+  function conformToTerrain() {
+    const corners = [
+      [-11.2, -9.6], [-1.8, -9.6], [-11.2, -6.0], [-1.8, -6.0], [-6.5, -7.8]
+    ];
+    let maxY = -Infinity;
+    for (const [cx, cz] of corners) {
+      maxY = Math.max(maxY, terrainEngine.getHeight(cx, cz));
+    }
+    const deckY = maxY + 0.10;
+    deckMesh.position.set(-6.5, deckY, -7.8);
+    plinthMesh.position.set(-6.5, deckY - 1.66, -7.8);
+    wallMesh.position.set(-6.5, deckY + 0.85, -9.65);
+
+    const n = new THREE.Vector3();
+    for (const p of pavers) {
+      const py = terrainEngine.getHeight(p.x, p.z);
+      terrainEngine.getNormal(p.x, p.z, n);
+      p.mesh.position.set(p.x, py + 0.015, p.z);
+      p.mesh.rotation.x = Math.atan2(n.z, n.y) * 0.65;
+      p.mesh.rotation.z = -Math.atan2(n.x, n.y) * 0.65;
+    }
+  }
+
+  return { group: deckGroup, conformToTerrain };
+}
+
+// ── INITIAL SHOWCASE NZ PLANTING BED (Cleanly outside Pool 1.2m F9 NCZ!) ──────
+function buildShowcaseNZGarden(engine, propsEngine) {
+  // Winding Crushed Greywacke Chip (14mm) garden path (Channel 4)
+  for (let z = -5.4; z <= 4.4; z += 0.65) {
+    const x = -4.6 + Math.sin((z + 5.4) * 0.32) * 1.9;
+    engine.paintSurfaceDisc(x, z, 1.45, 4, 0.96, 0.58);
+  }
+  // Firth Piazza 50 Pavers terrace apron beneath the Kwila deck (Channel 8)
+  engine.paintSurfacePolygon([
+    { x: -11.5, z: -10.0 }, { x: -1.5, z: -10.0 }, { x: -1.5, z: -5.4 }, { x: -11.5, z: -5.4 }
+  ], 8, 0.15);
+
+  // Decorative Waikato River Pebbles surround around water feature (Channel 6)
+  engine.paintSurfaceDisc(-0.9, 5.4, 1.65, 6, 0.92, 0.55);
+
+  // North edge sits cleanly south of z = -3.8 so pool at (5.8, -7.8) has ZERO F9 clashes on startup!
+  const heroBedPts = [
+    { x: -1.4, z: -3.6 },
+    { x: 2.3, z: -3.7 },
+    { x: 6.1, z: -3.3 },
+    { x: 7.7, z: -0.5 },
+    { x: 6.7, z: 3.3 },
+    { x: 3.1, z: 5.0 },
+    { x: -0.8, z: 4.4 },
+    { x: -2.0, z: 1.5 },
+    { x: -2.1, z: -1.6 }
+  ];
+
+  const showcaseMix = {
+    id: 'coastal_native',
+    name: 'Auckland Coastal & Summer Border',
+    density: 4.6,
+    species: [
+      { id: 'pohutukawa', weight: 0.03, layer: 'canopy' },
+      { id: 'nikau', weight: 0.04, layer: 'canopy' },
+      { id: 'tikouka', weight: 0.04, layer: 'canopy' },
+      { id: 'harakeke', weight: 0.10, layer: 'structure' },
+      { id: 'silver_spear', weight: 0.09, layer: 'structure' },
+      { id: 'platts_black', weight: 0.08, layer: 'structure' },
+      { id: 'toetoe', weight: 0.10, layer: 'matrix' },
+      { id: 'red_tussock', weight: 0.08, layer: 'matrix' },
+      { id: 'carex_testacea', weight: 0.11, layer: 'matrix' },
+      { id: 'libertia', weight: 0.08, layer: 'matrix' },
+      { id: 'agapanthus', weight: 0.10, layer: 'flower' },
+      { id: 'echinacea', weight: 0.08, layer: 'flower' },
+      { id: 'lavender', weight: 0.07, layer: 'flower' }
+    ]
+  };
+  engine.createBed(heroBedPts, showcaseMix, 'corten', 1.45, 0.72, 'Auckland Coastal Hero Bed');
+
+  const fernBedPts = [
+    { x: -9.8, z: -4.2 },
+    { x: -6.2, z: -4.4 },
+    { x: -5.4, z: -1.4 },
+    { x: -6.5, z: 2.2 },
+    { x: -9.6, z: 1.8 },
+    { x: -10.6, z: -1.2 }
+  ];
+  engine.createBed(fernBedPts, NZ_COMPOSITIONS[1], 'macrocarpa', 1.35, 0.68, 'Native Fern Glade');
+
+  // Anchor hero Nīkau Palm specimens framing the sunlit pavilion & pool
+  engine._addPlant('nikau', 0.6, -2.1, 1);
+  engine._addPlant('nikau', 4.4, -1.7, 1);
+  engine._addPlant('nikau', -7.2, -2.6, 2);
+  engine.syncInstances();
+
+  // Pre-place architectural NZ Garden Features
+  propsEngine.addProp('water_bowl', -0.9, 5.4, 0.0, 11);
+  propsEngine.addProp('boulders', 5.5, 4.8, 0.6, 23);
+  propsEngine.addProp('boulders', -5.6, 2.7, 2.1, 37);
+  propsEngine.addProp('bollard_light', -2.1, -3.5, 0.0, 41);
+  propsEngine.addProp('bollard_light', -2.0, 2.2, 0.0, 53);
+}
+
+init().catch(err => {
+  console.error('assembl. Studio init error:', err);
+  const b = document.getElementById('backend-badge');
+  if (b) b.textContent = 'Init Error';
 });

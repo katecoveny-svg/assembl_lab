@@ -29,59 +29,140 @@ export const MONTHS_NZ = [
   { idx: 11, short: 'Dec', name: 'December · Early Raumati (Pōhutukawa Bloom)', season: 'summer' },
 ];
 
-// ── AUTHENTIC NZ HARDSCAPE & SURFACE MATERIALS (GPU Splatmap Channels 0–5) ──
+// ── 11 AUTHENTIC NZ BULK SUPPLIES & SURFACES (3 RGBA GPU Splatmaps: Channels 0–10) ──
 export const NZ_SURFACES = [
   {
     id: 'lawn',
     channel: 0,
+    category: 'base',
     name: 'NZ Ryegrass Lawn',
     brand: 'Aotearoa Turf',
     spec: 'Perennial Ryegrass & White Clover',
+    depth: 0,
+    pricePerM3: 0,
     pricePerM2: 18,
     swatch: '#4C7238',
   },
+  // Barks & Mulches (Channels 1–3)
   {
     id: 'mulch',
     channel: 1,
+    category: 'bark',
     name: 'Daltons Black Bark Mulch',
     brand: 'Daltons NZ',
     spec: 'Composted Aged Bark · 75 mm depth',
+    depth: 0.075,
+    pricePerM3: 98,
     pricePerM2: 14,
     swatch: '#2A221D',
   },
   {
-    id: 'pavers',
+    id: 'pine_bark',
     channel: 2,
-    name: 'Firth Piazza 50 Black Sands',
-    brand: 'Firth Concrete NZ',
-    spec: 'Black Sands · 400×200×50 mm (12.5/m²)',
-    pricePerM2: 92,
-    swatch: '#46494D',
+    category: 'bark',
+    name: 'NZ Pine Bark Nugget (20–40 mm)',
+    brand: 'Daltons / Central Landscape',
+    spec: 'Chunky Red-Brown Radiata Nuggets · 75 mm',
+    depth: 0.075,
+    pricePerM3: 112,
+    pricePerM2: 16,
+    swatch: '#633C26',
+  },
+  {
+    id: 'woodchip',
+    channel: 3,
+    category: 'bark',
+    name: 'Arborist Woodchip Mulch',
+    brand: 'NZ Landscape Bulk',
+    spec: 'Natural Unscreened Native & Pine Chip · 80 mm',
+    depth: 0.08,
+    pricePerM3: 74,
+    pricePerM2: 11,
+    swatch: '#9B7C57',
+  },
+  // Stone Chips & Pebbles (Channels 4–7)
+  {
+    id: 'greywacke',
+    channel: 4,
+    category: 'chip',
+    name: 'Canterbury Greywacke Chip (10–20 mm)',
+    brand: 'NZ Quarry Bulk',
+    spec: 'Angular Crushed Blue-Grey Pathway Chip · 50 mm',
+    depth: 0.05,
+    pricePerM3: 125,
+    pricePerM2: 20,
+    swatch: '#7C8288',
+  },
+  {
+    id: 'limestone',
+    channel: 5,
+    category: 'chip',
+    name: 'Oamaru / Lime Chip Path (8–14 mm)',
+    brand: 'NZ Quarry Bulk',
+    spec: 'Compacting Warm Cream Limestone Path · 50 mm',
+    depth: 0.05,
+    pricePerM3: 138,
+    pricePerM2: 24,
+    swatch: '#D4C8B4',
   },
   {
     id: 'pebbles',
-    channel: 3,
-    name: 'Waikato River Pebble',
+    channel: 6,
+    category: 'chip',
+    name: 'Waikato River Pebble (20–40 mm)',
     brand: 'Daltons Landscape',
-    spec: 'Washed Greywacke Riverstone 20–40 mm',
+    spec: 'Washed Rounded Greywacke Riverstone · 60 mm',
+    depth: 0.06,
+    pricePerM3: 165,
     pricePerM2: 26,
     swatch: '#8B877D',
   },
   {
+    id: 'black_stones',
+    channel: 7,
+    category: 'chip',
+    name: 'Black Basalt / River Pebbles (20–40 mm)',
+    brand: 'NZ Volcanic Stone',
+    spec: 'Polished Charcoal-Black Basalt Pebble · 60 mm',
+    depth: 0.06,
+    pricePerM3: 245,
+    pricePerM2: 36,
+    swatch: '#2D3035',
+  },
+  // Pavers, Stone & Timber (Channels 8–10)
+  {
+    id: 'pavers',
+    channel: 8,
+    category: 'paving',
+    name: 'Firth Piazza 50 Black Sands',
+    brand: 'Firth Concrete NZ',
+    spec: 'Black Sands · 400×200×50 mm (12.5/m²)',
+    depth: 0,
+    pricePerM3: 0,
+    pricePerM2: 92,
+    swatch: '#46494D',
+  },
+  {
     id: 'schist',
-    channel: 4,
+    channel: 9,
+    category: 'paving',
     name: 'Central Otago Schist',
     brand: 'NZ Natural Stone',
     spec: 'Split Flagstone · Mica Grey & Warm Gold',
+    depth: 0,
+    pricePerM3: 0,
     pricePerM2: 165,
     swatch: '#7B786C',
   },
   {
     id: 'kwila',
-    channel: 5,
+    channel: 10,
+    category: 'paving',
     name: 'Kwila Hardwood Decking',
     brand: 'NZ Architectural Timber',
     spec: '140×19 mm Dressed Grooved Boards',
+    depth: 0,
+    pricePerM3: 0,
     pricePerM2: 195,
     swatch: '#6E3F27',
   },
@@ -159,8 +240,9 @@ export const NZ_EDGINGS = [
 
 export const MULCH_STYLES = {
   bark: { id: 'bark', label: 'Daltons Black Bark Mulch (75 mm)', supplier: 'Daltons NZ', color: 0x261d17, ratePerM2: 14, channel: 1 },
-  pebble: { id: 'pebble', label: 'Waikato River Pebble (20–40 mm)', supplier: 'Daltons Landscape', color: 0x726f68, ratePerM2: 26, channel: 3 },
-  scoria: { id: 'scoria', label: 'Central Otago Schist Chip', supplier: 'NZ Natural Stone', color: 0x6e6b60, ratePerM2: 34, channel: 4 },
+  pine_bark: { id: 'pine_bark', label: 'NZ Pine Bark Nugget (75 mm)', supplier: 'Daltons / Central Landscape', color: 0x5c3721, ratePerM2: 16, channel: 2 },
+  pebble: { id: 'pebble', label: 'Waikato River Pebble (20–40 mm)', supplier: 'Daltons Landscape', color: 0x726f68, ratePerM2: 26, channel: 6 },
+  scoria: { id: 'scoria', label: 'Canterbury Greywacke Chip (50 mm)', supplier: 'NZ Quarry Bulk', color: 0x7c8288, ratePerM2: 20, channel: 4 },
 };
 
 /** Helper to sample smooth 12-month phenology weights from [bloomStart, bloomEnd] (0..12, handles Dec->Jan wrap) */
@@ -2026,5 +2108,336 @@ export function computeEcologyMetrics(beds, plants) {
     kereruAttractionPct: Math.min(100, Math.round(berryScore)),
     skinkHabitatPct: Math.min(100, Math.round(lizardScore)),
     stormwaterLitresHr: Math.round(stormwaterLitresHr),
+  };
+}
+
+// ── 12-MONTH AOTEAROA BIRD NECTAR CALENDAR ────────────────────────────────────
+export const NECTAR_SPECIES_IDS = new Set([
+  'pohutukawa', 'kowhai', 'harakeke', 'manuka', 'koromiko',
+  'kakabeak', 'xeronema', 'pachystegia', 'kopakopa', 'tikouka', 'nikau', 'titoki',
+]);
+
+/** Compute 12-month bird nectar & berry availability (0..1 per month, Jan=0..Dec=11) */
+export function computeNectarCalendar(plants = []) {
+  const monthly = new Array(12).fill(0);
+  const contributingSpecies = new Set();
+  for (const p of plants) {
+    const sp = SPECIES_BY_ID[p.speciesId];
+    if (!sp || !NECTAR_SPECIES_IDS.has(sp.id)) continue;
+    contributingSpecies.add(sp.id);
+    const weight = sp.tier === 'canopy' ? 1.8 : sp.tier === 'shrub' ? 1.0 : 0.7;
+    for (let m = 0; m < 12; m++) {
+      monthly[m] += (sp.bloomMonths?.[m] || 0) * weight;
+    }
+  }
+  const peak = Math.max(1, ...monthly);
+  const normalized = monthly.map((v) => +(Math.min(1, v / Math.max(4, peak))).toFixed(2));
+  const coveredMonths = normalized.filter((v) => v >= 0.18).length;
+  return {
+    months: NZ_MONTHS.map((label, idx) => ({
+      idx,
+      label,
+      score: normalized[idx],
+      raw: +monthly[idx].toFixed(2),
+    })),
+    coveredMonths,
+    speciesCount: contributingSpecies.size,
+  };
+}
+
+// ── NZ POOL PRESETS & AUTOMATED NZBC CLAUSE F9 COMPLIANCE MATH ───────────────
+export const NZ_POOL_PRESETS = [
+  { id: 'none', name: 'No Pool', length: 0, width: 0, depth: 0, volumeL: 0, shellPrice: 0, infinity: false },
+  {
+    id: 'plunge',
+    name: 'Plunge Pool (4.5×2.5 m · ≤35kL)',
+    length: 4.5, width: 2.5, depth: 1.35, volumeL: 15188,
+    shellPrice: 36500, infinity: false,
+    spec: '4.5×2.5×1.35 m · 15,188 L · ≤35,000 L Fence Consent Only',
+  },
+  {
+    id: 'family_fibreglass',
+    name: 'Compass / Narellan Family (7.5×3.7 m)',
+    length: 7.5, width: 3.7, depth: 1.45, volumeL: 40238,
+    shellPrice: 54000, infinity: false,
+    spec: '7.5×3.7×1.45 m · 40,238 L · Full Building Consent (>35kL)',
+  },
+  {
+    id: 'concrete_arch',
+    name: 'Architectural Concrete (8.5×4.0 m)',
+    length: 8.5, width: 4.0, depth: 1.50, volumeL: 51000,
+    shellPrice: 82000, infinity: false,
+    spec: '8.5×4.0×1.50 m · 51,000 L · In-Situ Shotcrete + Coping',
+  },
+  {
+    id: 'infinity',
+    name: 'Waiheke Infinity Edge (10.0×4.0 m)',
+    length: 10.0, width: 4.0, depth: 1.55, volumeL: 62000,
+    shellPrice: 112000, infinity: true,
+    spec: '10.0×4.0×1.55 m · 62,000 L · Negative Edge & Catch Basin',
+  },
+];
+
+export const POOL_FINISHES = {
+  aqua_quartzon: { name: 'Aqua Quartzon Plaster', deep: '#0E5B78', shallow: '#3BAFD0', shell: '#4498B8' },
+  dark_basalt: { name: 'Dark Basalt Mirror', deep: '#0E1C22', shallow: '#213B42', shell: '#263036' },
+  pacific_mosaic: { name: 'Pacific Glass Mosaic', deep: '#0B467C', shallow: '#2988CC', shell: '#226096' },
+};
+
+export const FENCE_TYPES = {
+  frameless_glass: { name: '12 mm Frameless Glass (F9)', pricePerLm: 485 },
+  black_alu: { name: 'Black Aluminium Pool Fence (F9)', pricePerLm: 240 },
+  none: { name: 'No Pool Barrier (Non-Compliant)', pricePerLm: 0 },
+};
+
+export const NZ_POOL_CONSENT_LITRES = 35000;
+export const NZ_F9_NCZ_M = 1.2;
+
+/** Pure NZBC Clause F9 1.2 m exterior Non-Climbable Zone & 35,000 L Building Consent evaluator */
+export function evaluatePoolF9Compliance({
+  presetId = 'plunge',
+  x = 5.8,
+  z = -7.8,
+  fenceType = 'frameless_glass',
+  deckPadM = 1.35,
+  plants = [],
+  boulders = [],
+} = {}) {
+  const preset = NZ_POOL_PRESETS.find((p) => p.id === presetId) || NZ_POOL_PRESETS[0];
+  if (!preset || preset.id === 'none') {
+    return {
+      active: false,
+      compliant: true,
+      hasFence: false,
+      needsFullBuildingConsent: false,
+      volumeL: 0,
+      clashes: [],
+      issues: [],
+    };
+  }
+
+  const halfW = preset.length / 2;
+  const halfD = preset.width / 2;
+  const fenceHalfW = halfW + deckPadM;
+  const fenceHalfD = halfD + deckPadM;
+  const nczHalfW = fenceHalfW + NZ_F9_NCZ_M;
+  const nczHalfD = fenceHalfD + NZ_F9_NCZ_M;
+
+  const clashes = [];
+  const checkClimbable = (px, pz, label, heightM) => {
+    if (heightM < 0.45) return;
+    const dx = Math.abs(px - x);
+    const dz = Math.abs(pz - z);
+    const outsideFence = dx > fenceHalfW - 0.1 || dz > fenceHalfD - 0.1;
+    const insideNCZ = dx <= nczHalfW && dz <= nczHalfD;
+    if (outsideFence && insideNCZ) {
+      clashes.push({ x: +px.toFixed(2), z: +pz.toFixed(2), label, heightM: +heightM.toFixed(2) });
+    }
+  };
+
+  for (const p of plants) {
+    const sp = SPECIES_BY_ID[p.speciesId];
+    if (!sp) continue;
+    const h = (sp.matureHeight ?? sp.heightM ?? 0) * (p.scale || 1);
+    checkClimbable(p.x, p.z, sp.maori || sp.common || sp.id, h);
+  }
+  for (const b of boulders) {
+    checkClimbable(b.x, b.z, b.label || 'Climbable Feature', b.heightM ?? 0.65);
+  }
+
+  const issues = [];
+  const hasFence = fenceType !== 'none';
+  if (!hasFence) {
+    issues.push('NZBC Clause F9 requires a 1.2 m pool barrier with self-closing outward gate.');
+  }
+  if (clashes.length > 0) {
+    issues.push(`${clashes.length} climbable object(s) within 1.2 m exterior F9 Non-Climbable Zone.`);
+  }
+  const needsFullBuildingConsent = preset.volumeL > NZ_POOL_CONSENT_LITRES;
+
+  return {
+    active: true,
+    compliant: hasFence && clashes.length === 0,
+    hasFence,
+    needsFullBuildingConsent,
+    volumeL: preset.volumeL,
+    clashes,
+    issues,
+  };
+}
+
+/** Compute pool excavation cut, coping, fence linear metres, and NZD estimate */
+export function computePoolQuantities({
+  presetId = 'plunge',
+  fenceType = 'frameless_glass',
+  heatPump = true,
+  deckPadM = 1.35,
+  slopeDropM = 0.25,
+  f9Clashes = [],
+} = {}) {
+  const preset = NZ_POOL_PRESETS.find((p) => p.id === presetId) || NZ_POOL_PRESETS[0];
+  if (!preset || preset.id === 'none') {
+    return {
+      active: false,
+      presetName: 'No Pool',
+      volumeL: 0,
+      needsFullBuildingConsent: false,
+      fenceLm: 0,
+      fencePricePerLm: 0,
+      copingM2: 0,
+      cutM3: 0,
+      shellPrice: 0,
+      heatPumpPrice: 0,
+      totalPrice: 0,
+      f9Compliant: true,
+      f9Clashes: [],
+    };
+  }
+
+  const fenceHalfW = preset.length / 2 + deckPadM;
+  const fenceHalfD = preset.width / 2 + deckPadM;
+  const fenceLm = +((fenceHalfW * 2 + fenceHalfD * 2) * 2).toFixed(1);
+  const copingM2 = +(((preset.length + 1.2) * (preset.width + 1.2)) - preset.length * preset.width).toFixed(1);
+  const cutM3 = +(preset.length * preset.width * (preset.depth + Math.max(0, slopeDropM * 0.4)) * 1.15).toFixed(1);
+  const fenceSpec = FENCE_TYPES[fenceType] || FENCE_TYPES.frameless_glass;
+  const fenceCost = fenceLm * fenceSpec.pricePerLm;
+  const excavationCost = cutM3 * 135;
+  const copingCost = copingM2 * 195;
+  const heatPumpPrice = heatPump ? 5400 : 0;
+  const totalPrice = Math.round(preset.shellPrice + fenceCost + excavationCost + copingCost + heatPumpPrice);
+
+  return {
+    active: true,
+    presetId: preset.id,
+    presetName: preset.name,
+    volumeL: preset.volumeL,
+    needsFullBuildingConsent: preset.volumeL > NZ_POOL_CONSENT_LITRES,
+    fenceLm,
+    fenceType,
+    fencePricePerLm: fenceSpec.pricePerLm,
+    copingM2,
+    cutM3,
+    shellPrice: preset.shellPrice,
+    heatPumpPrice,
+    totalPrice,
+    f9Compliant: fenceType !== 'none' && f9Clashes.length === 0,
+    f9Clashes,
+  };
+}
+
+// ── UNIFIED NZ CLIENT QUOTE CALCULATOR (BULK m³ + 10% COMPACTION + 15% GST) ──
+export const NZ_GST_RATE = 0.15;
+export const NZ_LABOUR_RATE_HR = 85;
+
+/**
+ * Compute complete NZ landscape quote with:
+ * - Bulk bark/mulch/chip/pebbles in m³ (depth × 1.10 compaction allowance)
+ * - Paving/schist/kwila in m²
+ * - Bed edging in linear metres
+ * - Plants by NZ wholesale grade
+ * - Optional Pool + F9 barrier package
+ * - Optional installation labour @ $85/hr
+ * - NZ 15% GST
+ */
+export function computeLandscapeQuote({
+  beds = [],
+  plants = [],
+  surfaceAreasM2 = {},
+  props = [],
+  poolQuantities = null,
+  includeLabour = false,
+} = {}) {
+  const sched = buildPlantingSchedule(beds, plants, null);
+  const plantsSubtotal = sched.plantsCostNzd;
+
+  // Bulk & hardscape surfaces across all 11 channels
+  const bulkItems = [];
+  const pavingItems = [];
+  let bulkSubtotal = 0;
+  let pavingSubtotal = 0;
+
+  for (const surf of NZ_SURFACES) {
+    if (surf.channel === 0) continue;
+    const areaM2 = Number(surfaceAreasM2[surf.id] ?? surfaceAreasM2[surf.channel] ?? 0);
+    if (areaM2 < 0.4) continue;
+    if (surf.depth > 0 && surf.pricePerM3 > 0) {
+      const m3 = +(areaM2 * surf.depth * 1.10).toFixed(2);
+      const total = Math.round(m3 * surf.pricePerM3);
+      bulkSubtotal += total;
+      bulkItems.push({
+        id: surf.id,
+        name: surf.name,
+        brand: surf.brand,
+        areaM2: +areaM2.toFixed(1),
+        depthMm: Math.round(surf.depth * 1000),
+        volumeM3: m3,
+        unitRate: surf.pricePerM3,
+        unit: 'm³',
+        total,
+      });
+    } else {
+      const total = Math.round(areaM2 * surf.pricePerM2);
+      pavingSubtotal += total;
+      pavingItems.push({
+        id: surf.id,
+        name: surf.name,
+        brand: surf.brand,
+        areaM2: +areaM2.toFixed(1),
+        unitRate: surf.pricePerM2,
+        unit: 'm²',
+        total,
+      });
+    }
+  }
+
+  let edgingLm = 0;
+  let edgingSubtotal = 0;
+  for (const b of beds) {
+    const poly = b.isRawPoly ? b.points : sampleClosedSpline(b.points, 12);
+    const perim = polygonPerimeterM(poly);
+    const edg = EDGING_STYLES[b.edging] ?? EDGING_STYLES.corten;
+    edgingLm += perim;
+    edgingSubtotal += Math.round(perim * edg.ratePerM);
+  }
+
+  const propsSubtotal = Math.round(props.reduce((s, pr) => s + (Number(pr.price) || 0), 0));
+  const poolSubtotal = poolQuantities?.active ? Math.round(poolQuantities.totalPrice || 0) : 0;
+
+  // Indicative install labour hours (plants + bulk spreading + paving + edging)
+  const totalBulkM3 = bulkItems.reduce((s, b) => s + b.volumeM3, 0);
+  const totalPavingM2 = pavingItems.reduce((s, p) => s + p.areaM2, 0);
+  const labourHours = +(
+    plants.length * 0.12 +
+    totalBulkM3 * 0.9 +
+    totalPavingM2 * 0.65 +
+    edgingLm * 0.25 +
+    props.length * 0.8
+  ).toFixed(1);
+  const labourSubtotal = includeLabour ? Math.round(labourHours * NZ_LABOUR_RATE_HR) : 0;
+
+  const subtotalExclGst = Math.round(
+    plantsSubtotal + bulkSubtotal + pavingSubtotal + edgingSubtotal + propsSubtotal + poolSubtotal + labourSubtotal
+  );
+  const gstAmount = Math.round(subtotalExclGst * NZ_GST_RATE);
+  const grandTotalInclGst = subtotalExclGst + gstAmount;
+
+  return {
+    plantRows: sched.rows,
+    bulkItems,
+    pavingItems,
+    edgingLm: +edgingLm.toFixed(1),
+    plantsSubtotal,
+    bulkSubtotal,
+    pavingSubtotal,
+    edgingSubtotal,
+    propsSubtotal,
+    poolSubtotal,
+    labourHours,
+    labourRateHr: NZ_LABOUR_RATE_HR,
+    labourSubtotal,
+    subtotalExclGst,
+    gstRate: NZ_GST_RATE,
+    gstAmount,
+    grandTotalInclGst,
   };
 }

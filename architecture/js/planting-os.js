@@ -110,7 +110,7 @@ function ensureCss() {
   document.head.append(s);
 }
 
-/** Build the /nz-planting-studio/studio-v9.2 embed URL for an optional project & mode. Pure and Node-testable. */
+/** Build the /landscape/ embed URL for an optional project & mode. Pure and Node-testable. */
 export function buildPlantingEmbedUrl(project = null, opts = {}) {
   const params = new URLSearchParams();
   params.set('embed', 'os');
@@ -123,17 +123,18 @@ export function buildPlantingEmbedUrl(project = null, opts = {}) {
     params.set('lon', lon.toFixed(6));
   }
   if (opts.mode && opts.mode !== 'studio') params.set('mode', String(opts.mode));
-  return `/nz-planting-studio/studio-v9.2?${params.toString()}`;
+  return `/landscape/?${params.toString()}`;
 }
 
 export function formatPlantingStats(payload) {
   if (!payload || typeof payload !== 'object') return '';
   const parts = [];
   if (Number.isFinite(payload.plantCount)) parts.push(`${payload.plantCount} plants`);
-  if (Number.isFinite(payload.speciesCount)) parts.push(`${payload.speciesCount} spp`);
-  if (Number.isFinite(payload.nativePct)) parts.push(`${Math.round(payload.nativePct)}% native`);
-  if (Number.isFinite(payload.permeablePct)) parts.push(`${Math.round(payload.permeablePct)}% permeable`);
-  if (Number.isFinite(payload.totalNzd) && payload.totalNzd > 0) parts.push(`$${Math.round(payload.totalNzd).toLocaleString('en-NZ')} NZD`);
+  if (Number.isFinite(payload.areaM2) && payload.areaM2 > 0) parts.push(`${payload.areaM2} m²`);
+  if (Number.isFinite(payload.imperviousPct)) parts.push(`AUP ${Math.round(payload.imperviousPct)}% imp`);
+  if (typeof payload.f9Compliant === 'boolean') parts.push(payload.f9Compliant ? 'F9 PASS' : 'F9 CLASH');
+  const nzd = payload.totalInclGst ?? payload.totalNzd;
+  if (Number.isFinite(nzd) && nzd > 0) parts.push(`$${Math.round(nzd).toLocaleString('en-NZ')} incl. GST`);
   return parts.join(' · ');
 }
 
@@ -153,13 +154,13 @@ function mountPlantingHost(el, ctx, { isTab = false } = {}) {
     <section class="pl-os-shell${isTab ? ' is-tab' : ''}" aria-label="Aotearoa 3D Planting Studio">
       <div class="pl-os-bar">
         <div class="pl-os-meta">
-          <span class="pl-os-eyebrow">Aotearoa Planting Studio · v9.2</span>
-          <span class="pl-os-title">${esc(project?.name ? `${project.name} · Site, Pool & Native Planting` : '3D Native Planting, Pool F9 & LINZ Site Studio')}</span>
+          <span class="pl-os-eyebrow">Aotearoa Planting Studio · v6+</span>
+          <span class="pl-os-title">${esc(project?.name ? `${project.name} · Site, House, Pool F9 & Garden` : 'Site · House · Pool F9 · Native Garden Studio')}</span>
           <span class="pl-os-stats" data-pl-stats hidden></span>
         </div>
         <div class="pl-os-actions" role="group" aria-label="Planting workspace mode">
-          <button type="button" class="pl-os-btn" data-pl-mode="studio" aria-pressed="true">3D Garden</button>
-          <button type="button" class="pl-os-btn" data-pl-mode="model" aria-pressed="false">Model Grid</button>
+          <button type="button" class="pl-os-btn" data-pl-mode="studio" aria-pressed="true">3D Studio</button>
+          <button type="button" class="pl-os-btn" data-pl-mode="siteplan" aria-pressed="false">Site Plan</button>
           <button type="button" class="pl-os-btn" data-pl-mode="photo" aria-pressed="false">Photo Match</button>
           <a class="pl-os-btn" href="${esc(standaloneUrl)}" target="_blank" rel="noopener" data-pl-ext>Open Full Screen ↗</a>
         </div>

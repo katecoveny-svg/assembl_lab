@@ -16,7 +16,7 @@
 
 import { registerRoute, registerNav } from './modules.js';
 import { putHandoff, keepBrand } from './handoff.js';
-import { webglOk, meshesOf } from './model-view.js';
+import { webglOk, meshesOf, meshoptDecoder } from './model-view.js';
 
 const THREE_URL = new URL('../../assets/vendor/three/three.module.min.js', import.meta.url).href;
 const DROP_URL = '/plan-studio/twins/drop/';
@@ -2545,16 +2545,207 @@ export async function mountImmersiveStage(host, ctx = {}, opts = { fullPage: fal
           building.add(outPlanter);
         }
 
-        // Wave 2: Stream curated foreground botanical accents & native Tūī
-        const [nikauGlb, pongaGlb, tuiGlb] = await Promise.all([
-          loadLibraryGlb('kowhai-hero-nat-01', { scaleToHeight: 4.6, clip: false }),
+        // Wave 2: Stream Blender Hero Aotearoa Flora (/landscape/assets/models/*-hero*.glb) + curated foreground Ponga & Tūī
+        const loadBlenderHeroGlb = async (url, { scaleToHeight = null, fallbackId = null } = {}) => {
+          try {
+            const resp = await fetch(url);
+            if (!resp.ok) return fallbackId ? loadLibraryGlb(fallbackId, { scaleToHeight, clip: false }) : null;
+            const bytes = new Uint8Array(await resp.arrayBuffer());
+            const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+            if (dv.getUint32(0, true) !== 0x46546c67) return null;
+            let at = 12, json = null, bin = null;
+            while (at + 8 <= bytes.length) {
+              const len = dv.getUint32(at, true), type = dv.getUint32(at + 4, true);
+              const body = bytes.subarray(at + 8, at + 8 + len);
+              if (type === 0x4e4f534a) json = JSON.parse(new TextDecoder().decode(body));
+              else if (type === 0x004e4942) bin = body;
+              at += 8 + len;
+            }
+            if (!json || !bin || stopped) return null;
+            const used = json.extensionsUsed ?? [];
+            const decoder = used.includes('EXT_meshopt_compression') ? await meshoptDecoder() : null;
+            const decoded = new Map();
+            const viewBytes = (bvIdx) => {
+              const bv = json.bufferViews[bvIdx], mo = bv.extensions?.EXT_meshopt_compression;
+              if (!mo) return { data: bin, at: bv.byteOffset ?? 0, stride: bv.byteStride };
+              if (!decoded.has(bvIdx)) {
+                const out = new Uint8Array(mo.count * mo.byteStride);
+                decoder.decodeGltfBuffer(out, mo.count, mo.byteStride, bin.subarray(mo.byteOffset ?? 0, (mo.byteOffset ?? 0) + mo.byteLength), mo.mode, mo.filter ?? 'NONE');
+                decoded.set(bvIdx, out);
+              }
+              return { data: decoded.get(bvIdx), at: 0, stride: mo.byteStride };
+            };
+            const NORM = { 5120: 127, 5121: 255, 5122: 32767, 5123: 65535 };
+            const readAcc = (accIdx, asFloat = false) => {
+              const acc = json.accessors[accIdx];
+              const comps = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4 }[acc.type];
+              const ct = acc.componentType;
+              const size = { 5120: 1, 5121: 1, 5122: 2, 5123: 2, 5125: 4, 5126: 4 }[ct];
+              const src = viewBytes(acc.bufferView), stride = src.stride || comps * size;
+              const base = src.at + (acc.byteOffset ?? 0);
+              const out = new (asFloat || ct === 5126 ? Float32Array : Uint32Array)(acc.count * comps);
+              const d = new DataView(src.data.buffer, src.data.byteOffset, src.data.byteLength);
+              const norm = acc.normalized ? NORM[ct] : 0;
+              for (let i = 0; i < acc.count; i++) {
+                for (let k = 0; k < comps; k++) {
+                  const o = base + i * stride + k * size;
+                  const v = ct === 5126 ? d.getFloat32(o, true) : ct === 5120 ? d.getInt8(o) : ct === 5121 ? d.getUint8(o) : ct === 5122 ? d.getInt16(o, true) : ct === 5123 ? d.getUint16(o, true) : d.getUint32(o, true);
+                  out[i * comps + k] = norm ? Math.max(v / norm, -1) : v;
+                }
+              }
+              return { data: out, comps };
+            };
+
+            const matCache = new Map();
+            const getMat = (matIdx, hasVCol) => {
+              const key = `${matIdx ?? -1}:${hasVCol ? 1 : 0}`;
+              if (matCache.has(key)) return matCache.get(key);
+              const mDef = matIdx != null ? json.materials?.[matIdx] : null;
+              const pbr = mDef?.pbrMetallicRoughness ?? {};
+              const name = String(mDef?.name ?? '');
+              let col;
+              if (Array.isArray(pbr.baseColorFactor)) {
+                col = new THREE.Color(pbr.baseColorFactor[0], pbr.baseColorFactor[1], pbr.baseColorFactor[2]);
+              } else if (hasVCol) {
+                col = new THREE.Color(1, 1, 1);
+              } else if (/nikau.*trunk/i.test(name)) {
+                col = new THREE.Color('#656d57');
+              } else if (/trunk|bark|stem/i.test(name)) {
+                col = new THREE.Color('#5a4e45');
+              } else if (/blossom|flower|stamen|crimson/i.test(name)) {
+                col = new THREE.Color('#cc1e2b');
+              } else if (/frond|leaf|foliage|crown/i.test(name)) {
+                col = new THREE.Color('#3b6232');
+              } else {
+                col = new THREE.Color(0.82, 0.82, 0.82);
+              }
+              const alpha = Array.isArray(pbr.baseColorFactor) ? (pbr.baseColorFactor[3] ?? 1) : 1;
+              const cc = mDef?.extensions?.KHR_materials_clearcoat;
+              const mat = new THREE.MeshPhysicalMaterial({
+                color: col,
+                roughness: pbr.roughnessFactor ?? 0.65,
+                metalness: pbr.metallicFactor ?? 0.0,
+                clearcoat: cc?.clearcoatFactor ?? 0.0,
+                clearcoatRoughness: cc?.clearcoatRoughnessFactor ?? 0.25,
+                vertexColors: hasVCol,
+                envMapIntensity: 0.92,
+                transparent: alpha < 0.98,
+                opacity: alpha,
+                side: mDef?.doubleSided ? THREE.DoubleSide : THREE.FrontSide,
+              });
+              if (Array.isArray(mDef?.emissiveFactor)) {
+                mat.emissive.setRGB(mDef.emissiveFactor[0], mDef.emissiveFactor[1], mDef.emissiveFactor[2]);
+              }
+              matCache.set(key, mat);
+              return mat;
+            };
+
+            const grp = new THREE.Group();
+            const walkNode = (ni, parentObj) => {
+              const n = json.nodes[ni];
+              const nodeObj = new THREE.Group();
+              if (n.matrix) {
+                nodeObj.matrixAutoUpdate = false;
+                nodeObj.matrix.fromArray(n.matrix);
+              } else {
+                if (n.translation) nodeObj.position.fromArray(n.translation);
+                if (n.rotation) nodeObj.quaternion.fromArray(n.rotation);
+                if (n.scale) nodeObj.scale.fromArray(n.scale);
+              }
+              if (n.mesh != null) {
+                for (const p of json.meshes[n.mesh].primitives) {
+                  if ((p.mode ?? 4) !== 4 || p.attributes?.POSITION == null) continue;
+                  const geo = new THREE.BufferGeometry();
+                  geo.setAttribute('position', new THREE.BufferAttribute(readAcc(p.attributes.POSITION, true).data, 3));
+                  if (p.attributes.NORMAL != null) {
+                    geo.setAttribute('normal', new THREE.BufferAttribute(readAcc(p.attributes.NORMAL, true).data, 3));
+                  }
+                  let hasVCol = false;
+                  if (p.attributes.COLOR_0 != null) {
+                    const cAcc = readAcc(p.attributes.COLOR_0, true);
+                    if (cAcc.comps === 3 || cAcc.comps === 4) {
+                      geo.setAttribute('color', new THREE.BufferAttribute(cAcc.data, cAcc.comps));
+                      hasVCol = true;
+                    }
+                  }
+                  if (p.indices != null) geo.setIndex(new THREE.BufferAttribute(readAcc(p.indices, false).data, 1));
+                  if (p.attributes.NORMAL == null) geo.computeVertexNormals();
+                  const mesh = new THREE.Mesh(geo, getMat(p.material, hasVCol));
+                  mesh.castShadow = true;
+                  mesh.receiveShadow = true;
+                  nodeObj.add(mesh);
+                }
+              }
+              parentObj.add(nodeObj);
+              for (const ci of n.children ?? []) walkNode(ci, nodeObj);
+            };
+            const rootScene = json.scenes?.[json.scene ?? 0];
+            for (const ni of rootScene?.nodes ?? json.nodes?.map((_, k) => k) ?? []) walkNode(ni, grp);
+
+            grp.updateMatrixWorld(true);
+            const bx = new THREE.Box3().setFromObject(grp);
+            const sz = bx.getSize(new THREE.Vector3());
+            const ctr = bx.getCenter(new THREE.Vector3());
+            if (!Number.isFinite(sz.y) || sz.y < 0.001) return null;
+            const wrap = new THREE.Group();
+            grp.position.set(-ctr.x, -bx.min.y, -ctr.z);
+            wrap.add(grp);
+            if (scaleToHeight) wrap.scale.setScalar(scaleToHeight / sz.y);
+            return wrap;
+          } catch {
+            return fallbackId ? loadLibraryGlb(fallbackId, { scaleToHeight, clip: false }) : null;
+          }
+        };
+
+        const [nikauHero, pohutHero, manukaHero, pongaGlb, tuiGlb] = await Promise.all([
+          loadBlenderHeroGlb('/landscape/assets/models/nikau-hero-blender.glb', { scaleToHeight: 4.85, fallbackId: 'kowhai-hero-nat-01' }),
+          loadBlenderHeroGlb('/landscape/assets/models/pohutukawa-hero.glb', { scaleToHeight: 5.5, fallbackId: 'kowhai-hero-nat-02' }),
+          loadBlenderHeroGlb('/landscape/assets/models/manuka-hero.glb', { scaleToHeight: 2.35 }),
           loadLibraryGlb('kowhai-hero-nat-03', { scaleToHeight: 2.25, clip: false }),
           loadLibraryGlb('manu-tui', { scaleToHeight: 0.24, clip: false }),
         ]);
         if (stopped) return;
-        if (nikauGlb) {
-          nikauGlb.position.set(-9.7, terrainHeight(-9.7, 6.8) - 0.08, 6.8);
-          scene.add(nikauGlb);
+
+        // Place photorealistic Blender Hero Nīkau palms beside mirror pool & Kwila terrace
+        if (nikauHero) {
+          for (const [nx, nz, sc, ry] of [
+            [-9.6, 6.7, 1.0, 0.35],
+            [11.0, 5.2, 0.94, 2.2],
+            [-10.4, 2.2, 0.88, 4.1],
+          ]) {
+            const inst = nikauHero.clone(true);
+            inst.position.set(nx, terrainHeight(nx, nz) - 0.06, nz);
+            inst.rotation.y = ry;
+            inst.scale.multiplyScalar(sc);
+            scene.add(inst);
+          }
+        }
+        // Place Blender Hero Pōhutukawa overhanging the mirror pool & headland flank
+        if (pohutHero) {
+          for (const [px, pz, sc, ry] of [
+            [-12.8, 9.6, 1.0, 0.45],
+            [14.2, -5.6, 0.95, 2.3],
+          ]) {
+            const inst = pohutHero.clone(true);
+            inst.position.set(px, terrainHeight(px, pz) - 0.08, pz);
+            inst.rotation.y = ry;
+            inst.scale.multiplyScalar(sc);
+            scene.add(inst);
+          }
+        }
+        // Place Blender Hero Mānuka framing courtyard beds & arrival forecourt
+        if (manukaHero) {
+          for (const [mx, mz, sc, ry] of [
+            [-8.7, 10.6, 1.0, 0.7],
+            [10.8, 8.8, 0.92, 2.5],
+            [3.8, 11.4, 0.84, 4.3],
+          ]) {
+            const inst = manukaHero.clone(true);
+            inst.position.set(mx, terrainHeight(mx, mz) - 0.05, mz);
+            inst.rotation.y = ry;
+            inst.scale.multiplyScalar(sc);
+            scene.add(inst);
+          }
         }
         if (pongaGlb) {
           pongaGlb.position.set(-9.6, terrainHeight(-9.6, 9.2) - 0.04, 9.2);
@@ -2641,27 +2832,28 @@ export async function mountImmersiveStage(host, ctx = {}, opts = { fullPage: fal
       }
 
       // Curated Piet-Oudolf-inspired coastal headland & architectural courtyard planting composition
+      // (Foreground specimen spots around mirror pool & terrace showcase Blender hero .glb Nīkau, Pōhutukawa & Mānuka)
       const PLANT_PLACEMENTS = {
         pohutukawa: [
-          [-13.4, 9.8, 1.12, 0.4], // Overhanging reflecting pool west edge (crimson reflections!)
-          [14.8, -6.5, 1.14, 2.1],
-          [-15.6, -7.8, 1.08, 4.2],
-          [16.2, 10.6, 0.96, 1.3],
+          [-16.8, 12.6, 1.14, 0.4],
+          [18.2, -9.2, 1.16, 2.1],
+          [-16.2, -8.4, 1.08, 4.2],
+          [17.4, 11.2, 0.98, 1.3],
           [-22.5, -13.5, 1.28, 3.1],
           [23.5, -14.0, 1.22, 0.8],
         ],
         tikouka: [
-          [12.1, 8.6, 1.06, 0.6],
-          [-12.2, -5.8, 0.96, 2.2],
-          [13.4, -1.8, 0.92, 4.1],
+          [12.4, 9.4, 1.06, 0.6],
+          [-12.4, -5.8, 0.96, 2.2],
+          [13.8, -1.8, 0.92, 4.1],
           [-16.4, 3.8, 1.08, 1.4],
           [18.8, 4.5, 1.02, 3.5],
         ],
         nikau: [
-          [-10.6, 3.4, 0.98, 0.9],
-          [11.4, -4.6, 0.94, 2.8],
-          [-11.8, -1.2, 1.04, 4.4],
-          [12.2, 2.4, 0.88, 1.7],
+          [-13.6, 3.2, 0.98, 0.9],
+          [12.8, -4.8, 0.94, 2.8],
+          [-12.6, -1.6, 1.04, 4.4],
+          [14.2, 2.6, 0.9, 1.7],
         ],
         ponga: [
           [-10.4, 5.2, 0.92, 0.5],

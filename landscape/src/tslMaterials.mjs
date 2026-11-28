@@ -2,58 +2,53 @@ import * as THREE from 'three';
 import { MeshStandardNodeMaterial } from 'three/webgpu';
 import {
   Fn, attribute, uniform, time, vec2, vec3, float,
-  sin, cos, fract, mix, smoothstep, clamp, max, pow, dot, normalize,
+  sin, cos, mix, smoothstep, clamp, max, pow, dot, normalize, fract,
   mx_noise_float, positionLocal, positionWorld, normalWorld,
-  cameraPosition, texture, uv, vertexColor,
+  cameraPosition, texture, uv
 } from 'three/tsl';
 
-// ── SHARED GLOBAL ENVIRONMENT & PHENOLOGY UNIFORMS ───────────────────────────
+// ── SHARED GLOBAL ENVIRONMENT, PHENOLOGY, SITE-PLAN & PHOTO-MATCH UNIFORMS ────
 export function createSharedUniforms() {
   return {
-    uMonth: uniform(11.4),         // 0..12 (11.4 = Mid-Dec NZ Raumati Summer peak bloom!)
+    uMonth: uniform(11.4),         // 0..12 (11.4 = Mid-December NZ Summer peak bloom)
     uYear: uniform(4.0),           // 1..15 years maturity projection
     uWindStrength: uniform(0.85),  // 0..2.0
     uWindDir: uniform(new THREE.Vector2(0.82, 0.57)),
     uSunDir: uniform(new THREE.Vector3(0.45, 0.72, -0.52).normalize()),
+    uPhotoMode: uniform(0.0),      // 0.0 = 3D/Plan opaque terrain, 1.0 = Site Photo-Match transparent ground
+    uPlanMix: uniform(0.0),        // 0.0 = 3D turf, 1.0 = crisp 2D architectural site plan on channel 0
+    uContourMix: uniform(0.0),     // 0.0 = off, 1.0 = subtle 0.5m LINZ LiDAR contour lines
   };
 }
 
-// ── V3 PHOTOREALISTIC BOTANICAL ATLAS TSL FOLIAGE MATERIAL ───────────────────
-// Three.js r187 WebGPU + TSL:
-// - Samples 1024×1024 2×2 WebP botanical atlas with crisp alpha-cutout (`alphaTest: 0.36`)
-// - Anchors multi-year growth (Yr 1..15), seasonal colour/bloom boost & 3-layer wind at exact 3D `aInstRoot`
-//   so plants drape cleanly over contoured 1 m LINZ LiDAR slopes and mounded mulch beds!
-// - Supports procedural fibrous trunk bark on `aPartType = 0` (Ponga) + backlit SSS on foliage!
-export function createAtlasFoliageMaterial(plant, atlasTex, shared, tintHex = '#ffffff') {
+// ── PHOTOREALISTIC TSL BOTANICAL CARD SHADER (Edge-Dilated Atlas + Grazing Fade + Wind + SSS)
+export function createBotanicalCardMaterial(plant, atlasTex, shared, speciesTintHex = '#ffffff') {
   const leafRough = typeof plant.leafRoughness === 'number'
     ? plant.leafRoughness
-    : plant.category === 'architectural' ? 0.38 : 0.58;
+    : (plant.category === 'architectural' ? 0.38 : 0.58);
 
   const mat = new MeshStandardNodeMaterial({
     roughness: leafRough,
     metalness: 0.0,
     side: THREE.DoubleSide,
-    alphaTest: 0.36,
+    alphaTest: 0.50,
     transparent: false,
   });
 
-  const uBloomStart = uniform(plant.bloomStart);
-  const uBloomEnd = uniform(plant.bloomEnd);
-  const uDeciduous = uniform(plant.deciduous || 0.0);
-  const uWinterTint = uniform(new THREE.Color(plant.winterColor || plant.foliageColor));
-  const uTint = uniform(new THREE.Color(tintHex));
-  const uBaseRough = uniform(leafRough);
+  const uBloomStart = uniform(plant.bloomStart ?? 13);
+  const uBloomEnd = uniform(plant.bloomEnd ?? 13);
+  const uDeciduous = uniform(plant.deciduous ?? 0.0);
+  const uWinterTint = uniform(new THREE.Color(plant.winterColor || '#4a5a3a'));
+  const uSpeciesTint = uniform(new THREE.Color(speciesTintHex));
+  const uLeafRoughness = uniform(leafRough);
   const uGrowthCurve = uniform(new THREE.Vector4(
     plant.growth[0], plant.growth[1], plant.growth[2], plant.growth[3]
   ));
 
   const aTipness = attribute('aTipness', 'float');
-  const aPartType = attribute('aPartType', 'float');
-  // Per-instance attributes:
-  // aInstRoot = vec3(rootX, rootY, rootZ)
-  // aInstVar  = vec4(rootX, rootZ, phaseSeed, hueShift)
-  const aInstRoot = attribute('aInstRoot', 'vec3');
+  const aPartType = attribute('aPartType', 'float'); // 0 = ponga fibrous trunk, 1 = photographic card
   const aInstVar = attribute('aInstVar', 'vec4');
+  const aInstRoot = attribute('aInstRoot', 'vec3');
 
   const getYearScale = Fn(() => {
     const y = shared.uYear;
@@ -82,7 +77,6 @@ export function createAtlasFoliageMaterial(plant, atlasTex, shared, tintHex = '#
     return float(1.0).sub(smoothstep(1.2, 3.6, distFromJuly));
   });
 
-  // ── VERTEX STAGE: 3D Root-Anchored Growth + 3-Layer Wind ───────────────────
   mat.positionNode = Fn(() => {
     const yearScale = getYearScale();
     const winter = getWinterFactor();
@@ -119,21 +113,21 @@ export function createAtlasFoliageMaterial(plant, atlasTex, shared, tintHex = '#
   })();
 
   const texSample = texture(atlasTex, uv());
-  const isFoliage = smoothstep(0.25, 0.75, aPartType);
-
-  mat.opacityNode = mix(float(1.0), texSample.a, isFoliage);
+  const isCard = smoothstep(0.25, 0.75, aPartType);
+  // Grazing-angle fade: hides edge-on card planes so flowers/grasses never slice like cardboard up close!
+  const cardViewDir = normalize(cameraPosition.sub(positionWorld));
+  const cardEdgeFade = smoothstep(float(0.14), float(0.38), dot(normalWorld, cardViewDir).abs());
+  mat.opacityNode = mix(float(1.0), texSample.a.mul(cardEdgeFade), isCard);
 
   mat.colorNode = Fn(() => {
     const winter = getWinterFactor();
     const bloom = getBloomFactor();
 
-    // Procedural fibrous bark for Ponga trunk (aPartType = 0)
-    const barkNoise = mx_noise_float(vec2(uv().x.mul(18.0), uv().y.mul(36.0))).mul(0.18);
-    const barkCol = vec3(0.21, 0.15, 0.11).mul(float(0.92).add(barkNoise));
+    const trunkGrain = mx_noise_float(vec2(uv().x.mul(18.0), uv().y.mul(36.0))).mul(0.18);
+    const trunkCol = vec3(0.21, 0.15, 0.11).mul(float(0.92).add(trunkGrain));
 
-    let col = mix(barkCol, texSample.rgb.mul(uTint), isFoliage);
+    let col = mix(trunkCol, texSample.rgb.mul(uSpeciesTint), isCard);
 
-    // Subtle organic per-instance warmth/value shift
     const hue = aInstVar.w;
     const warmShift = vec3(
       float(1.0).add(hue.mul(0.08)),
@@ -142,118 +136,168 @@ export function createAtlasFoliageMaterial(plant, atlasTex, shared, tintHex = '#
     );
     col = col.mul(warmShift);
 
-    // Peak-season bloom radiance & subtle winter colour shift
-    const bloomLift = float(0.90).add(bloom.mul(0.18));
-    col = col.mul(mix(float(1.0), bloomLift, isFoliage));
-    col = mix(col, col.mul(uWinterTint.add(vec3(0.45, 0.45, 0.45))), winter.mul(isFoliage).mul(0.32));
+    const bloomBoost = float(0.92).add(bloom.mul(0.14));
+    col = col.mul(mix(float(1.0), bloomBoost, isCard));
+    col = mix(col, col.mul(uWinterTint.add(vec3(0.45, 0.45, 0.45))), winter.mul(isCard).mul(0.32));
 
-    // Ground-contact Base Ambient Occlusion
-    const baseAO = mix(float(0.44), float(1.02), smoothstep(0.0, 0.38, aTipness));
+    const baseAO = mix(float(0.46), float(1.02), smoothstep(0.0, 0.36, aTipness));
     return col.mul(baseAO);
   })();
 
   mat.roughnessNode = Fn(() => {
-    const leafR = clamp(uBaseRough.sub(aTipness.mul(0.06)), 0.24, 0.86);
-    return mix(float(0.92), leafR, isFoliage);
+    const leafR = clamp(uLeafRoughness.sub(aTipness.mul(0.06)), 0.24, 0.86);
+    const barkR = float(0.92);
+    return mix(barkR, leafR, isCard);
   })();
 
-  // Backlit Subsurface Scattering (SSS) glow through botanical leaves & blossoms
   mat.emissiveNode = Fn(() => {
     const viewDir = normalize(cameraPosition.sub(positionWorld));
     const backLight = pow(clamp(dot(viewDir, shared.uSunDir.negate()), 0.0, 1.0), float(2.8));
     const wrapLight = clamp(dot(normalWorld, shared.uSunDir).mul(0.5).add(0.5), 0.0, 1.0);
-    const sssStrength = backLight.mul(0.45).add(wrapLight.mul(0.14)).add(float(0.12))
-      .mul(aTipness.mul(0.55).add(0.45)).mul(isFoliage);
-    return texSample.rgb.mul(uTint).mul(vec3(1.24, 1.12, 0.72)).mul(sssStrength);
+    const sssStrength = backLight.mul(0.45).add(wrapLight.mul(0.16)).add(float(0.16)).mul(aTipness.mul(0.55).add(0.45));
+    const glowTint = texSample.rgb.mul(uSpeciesTint).mul(vec3(1.26, 1.12, 0.68));
+    return glowTint.mul(sssStrength);
   })();
 
   return mat;
 }
 
-// ── SCULPTED VOLCANIC BASALT BOULDER MATERIAL (Kōhatu) ──────────────────────
-export function createBoulderNodeMaterial() {
-  const mat = new MeshStandardNodeMaterial({
-    roughness: 0.88,
-    metalness: 0.04,
-  });
-  mat.colorNode = Fn(() => {
-    const grain = mx_noise_float(vec2(positionWorld.x, positionWorld.z).mul(6.5)).mul(0.12);
-    return vertexColor().rgb.mul(float(1.0).add(grain));
-  })();
-  return mat;
-}
-
-// ── UNIFIED 6-CHANNEL NZ SPLATMAP + CRISP 2D SITE PLAN + LINZ CONTOURS TSL ──
-export function createTerrainNodeMaterial(splatTexA, splatTexB, surfaceTextures, planTex) {
+// ── DYNAMIC 11-MATERIAL NZ TERRAIN SPLATMAP + SITE PLAN + LIDAR CONTOURS + PHOTO MATCH ──
+export function createTerrainNodeMaterial(
+  splatTexA,
+  splatTexB,
+  splatTexC,
+  surfaceTextures,
+  terrainSize,
+  shared,
+  planTex = null
+) {
   const mat = new MeshStandardNodeMaterial({
     roughness: 0.90,
     metalness: 0.01,
+    alphaTest: 0.08,
+    transparent: false,
   });
 
-  const uPlanMix = uniform(0.0);     // 1.0 in Site Plan + Brush mode -> channel 0 shows crisp 2D Site Plan!
-  const uContourMix = uniform(0.0);  // 1.0 in Real NZ Land (LINZ) mode -> crisp 0.5 m NZVD2016 contour lines!
+  const tileScale = float(terrainSize / 3.2);
+  const chipScale = float(terrainSize / 2.6);
+  const paverScale = float(terrainSize / 2.4);
 
   mat.colorNode = Fn(() => {
     const st = uv();
-    const worldUV = vec2(positionWorld.x, positionWorld.z).div(3.2);
-    const paverUV = vec2(positionWorld.x, positionWorld.z).div(2.4);
+    const tiledUV = st.mul(tileScale);
+    const chipUV = st.mul(chipScale);
+    const paverUV = st.mul(paverScale);
 
-    const wA = texture(splatTexA, st); // r=lawn/plan, g=mulch, b=pavers, a=pebbles
-    const wB = texture(splatTexB, st); // r=schist, g=kwila
+    const wA = texture(splatTexA, st); // r=0 lawn, g=1 mulch, b=2 pine_bark, a=3 woodchip
+    const wB = texture(splatTexB, st); // r=4 greywacke, g=5 limestone, b=6 pebbles, a=7 black_stones
+    const wC = texture(splatTexC, st); // r=8 pavers, g=9 schist, b=10 kwila
 
-    const cLawn = texture(surfaceTextures.lawn, worldUV).rgb;
-    const cPlan = texture(planTex, st).rgb;
-    const cBase = mix(cLawn, cPlan, uPlanMix);
+    // Rich multi-octave organic NZ ryegrass/clover patch variation on channel 0
+    const worldXZ = vec2(positionWorld.x, positionWorld.z);
+    const grassMacro1 = mx_noise_float(worldXZ.mul(0.11));
+    const grassMacro2 = mx_noise_float(worldXZ.mul(0.31).add(vec2(17.3, 9.1)));
+    const cloverTint = vec3(1.06, 1.08, 0.94);
+    const lushTint = vec3(0.90, 0.98, 0.86);
+    const grassVar = mix(lushTint, cloverTint, clamp(grassMacro1.mul(0.6).add(grassMacro2.mul(0.4)).mul(0.5).add(0.5), 0.0, 1.0));
+    const c0Turf = texture(surfaceTextures.lawn, tiledUV).rgb.mul(grassVar);
 
-    const cMulch = texture(surfaceTextures.mulch, worldUV.mul(1.25)).rgb;
-    const cPavers = texture(surfaceTextures.pavers, paverUV).rgb;
-    const cPebbles = texture(surfaceTextures.pebbles, worldUV.mul(1.3)).rgb;
-    const cSchist = texture(surfaceTextures.schist, paverUV.mul(0.85)).rgb;
-    const cKwila = texture(surfaceTextures.kwila, paverUV.mul(0.9)).rgb;
+    // Optional crisp 2D Site Plan underlay mixed onto channel 0 (unpainted base)
+    const c0 = planTex
+      ? mix(c0Turf, texture(planTex, st).rgb, shared.uPlanMix)
+      : c0Turf;
 
-    const total = max(wA.r.add(wA.g).add(wA.b).add(wA.a).add(wB.r).add(wB.g), float(0.001));
-    const baseWeight = wA.r.div(total);
+    const c1 = texture(surfaceTextures.mulch, tiledUV.mul(1.25)).rgb;
+    const c2 = texture(surfaceTextures.pine_bark, tiledUV.mul(1.15)).rgb;
+    const c3 = texture(surfaceTextures.woodchip, tiledUV.mul(1.25)).rgb;
 
-    let blended = cBase.mul(wA.r)
-      .add(cMulch.mul(wA.g))
-      .add(cPavers.mul(wA.b))
-      .add(cPebbles.mul(wA.a))
-      .add(cSchist.mul(wB.r))
-      .add(cKwila.mul(wB.g))
+    const c4 = texture(surfaceTextures.greywacke, chipUV.mul(1.35)).rgb;
+    const c5 = texture(surfaceTextures.limestone, chipUV.mul(1.30)).rgb;
+    const c6 = texture(surfaceTextures.pebbles, tiledUV.mul(1.30)).rgb;
+    const c7 = texture(surfaceTextures.black_stones, tiledUV.mul(1.30)).rgb;
+
+    const c8 = texture(surfaceTextures.pavers, paverUV).rgb;
+    const c9 = texture(surfaceTextures.schist, paverUV.mul(0.85)).rgb;
+    const c10 = texture(surfaceTextures.kwila, paverUV.mul(0.90)).rgb;
+
+    const nonZeroW = wA.g.add(wA.b).add(wA.a)
+      .add(wB.r).add(wB.g).add(wB.b).add(wB.a)
+      .add(wC.r).add(wC.g).add(wC.b);
+
+    // In Photo-Match mode, exclude channel 0 (lawn) from colour blend so edges never bleed green onto the photo!
+    const wLawnEff = wA.r.mul(float(1.0).sub(shared.uPhotoMode));
+    const total = max(wLawnEff.add(nonZeroW), float(0.001));
+
+    const blended = c0.mul(wLawnEff)
+      .add(c1.mul(wA.g))
+      .add(c2.mul(wA.b))
+      .add(c3.mul(wA.a))
+      .add(c4.mul(wB.r))
+      .add(c5.mul(wB.g))
+      .add(c6.mul(wB.b))
+      .add(c7.mul(wB.a))
+      .add(c8.mul(wC.r))
+      .add(c9.mul(wC.g))
+      .add(c10.mul(wC.b))
       .div(total);
 
-    // Subtle volcanic earth on steep LiDAR banks
-    const steepness = clamp(float(1.0).sub(normalWorld.y), 0.0, 1.0);
-    const earthCol = vec3(0.28, 0.24, 0.19);
-    blended = mix(blended, earthCol, smoothstep(0.18, 0.55, steepness).mul(baseWeight).mul(float(1.0).sub(uPlanMix)).mul(0.38));
+    const macro = mx_noise_float(worldXZ.mul(0.14)).mul(0.07).mul(float(1.0).sub(shared.uPlanMix.mul(0.85)));
+    const slopeBlend = clamp(float(1.0).sub(normalWorld.y), 0.0, 1.0);
+    const steepEarth = vec3(0.28, 0.25, 0.19);
+    const sloped = mix(
+      blended,
+      steepEarth,
+      smoothstep(0.18, 0.55, slopeBlend).mul(wLawnEff).mul(float(1.0).sub(shared.uPlanMix)).mul(0.32)
+    );
 
-    // World-space macro-noise on natural terrain/hardscapes only (keep 2D Site Plan razor-sharp!)
-    const macroAmt = float(1.0).sub(uPlanMix.mul(baseWeight));
-    const macro = mx_noise_float(vec2(positionWorld.x, positionWorld.z).mul(0.14)).mul(0.08).mul(macroAmt);
-    blended = blended.mul(float(1.0).add(macro));
-
-    // Crisp 0.5 m NZVD2016 topographic contour lines when LINZ 1 m LiDAR terrain is active
-    const elevWave = fract(positionWorld.y.mul(2.0).add(0.5)).sub(0.5).abs();
-    const contourLine = float(1.0).sub(smoothstep(0.0, 0.032, elevWave));
-    blended = mix(blended, vec3(0.95, 0.91, 0.86), contourLine.mul(0.36).mul(uContourMix));
-
-    return blended;
+    // Subtle 0.5 m LINZ LiDAR contour lines when enabled
+    const contourBand = fract(positionWorld.y.mul(2.0).add(50.0));
+    const contourEdge = float(1.0).sub(smoothstep(float(0.0), float(0.032), contourBand))
+      .add(smoothstep(float(0.968), float(1.0), contourBand));
+    const withContours = mix(
+      sloped.mul(float(1.0).add(macro)),
+      vec3(0.14, 0.06, 0.13),
+      clamp(contourEdge, 0.0, 1.0).mul(shared.uContourMix).mul(0.28)
+    );
+    return withContours;
   })();
 
   mat.roughnessNode = Fn(() => {
     const st = uv();
     const wA = texture(splatTexA, st);
     const wB = texture(splatTexB, st);
-    const total = max(wA.r.add(wA.g).add(wA.b).add(wA.a).add(wB.r).add(wB.g), float(0.001));
-    const baseRough = mix(float(0.94), float(0.88), uPlanMix);
-    return wA.r.mul(baseRough)
+    const wC = texture(splatTexC, st);
+
+    const nonZeroW = wA.g.add(wA.b).add(wA.a)
+      .add(wB.r).add(wB.g).add(wB.b).add(wB.a)
+      .add(wC.r).add(wC.g).add(wC.b);
+    const wLawnEff = wA.r.mul(float(1.0).sub(shared.uPhotoMode));
+    const total = max(wLawnEff.add(nonZeroW), float(0.001));
+
+    return wLawnEff.mul(0.94)
       .add(wA.g.mul(0.95))
-      .add(wA.b.mul(0.78))
-      .add(wA.a.mul(0.68))
-      .add(wB.r.mul(0.76))
-      .add(wB.g.mul(0.56))
+      .add(wA.b.mul(0.92))
+      .add(wA.a.mul(0.93))
+      .add(wB.r.mul(0.84))
+      .add(wB.g.mul(0.82))
+      .add(wB.b.mul(0.68))
+      .add(wB.a.mul(0.30)) // Polished black river stones have natural sheen
+      .add(wC.r.mul(0.78))
+      .add(wC.g.mul(0.76))
+      .add(wC.b.mul(0.56))
       .div(total);
   })();
 
-  return { mat, uPlanMix, uContourMix };
+  // Photo-Match ground transparency: discard unpainted base pixels when shared.uPhotoMode > 0.5
+  mat.opacityNode = Fn(() => {
+    const st = uv();
+    const wA = texture(splatTexA, st);
+    const wB = texture(splatTexB, st);
+    const wC = texture(splatTexC, st);
+    const nonBase = wA.g.add(wA.b).add(wA.a).add(wB.r).add(wB.g).add(wB.b).add(wB.a).add(wC.r).add(wC.g).add(wC.b);
+    const paintedAlpha = smoothstep(float(0.06), float(0.22), nonBase);
+    return mix(float(1.0), paintedAlpha, shared.uPhotoMode);
+  })();
+
+  return mat;
 }
