@@ -1,3 +1,4 @@
+import { WowAtmosphereEngine } from "./wowAtmosphere.js";
 import { ArchitectureEngine, ARCH_PRESETS, CLADDING_FINISHES } from './architectureEngine.js';
 import { PoolEngine, NZ_POOL_PRESETS, POOL_FINISHES, FENCE_TYPES } from './poolEngine.js';
 import { ComplianceEngine } from './complianceEngine.js';
@@ -1137,7 +1138,11 @@ async function init() {
       camAnim = null;
       camera.position.set(px, py, pz);
       controls.target.set(tx, ty, tz);
-      engine.updateHeroTrees(performance.now() * 0.001, state.windOn ? 0.85 : 0.0);
+      const _nowSec = performance.now() * 0.001;
+    const _dtWow = Math.max(0.001, Math.min(0.05, _nowSec - _lastWowTime));
+    _lastWowTime = _nowSec;
+    engine.updateHeroTrees(_nowSec, state.windOn ? 0.85 : 0.0);
+    wowAtmosphere.update(_dtWow, _nowSec, photoMatch.active);
     controls.update();
     },
     setPreset: (id) => { presetSelect.value = id; terrainEngine.applyPreset(id, true); },
@@ -1193,7 +1198,39 @@ async function init() {
       }
     }
   });
-  window.__assemblStudio = { scene, camera, controls, terrainEngine, engine, archEngine, poolEngine, complianceEngine, photoMatch, sharedUniforms };
+  const wowAtmosphere = new WowAtmosphereEngine({
+    scene, renderer, terrainEngine, sunLight, hemiLight, sky, sharedUniforms, canvasEl: renderer.domElement
+  });
+  let _lastWowTime = performance.now() * 0.001;
+  document.querySelectorAll("[data-mood]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("[data-mood]").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      const m = btn.dataset.mood || "daylight";
+      wowAtmosphere.setMood(m, (hr) => {
+        state.sunHour = hr;
+        const sunInput = document.getElementById("sun-slider");
+        if (sunInput) sunInput.value = String(hr);
+        if (typeof updateSun === "function") updateSun();
+      });
+    });
+  });
+  const tuiBtn = document.getElementById("btn-fly-tui");
+  const flyTui = () => {
+    wowAtmosphere.triggerFlight();
+    if (tuiBtn) { tuiBtn.classList.add("active"); setTimeout(() => tuiBtn.classList.remove("active"), 7800); }
+  };
+  tuiBtn?.addEventListener("click", flyTui);
+  window.addEventListener("keydown", (ev) => {
+    if (ev.key.toLowerCase() === "f" && !["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName)) {
+      flyTui();
+    }
+  });
+  if (params.get("mood")) {
+    const m = params.get("mood");
+    document.querySelector(`[data-mood="${m}"]`)?.click();
+  }
+  window.__assemblStudio = { wowAtmosphere,  scene, camera, controls, terrainEngine, engine, archEngine, poolEngine, complianceEngine, photoMatch, sharedUniforms };
 
   renderer.setAnimationLoop(() => {
     const now = performance.now();

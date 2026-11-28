@@ -35,7 +35,7 @@ async function check() {
   label();
 }
 function label() {
-  status.textContent = live ? "Live · Claude · moves this page only" : live === false ? "Offline here · set answers, not a live agent" : "Checking the connection…";
+  status.textContent = live ? "Live · Claude · moves this page only" : live === false ? "Studio guide · instant walkthrough" : "Checking the connection…";
   voiceL.textContent = !voiceOn ? "Replies are text only" : eleven ? "New Zealand voice by ElevenLabs" : browserVoice() ? "Your browser's voice" : "No voice in this browser";
 }
 voiceBtn.addEventListener("click", () => { voiceOn = !voiceOn; voiceBtn.setAttribute("aria-pressed", String(voiceOn)); voiceBtn.textContent = voiceOn ? "Voice on" : "Voice off"; if (!voiceOn) stopVoice(); label(); });
@@ -157,12 +157,14 @@ async function scripted(text) {
   const t = text.toLowerCase();
   if (/price|cost|how much|budget|quote/.test(t)) return say("It depends on the work. After a short conversation we send a written proposal with the scope, price and timing. The button at the end of the page opens an email to us.");
   if (/chatgpt|claude|assistant|google|found|seo|search|rank/.test(t)) { await goTo("what"); return say("Getting found is the first of the three things we do: by assistants and by search, when people ask for what you do. No one can promise a ranking, but we can make your business easy to find and easy to quote."); }
-  if (/3d|render|house|model|plan|drawing|architect|twin|work|show|demo|film|bird/.test(t)) { await goTo("work"); return say("Here's work you can open now: a house built from its plans, the birds of Aotearoa, and our fly-throughs."); }
+  if (/garden|plant|landscape|pool|f9|nikau|pohutukawa|bark|pebble/.test(t)) { await goTo("native-garden"); return say("Here's our live Aotearoa Garden, House & Pool F9 Studio — brush native mixes, check NZBC Clause F9 pool barriers, match a client photo, and generate an instant 15% GST quote."); }
+  if (/hirb|envelope|iot|lidar|linz|parcel|contour|solar/.test(t)) { await goTo("lab"); return say("In assembl Lab you can open our Live Site, HIRB & IoT Twin with 1 m LINZ LiDAR contours, real parcels, wind vectors, and Roof Solar studies."); }
+  if (/3d|render|house|model|plan|drawing|architect|twin|work|show|demo|film|bird/.test(t)) { await goTo("work"); return say("Here's work you can open now: our Waiheke Pavilion, the interactive Garden & Pool F9 Studio, Architecture OS, and live NZ data twins."); }
   if (/approve|agent|human|person|how do you work|process/.test(t)) { await goTo("how"); return say("Agents prepare, and a person approves every step. Nothing goes out without a yes."); }
   if (/contact|email|talk|start|hire|work with/.test(t)) { await goTo("start"); return say("Start here: the Start a conversation button opens an email to us. Send a line about your business and what you'd like to do."); }
   if (/who|kate|about|where|based/.test(t)) return say("assembl is a full-service marketing and advertising agency in Tāmaki Makaurau Auckland, founded by Kate Hudson. Marketing for the agentic era, for every kind of New Zealand business.");
   if (/what|do you|services|help/.test(t)) { await goTo("what"); return say("Three things. We help you get found, by assistants and by search. We create campaigns. And we show what's possible, with working demos, films and 3D twins."); }
-  return say("I can't reach the live guide just now, so these are set answers. Try the tour, or ask about getting found, campaigns, our work or how to start.");
+  return say("Welcome to our interactive studio guide. Try the tour, or ask about our 3D Garden & Pool Studio, Architecture OS, Live HIRB Twin, campaigns, or how to start.");
 }
 
 // ------------------------------------------------------------------------------------------- the tour
