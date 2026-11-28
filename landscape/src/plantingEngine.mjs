@@ -1,12 +1,8 @@
 import * as THREE from 'three';
 import { NZ_PLANTS, PLANT_MAP, NZ_EDGINGS } from '../catalog.mjs';
-import {
-  loadBotanicalAtlases,
-  buildPhotorealPlantGeometry,
-  SPECIES_ATLAS_MAP,
-  HeroTreeManager
-} from './botanicalAtlas.mjs';
-import { createBotanicalCardMaterial } from './tslMaterials.mjs';
+import { HeroTreeManager } from './botanicalAtlas.mjs';
+import { buildSpeciesGeometry as buildPlantGeometry } from './botanicalBuilders.mjs';
+import { createFoliageNodeMaterial } from './tslMaterials.mjs';
 
 const MAX_PER_SPECIES = 900;
 
@@ -100,7 +96,7 @@ export class PlantingEngine {
     this.splatTexC.needsUpdate = true;
 
     // ── INSTANCED PHOTOGRAPHIC PLANT POOLS (23 species -> 5 WebP atlases) ─────
-    this.atlases = loadBotanicalAtlases();
+    this.atlases = [];
     this.speciesMeshes = new Map();
     this.plants = [];
     this.nextPlantId = 1;
@@ -133,9 +129,7 @@ export class PlantingEngine {
   _initSpeciesPools() {
     this._dummy = new THREE.Object3D();
     for (const plant of NZ_PLANTS) {
-      const spec = SPECIES_ATLAS_MAP[plant.id] || SPECIES_ATLAS_MAP.harakeke;
-      const atlasTex = this.atlases[spec.atlas];
-      const geom = buildPhotorealPlantGeometry(plant);
+      const geom = buildPlantGeometry(plant);
 
       const instVarArr = new Float32Array(MAX_PER_SPECIES * 4);
       const instVarAttr = new THREE.InstancedBufferAttribute(instVarArr, 4);
@@ -146,7 +140,7 @@ export class PlantingEngine {
       const instRootAttr = new THREE.InstancedBufferAttribute(instRootArr, 3);
       geom.setAttribute('aInstRoot', instRootAttr);
 
-      const mat = createBotanicalCardMaterial(plant, atlasTex, this.sharedUniforms, spec.tint);
+      const mat = createFoliageNodeMaterial(plant, this.sharedUniforms);
       const mesh = new THREE.InstancedMesh(geom, mat, MAX_PER_SPECIES);
       mesh.count = 0;
       mesh.castShadow = true;
