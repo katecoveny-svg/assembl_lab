@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en-NZ">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>assembl. — Reality Scan + Interactive 3D Design</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "../assets/vendor/three/three.module.min.js",
+        "three/addons/": "../assets/vendor/three/addons/",
+        "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/0.1.10/spark.module.js"
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --ivory: #F6F1ED;
+      --paper: #FFFDFB;
+      --plum: #240B21;
+      --mulberry: #654A4E;
+      --rose: #D9BACB;
+      --line: rgba(36, 11, 33, 0.12);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; height: 100%; overflow: hidden;
+      background: #140b13; color: var(--plum);
+      font-family: "Instrument Sans", system-ui, sans-serif;
+    }
+    #viewer-wrap { position: fixed; inset: 0; }
+    .top-bar {
+      position: fixed; top: 14px; left: 16px; right: 16px; z-index: 10;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      background: rgba(246, 241, 237, 0.92); backdrop-filter: blur(14px);
+      border: 1px solid var(--line); border-radius: 999px;
+      padding: 8px 14px 8px 18px;
+      box-shadow: 0 12px 30px -18px rgba(24, 11, 24, 0.35);
+    }
+    .brand { font-size: 20px; font-weight: 600; letter-spacing: -0.04em; color: var(--plum); text-decoration: none; }
+    .brand .dot { color: var(--rose); }
+    .mono { font: 500 11px/1.2 "IBM Plex Mono", monospace; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mulberry); }
+    .pill-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .pill {
+      appearance: none; border: 1px solid var(--line); background: var(--paper); color: var(--plum);
+      font: 500 13px/1 "Instrument Sans", sans-serif; padding: 8px 14px; border-radius: 999px;
+      cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .pill:hover { border-color: rgba(36, 11, 33, 0.35); }
+    .pill.primary { background: var(--plum); color: var(--paper); border-color: var(--plum); }
+    .card {
+      position: fixed; right: 18px; top: 76px; width: 320px; max-width: calc(100vw - 36px); z-index: 10;
+      background: rgba(246, 241, 237, 0.94); backdrop-filter: blur(14px);
+      border: 1px solid var(--line); border-radius: 20px; padding: 18px;
+      box-shadow: 0 18px 42px -24px rgba(24, 11, 24, 0.45);
+    }
+    .card h1 { margin: 6px 0 8px; font-size: 22px; line-height: 1.12; letter-spacing: -0.03em; font-weight: 600; }
+    .card p { margin: 0 0 12px; font-size: 13.5px; line-height: 1.48; color: var(--mulberry); }
+    .drop-zone {
+      border: 1.5px dashed rgba(36, 11, 33, 0.28); border-radius: 14px; background: var(--paper);
+      padding: 14px; text-align: center; cursor: pointer; margin-bottom: 12px;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+    .drop-zone:hover, .drop-zone.over { border-color: var(--plum); background: #fff; }
+    .drop-zone strong { display: block; font-size: 13.5px; color: var(--plum); margin-bottom: 4px; }
+    .drop-zone span { font-size: 12px; color: var(--mulberry); }
+    .step-list { list-style: none; padding: 0; margin: 0 0 14px; display: grid; gap: 8px; }
+    .step-list li {
+      background: var(--paper); border: 1px solid var(--line); border-radius: 12px;
+      padding: 9px 12px; font-size: 12.5px; color: var(--plum);
+    }
+    .step-list b { display: block; font-size: 11px; font-family: "IBM Plex Mono", monospace; color: var(--mulberry); margin-bottom: 2px; }
+    .status-bar {
+      position: fixed; left: 18px; bottom: 18px; z-index: 10;
+      background: rgba(246, 241, 237, 0.92); backdrop-filter: blur(12px);
+      border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px;
+      font: 500 12px/1 "IBM Plex Mono", monospace; color: var(--plum);
+    }
+  </style>
+</head>
+<body>
+  <div id="viewer-wrap"></div>
+
+  <header class="top-bar">
+    <div class="pill-group">
+      <a class="brand" href="/">assembl<span class="dot">.</span></a>
+      <span class="mono">Reality Capture · 3DGS</span>
+    </div>
+    <nav class="pill-group">
+      <a class="pill" href="/landscape/">Garden &amp; Pool Studio ↗</a>
+      <a class="pill" href="/architecture/">Walk the Architecture ↗</a>
+      <a class="pill primary" href="/architecture/#/envelope">Check NZ Section ↗</a>
+    </nav>
+  </header>
+
+  <aside class="card">
+    <span class="mono">Capture Reality · Design Live</span>
+    <h1>Walk the real site in 60 seconds.</h1>
+    <p>Scan any room, showroom or NZ section on an iPhone, clean in SuperSplat, and drop it straight here—giving clients photographic walkthroughs and live design sign-off in one browser link.</p>
+    <label class="drop-zone" id="drop-zone">
+      <input type="file" id="splat-file" accept=".spz,.splat,.ply,.ksplat,.sog" hidden />
+      <strong>+ Drop SuperSplat Scan (.spz / .splat / .ply)</strong>
+      <span>Runs locally in your browser · zero upload wait</span>
+    </label>
+    <ul class="step-list">
+      <li><b>01 · REALITY CONTEXT</b>True photographic lighting, reflections &amp; real-world surroundings.</li>
+      <li><b>02 · EDITABLE DESIGN</b>Layer 3D native gardens, pools &amp; pavilions directly inside the scan.</li>
+      <li><b>03 · FASTER APPROVALS</b>Share one browser link for instant client sign-off on phone or desktop.</li>
+    </ul>
+    <div class="pill-group">
+      <button class="pill" id="btn-reset-cam">Reset View</button>
+      <a class="pill primary" href="/landscape/">Open Planting &amp; Splat Studio ↗</a>
+    </div>
+  </aside>
+
+  <div class="status-bar" id="status-bar">Loading real 3D Gaussian Splat (.spz)…</div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { SplatMesh } from '@sparkjsdev/spark';
+
+    const wrap = document.getElementById('viewer-wrap');
+    const statusEl = document.getElementById('status-bar');
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+    wrap.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#140b13');
+
+    const camera = new THREE.PerspectiveCamera(46, window.innerWidth / window.innerHeight, 0.05, 120);
+    camera.position.set(2.8, 1.35, 3.6);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.target.set(0, 0.35, 0);
+
+    let currentSplat = null;
+    async function loadSplatUrl(url, label) {
+      statusEl.textContent = `Loading ${label}…`;
+      if (currentSplat) {
+        scene.remove(currentSplat);
+        currentSplat.dispose?.();
+      }
+      try {
+        currentSplat = new SplatMesh({ url });
+        currentSplat.quaternion.set(1, 0, 0, 0);
+        scene.add(currentSplat);
+        statusEl.textContent = `Live 3DGS · ${label} · Drag to orbit · Scroll to zoom`;
+      } catch (err) {
+        statusEl.textContent = `Could not load ${label}: ${err?.message || err}`;
+      }
+    }
+
+    // Load real 7.4 MB compressed .spz scan already in the repo!
+    loadSplatUrl('/capture/example/mx5-rf-sample.spz', 'Real 3DGS Scan (7.4 MB .spz)');
+
+    const fileInput = document.getElementById('splat-file');
+    const dropZone = document.getElementById('drop-zone');
+    const handleFile = (file) => {
+      if (!file) return;
+      const objUrl = URL.createObjectURL(file);
+      loadSplatUrl(objUrl, file.name);
+    };
+    fileInput.addEventListener('change', (e) => handleFile(e.target.files?.[0]));
+    ['dragenter', 'dragover'].forEach((ev) => dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.add('over'); }));
+    ['dragleave', 'drop'].forEach((ev) => dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.remove('over'); }));
+    dropZone.addEventListener('drop', (e) => handleFile(e.dataTransfer?.files?.[0]));
+    document.getElementById('btn-reset-cam').addEventListener('click', () => {
+      camera.position.set(2.8, 1.35, 3.6);
+      controls.target.set(0, 0.35, 0);
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    function tick() {
+      requestAnimationFrame(tick);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    tick();
+  </script>
+</body>
+</html>

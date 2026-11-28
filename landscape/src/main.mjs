@@ -1,3 +1,4 @@
+import { SplatScanEngine } from "./splatEngine.js";
 import { WowAtmosphereEngine } from "./wowAtmosphere.js";
 import { ArchitectureEngine, ARCH_PRESETS, CLADDING_FINISHES } from './architectureEngine.js';
 import { PoolEngine, NZ_POOL_PRESETS, POOL_FINISHES, FENCE_TYPES } from './poolEngine.js';
@@ -1197,6 +1198,24 @@ async function init() {
         document.getElementById("view-3d-btn")?.click();
       }
     }
+  });
+  const splatEngine = new SplatScanEngine(scene, terrainEngine);
+  document.getElementById("splat-file-input")?.addEventListener("change", async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    try {
+      const res = await splatEngine.loadFile(f);
+      const st = document.getElementById("linz-status");
+      if (st) st.textContent = `3DGS Scan loaded: ${res.name} (${res.count.toLocaleString()} splats)`;
+    } catch (err) {
+      const st = document.getElementById("linz-status");
+      if (st) st.textContent = err?.message || "Could not load splat file.";
+    }
+  });
+  document.getElementById("btn-demo-splat")?.addEventListener("click", () => {
+    const res = splatEngine.loadDemoScan();
+    const st = document.getElementById("linz-status");
+    if (st) st.textContent = `Loaded ${res.name}`;
   });
   const wowAtmosphere = new WowAtmosphereEngine({
     scene, renderer, terrainEngine, sunLight, hemiLight, sky, sharedUniforms, canvasEl: renderer.domElement

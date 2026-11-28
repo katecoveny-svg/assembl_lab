@@ -89,6 +89,11 @@
         <input type="password" id="linz-api-key" class="nz-input" placeholder="LINZ API Key (optional)" />
 
         <button class="action-btn compact full" id="btn-import-geojson" title="Import LINZ Parcel GeoJSON (WGS84 or NZTM2000)">+ LINZ Parcel</button>
+          <label class="secondary-btn" id="btn-import-splat" style="cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:4px;">
+            + 3DGS Scan (.splat/.ply)
+            <input type="file" id="splat-file-input" accept=".splat,.ply" hidden />
+          </label>
+          <button class="secondary-btn" id="btn-demo-splat" type="button">Coastal Splat Demo</button>
         <input type="file" id="file-geojson" accept=".geojson,.json" class="hidden" />
         <div id="site-status" class="site-status">Auckland Maunga Terrace (-36.85°S)</div>
       </div>
