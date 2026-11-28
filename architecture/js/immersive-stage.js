@@ -2768,12 +2768,11 @@ export async function mountImmersiveStage(host, ctx = {}, opts = { fullPage: fal
         ]);
         if (stopped) return;
 
-        // Place photorealistic Blender Hero Nīkau palms beside mirror pool & Kwila terrace
+        // Place hero trees ONLY on the distant headland flanks so the architecture has clean, unobstructed gallery sightlines
         if (nikauHero) {
           for (const [nx, nz, sc, ry] of [
-            [-9.6, 6.7, 1.0, 0.35],
-            [11.0, 5.2, 0.94, 2.2],
-            [-10.4, 2.2, 0.88, 4.1],
+            [-15.8, 3.2, 0.92, 0.35],
+            [15.6, -2.4, 0.88, 2.2],
           ]) {
             const inst = nikauHero.clone(true);
             inst.position.set(nx, terrainHeight(nx, nz) - 0.06, nz);
@@ -2782,11 +2781,10 @@ export async function mountImmersiveStage(host, ctx = {}, opts = { fullPage: fal
             scene.add(inst);
           }
         }
-        // Place Blender Hero Pōhutukawa overhanging the mirror pool & headland flank
         if (pohutHero) {
           for (const [px, pz, sc, ry] of [
-            [-12.8, 9.6, 1.0, 0.45],
-            [14.2, -5.6, 0.95, 2.3],
+            [-17.5, 8.8, 0.96, 0.45],
+            [17.8, -7.8, 0.94, 2.3],
           ]) {
             const inst = pohutHero.clone(true);
             inst.position.set(px, terrainHeight(px, pz) - 0.08, pz);
@@ -2795,12 +2793,10 @@ export async function mountImmersiveStage(host, ctx = {}, opts = { fullPage: fal
             scene.add(inst);
           }
         }
-        // Place Blender Hero Mānuka framing courtyard beds & arrival forecourt
         if (manukaHero) {
           for (const [mx, mz, sc, ry] of [
-            [-8.7, 10.6, 1.0, 0.7],
-            [10.8, 8.8, 0.92, 2.5],
-            [3.8, 11.4, 0.84, 4.3],
+            [-12.8, 10.6, 0.86, 0.7],
+            [13.4, 8.2, 0.84, 2.5],
           ]) {
             const inst = manukaHero.clone(true);
             inst.position.set(mx, terrainHeight(mx, mz) - 0.05, mz);
@@ -2902,7 +2898,8 @@ export async function mountImmersiveStage(host, ctx = {}, opts = { fullPage: fal
         } catch {}
       })();
 
-      // 5. True Volumetric 3D Aotearoa Coastal Headland Flora (BotanicalMeshBuilder + GPU Coastal Wind + Backlit SSS)
+      // 5. High-craft Instanced Coastal Tussock Meadow (ported from Theo Tillberg 27/Burrow 5-segment arching blades,
+      //    folded-midrib specular normals, dark root AO & backlit sun translucency — zero toy procedural trees!)
       const windUniforms = {
         uWindTime: { value: 0 },
         uSunDir: { value: new THREE.Vector3(0.5, 0.4, 0.5) },
@@ -2910,160 +2907,115 @@ export async function mountImmersiveStage(host, ctx = {}, opts = { fullPage: fal
         uSunSss: { value: 0.68 },
       };
 
-      const floraMat = new THREE.MeshStandardMaterial({
-        vertexColors: true,
-        roughness: 0.64,
-        metalness: 0.0,
-        side: THREE.DoubleSide,
-        envMapIntensity: 0.72,
-      });
-      floraMat.onBeforeCompile = (sh) => {
-        sh.uniforms.uWindTime = windUniforms.uWindTime;
-        sh.uniforms.uSunDir = windUniforms.uSunDir;
-        sh.uniforms.uSunColor = windUniforms.uSunColor;
-        sh.uniforms.uSunSss = windUniforms.uSunSss;
-        sh.vertexShader =
-          `attribute float aTipness;\nattribute float aPartType;\nuniform float uWindTime;\nvarying float vTipness;\nvarying float vPartType;\nvarying vec3 vBotWorldPos;\n` +
-          sh.vertexShader
-            .replace(
-              '#include <begin_vertex>',
-              `#include <begin_vertex>
-               vTipness = aTipness;
-               vPartType = aPartType;
-               vec3 instOrig = vec3(0.0);
-               #ifdef USE_INSTANCING
-                 instOrig = instanceMatrix[3].xyz;
-               #endif
-               vec3 wSeed = (modelMatrix * vec4(instOrig, 1.0)).xyz;
-               if (aTipness > 0.01) {
-                 float ph = wSeed.x * 0.43 + wSeed.z * 0.37 + position.x * 1.05 + position.z * 0.85;
-                 float gust = 0.65 + 0.35 * sin(uWindTime * 0.46 + wSeed.x * 0.11 - wSeed.z * 0.09);
-                 float w1 = sin(uWindTime * 1.68 + ph) * 0.075;
-                 float w2 = cos(uWindTime * 2.95 + ph * 1.65) * 0.028;
-                 float flex = pow(clamp(aTipness, 0.0, 1.0), 1.45) * gust;
-                 transformed.x += (w1 + w2) * flex;
-                 transformed.z += (w1 * 0.72 - w2 * 0.82) * flex;
-                 transformed.y -= abs(w1) * 0.16 * flex;
-               }`
-            )
-            .replace(
-              '#include <project_vertex>',
-              `#include <project_vertex>
-               #ifdef USE_INSTANCING
-                 vBotWorldPos = (modelMatrix * instanceMatrix * vec4(transformed, 1.0)).xyz;
-               #else
-                 vBotWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;
-               #endif`
-            );
-        sh.fragmentShader =
-          `uniform vec3 uSunDir;\nuniform vec3 uSunColor;\nuniform float uSunSss;\nvarying float vTipness;\nvarying float vPartType;\nvarying vec3 vBotWorldPos;\n` +
-          sh.fragmentShader.replace(
-            '#include <dithering_fragment>',
-            `if (vPartType > 0.5) {
-               vec3 toSun = normalize(uSunDir);
-               vec3 viewD = normalize(cameraPosition - vBotWorldPos);
-               float backLit = pow(clamp(dot(-viewD, toSun), 0.0, 1.0), 2.8);
-               float sss = backLit * (0.20 + 0.46 * vTipness) * uSunSss;
-               gl_FragColor.rgb += gl_FragColor.rgb * uSunColor * sss;
-             }
-             #include <dithering_fragment>`
-          );
-      };
-
-      const botanicalGeos = {};
-      for (const [k, sp] of Object.entries(COASTAL_SPECIES)) {
-        botanicalGeos[k] = buildCoastalSpeciesGeometry(THREE, sp);
-      }
-
-      // Curated Piet-Oudolf-inspired coastal headland & architectural courtyard planting composition
-      // (Foreground specimen spots around mirror pool & terrace showcase Blender hero .glb Nīkau, Pōhutukawa & Mānuka)
-      const PLANT_PLACEMENTS = {
-        pohutukawa: [
-          [-16.8, 12.6, 1.14, 0.4],
-          [18.2, -9.2, 1.16, 2.1],
-          [-16.2, -8.4, 1.08, 4.2],
-          [17.4, 11.2, 0.98, 1.3],
-          [-22.5, -13.5, 1.28, 3.1],
-          [23.5, -14.0, 1.22, 0.8],
-        ],
-        tikouka: [
-          [12.4, 9.4, 1.06, 0.6],
-          [-12.4, -5.8, 0.96, 2.2],
-          [13.8, -1.8, 0.92, 4.1],
-          [-16.4, 3.8, 1.08, 1.4],
-          [18.8, 4.5, 1.02, 3.5],
-        ],
-        nikau: [
-          [-13.6, 3.2, 0.98, 0.9],
-          [12.8, -4.8, 0.94, 2.8],
-          [-12.6, -1.6, 1.04, 4.4],
-          [14.2, 2.6, 0.9, 1.7],
-        ],
-        ponga: [
-          [-10.4, 5.2, 0.92, 0.5],
-          [-10.8, 1.2, 0.98, 2.1],
-          [11.6, -2.4, 0.88, 3.9],
-          [-12.6, 7.6, 0.95, 1.3],
-        ],
-        harakeke: [
-          [-10.2, 10.2, 0.94, 0.4], [-11.8, 11.4, 0.88, 1.8], [11.2, 4.6, 0.92, 2.6],
-          [11.8, 7.8, 0.86, 4.1], [10.8, 10.4, 0.88, 0.9], [-13.5, 5.4, 1.02, 3.3],
-          [13.6, 1.2, 0.96, 5.0], [-14.2, -2.5, 1.05, 1.2], [6.2, -9.2, 1.08, 2.4],
-          [-5.4, -9.6, 1.02, 3.8],
-        ],
-        platts_black: [
-          [-9.4, 6.4, 0.95, 0.3], [-9.6, 7.8, 0.88, 1.7], [10.6, 5.4, 0.92, 2.9],
-          [10.8, 7.2, 0.86, 4.2], [-6.6, 11.3, 0.88, 0.8], [-4.8, 11.4, 0.84, 2.2],
-          [1.2, 11.3, 0.86, 3.5], [10.4, 8.8, 0.82, 5.1],
-        ],
-        silver_spear: [
-          [-9.2, 8.8, 0.92, 0.6], [-8.8, 10.6, 0.88, 2.1], [-5.8, 11.3, 0.94, 3.8],
-          [-1.4, 11.4, 0.92, 1.4], [0.4, 11.3, 0.86, 4.7], [10.6, 6.4, 0.92, 2.5],
-          [10.5, 9.6, 0.88, 0.2], [9.8, 11.2, 0.82, 3.1],
-        ],
-        carex_testacea: [
-          [-7.2, 11.1, 0.96, 0.4], [-6.1, 11.5, 0.92, 1.9], [-3.8, 11.2, 0.98, 3.2],
-          [-2.6, 11.4, 0.94, 4.5], [-0.4, 11.2, 0.95, 1.1], [1.6, 11.5, 0.92, 2.7],
-          [-9.2, 5.4, 0.96, 0.8], [-9.3, 7.1, 0.92, 2.3], [10.4, 4.6, 0.94, 3.9],
-          [10.5, 8.1, 0.92, 5.2], [9.6, 10.2, 0.96, 1.6], [4.3, 10.8, 0.88, 3.0],
-          [4.2, 9.6, 0.86, 4.4], [-10.8, 9.8, 1.0, 2.0],
-        ],
-        toetoe: [
-          [-12.4, 12.6, 1.06, 0.5], [-14.2, 11.8, 1.12, 2.1], [-9.8, 13.4, 0.98, 3.7],
-          [12.6, 11.4, 1.04, 1.2], [14.4, 9.2, 1.1, 2.8], [13.8, 6.4, 1.02, 4.4],
-          [-15.5, 7.2, 1.15, 0.9], [16.5, 2.2, 1.08, 3.3], [-16.8, -1.8, 1.14, 5.1],
-          [11.2, -8.8, 1.06, 1.9], [-8.5, -10.4, 1.12, 4.0], [1.8, -10.8, 1.04, 2.6],
-          [-18.5, 13.8, 1.18, 0.3], [18.2, 13.5, 1.12, 3.9],
-        ],
-        libertia: [
-          [-4.2, 11.5, 0.92, 0.7], [-3.1, 11.1, 0.88, 2.4], [-1.9, 11.5, 0.94, 4.1],
-          [10.8, 6.0, 0.92, 1.5], [10.9, 7.6, 0.86, 3.2], [-9.8, 8.2, 0.90, 5.0],
-        ],
-        tororaro: [
-          [-11.2, 11.0, 0.94, 0.6], [12.4, 4.2, 0.92, 2.2], [-13.2, 2.2, 1.02, 3.8],
-          [12.8, 9.8, 0.96, 1.4], [-11.8, -4.2, 0.98, 4.9],
-        ],
-      };
-
-      const dummy = new THREE.Object3D();
       const instancedFlora = [];
-      for (const [spKey, list] of Object.entries(PLANT_PLACEMENTS)) {
-        const geo = botanicalGeos[spKey];
-        if (!geo || !list.length) continue;
-        const im = new THREE.InstancedMesh(geo, floraMat, list.length);
-        im.castShadow = true;
-        im.receiveShadow = true;
-        list.forEach(([px, pz, sc, ry], idx) => {
-          const py = terrainHeight(px, pz) - 0.05;
-          dummy.position.set(px, py, pz);
-          dummy.rotation.set(0, ry, 0);
-          dummy.scale.setScalar(sc);
-          dummy.updateMatrix();
-          im.setMatrixAt(idx, dummy.matrix);
+      {
+        const SEG = 5;
+        const pos = [], idx = [];
+        for (let i = 0; i <= SEG; i++) {
+          const t = i / SEG;
+          pos.push(-0.5, t, 0, 0.5, t, 0);
+          if (i < SEG) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+        }
+        const g = new THREE.InstancedBufferGeometry();
+        g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pos), 3));
+        g.setIndex(idx);
+
+        const root = [], shape = [], look = [];
+        let seed = 4041337;
+        const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+        const inPavilionPad = (x, z) => (x > -9.2 && x < 10.8 && z > -6.0 && z < 11.8);
+
+        // 550 coastal tussock crowns (arching blades out of each crown) + 18,000 fine sward blades
+        for (let c = 0; c < 550; c++) {
+          const cx = -24 + rnd() * 48, cz = -16 + rnd() * 34;
+          if (inPavilionPad(cx, cz)) continue;
+          const big = 0.65 + rnd() * 0.95;
+          const tint = rnd();
+          const n = 22 + Math.floor(rnd() * 26);
+          for (let k = 0; k < n; k++) {
+            const a = rnd() * Math.PI * 2, r = rnd() * rnd() * 0.28 * big;
+            const bx = cx + Math.cos(a) * r, bz = cz + Math.sin(a) * r;
+            if (inPavilionPad(bx, bz)) continue;
+            root.push(bx, terrainHeight(bx, bz) - 0.03, bz);
+            shape.push((0.26 + rnd() * 0.42) * big, 0.012 + rnd() * 0.014, 0.55 + rnd() * 1.45, a + (rnd() - 0.5) * 0.65);
+            look.push(tint * 0.72 + rnd() * 0.28, rnd());
+          }
+        }
+        for (let i = 0; i < 16000; i++) {
+          const bx = -24 + rnd() * 48, bz = -16 + rnd() * 34;
+          if (inPavilionPad(bx, bz)) continue;
+          root.push(bx, terrainHeight(bx, bz) - 0.03, bz);
+          shape.push(0.11 + rnd() * rnd() * 0.24, 0.008 + rnd() * 0.009, 0.35 + rnd() * 1.15, rnd() * Math.PI * 2);
+          look.push(rnd(), rnd());
+        }
+        g.setAttribute('aRoot', new THREE.InstancedBufferAttribute(new Float32Array(root), 3));
+        g.setAttribute('aShape', new THREE.InstancedBufferAttribute(new Float32Array(shape), 4));
+        g.setAttribute('aLook', new THREE.InstancedBufferAttribute(new Float32Array(look), 2));
+        g.instanceCount = root.length / 3;
+
+        const tussockMat = new THREE.ShaderMaterial({
+          uniforms: {
+            uTime: windUniforms.uWindTime,
+            uSunDir: windUniforms.uSunDir,
+            uSunColor: windUniforms.uSunColor,
+          },
+          vertexShader: /* glsl */ `
+            attribute vec3 aRoot;
+            attribute vec4 aShape;
+            attribute vec2 aLook;
+            uniform float uTime;
+            varying vec3 vP; varying vec3 vN; varying vec3 vSide; varying float vT; varying float vX; varying vec2 vLook;
+            void main() {
+              float t = position.y;
+              float gust = 0.065 * sin(uTime * 1.05 + aRoot.x * 0.38 + aRoot.z * 0.29 + aLook.y * 6.28)
+                         + 0.025 * sin(uTime * 2.4 + aLook.y * 31.0);
+              float bend = max(0.08, aShape.z + gust);
+              vec3 d = vec3(cos(aShape.w), 0.0, sin(aShape.w));
+              vec3 side = vec3(-d.z, 0.0, d.x);
+              float a = bend * t;
+              vec3 c = aRoot + (d * (1.0 - cos(a)) + vec3(0.0, sin(a), 0.0)) * (aShape.x / bend);
+              vec3 tang = d * sin(a) + vec3(0.0, cos(a), 0.0);
+              vP = c + side * (position.x * aShape.y * (1.0 - 0.9 * t * t));
+              vN = cross(side, tang);
+              vSide = side; vT = t; vX = position.x * 2.0; vLook = aLook;
+              gl_Position = projectionMatrix * viewMatrix * vec4(vP, 1.0);
+            }
+          `,
+          fragmentShader: /* glsl */ `
+            uniform vec3 uSunDir;
+            uniform vec3 uSunColor;
+            varying vec3 vP; varying vec3 vN; varying vec3 vSide; varying float vT; varying float vX; varying vec2 vLook;
+            void main() {
+              vec3 N = normalize(vN);
+              if (!gl_FrontFacing) N = -N;
+              N = normalize(N + vSide * vX * 0.55 * (gl_FrontFacing ? 1.0 : -1.0));
+              vec3 green = mix(vec3(0.055, 0.095, 0.032), vec3(0.11, 0.145, 0.05), vLook.x);
+              vec3 straw = vec3(0.32, 0.26, 0.13);
+              float dry = smoothstep(0.52, 0.94, vLook.x + 0.35 * fract(vLook.y * 7.7));
+              vec3 alb = mix(green, straw, max(dry, smoothstep(0.72, 1.0, vT) * 0.62));
+              alb = mix(straw * 0.42, alb, smoothstep(0.0, 0.28, vT));
+              alb *= 0.86 + 0.28 * fract(vLook.y * 13.3);
+              float ao = mix(0.24, 1.0, smoothstep(0.0, 0.55, vT));
+              vec3 L = normalize(uSunDir);
+              vec3 V = normalize(cameraPosition - vP);
+              float ndl = max(dot(N, L), 0.0);
+              float back = pow(max(dot(-V, L), 0.0), 3.0) * 0.55 * (0.35 + 0.65 * vT);
+              vec3 H = normalize(L + V);
+              float spec = pow(max(dot(N, H), 0.0), 28.0) * 0.18 * vT;
+              vec3 col = alb * (vec3(0.28, 0.32, 0.36) * ao + uSunColor * (ndl * 0.95 + back)) + uSunColor * spec;
+              float dist = length(cameraPosition - vP);
+              col = mix(col, vec3(0.78, 0.72, 0.66), smoothstep(26.0, 75.0, dist) * 0.45);
+              gl_FragColor = vec4(col, 1.0);
+              #include <tonemapping_fragment>
+              #include <colorspace_fragment>
+            }
+          `,
+          side: THREE.DoubleSide,
         });
-        im.instanceMatrix.needsUpdate = true;
-        scene.add(im);
-        instancedFlora.push(im);
+        const tussockMesh = new THREE.Mesh(g, tussockMat);
+        tussockMesh.frustumCulled = false;
+        scene.add(tussockMesh);
+        instancedFlora.push(tussockMesh);
       }
 
       // Camera, Orbit & True 1.68 m First-Person Walk Controller

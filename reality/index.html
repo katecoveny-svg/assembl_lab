@@ -106,8 +106,8 @@
     <h1>Walk the real space in your browser.</h1>
     <p>Explore real 3D Gaussian Splat environments with true photographic lighting and reflections, or drop your own SuperSplat iPhone scan straight in.</p>
     <div class="scene-tabs">
-      <button class="pill active" data-scene="bonsai">Studio Bonsai</button>
-      <button class="pill" data-scene="valley">Alpine Valley</button>
+      <button class="pill active" data-scene="garden">Outdoor Garden Scan</button>
+      <button class="pill" data-scene="bonsai">Studio Bonsai</button>
     </div>
     <label class="drop-zone" id="drop-zone">
       <input type="file" id="splat-file" accept=".spz,.splat,.ply,.ksplat,.sog" hidden />
@@ -154,6 +154,17 @@
     controls.maxDistance = 12.0;
 
     const SCENES = {
+      garden: {
+        url: '/reality/scans/garden-courtyard.splat',
+        label: 'Real-World Outdoor Garden Capture (17 MB .splat)',
+        pos: [0, 0, 0],
+        flip: true,
+        views: [
+          { pos: [2.2, 0.55, 2.8], target: [0.0, 0.15, 0.0] },
+          { pos: [0.95, 0.35, 1.55], target: [0.0, 0.1, 0.0] },
+          { pos: [-2.4, 0.75, 2.2], target: [0.0, 0.15, 0.0] },
+        ],
+      },
       bonsai: {
         url: '/reality/scans/bonsai-interior.splat',
         label: 'Real-World Studio Capture · Bonsai (8.3 MB .splat)',
@@ -165,26 +176,15 @@
           { pos: [-2.05, 0.95, 2.25], target: [0.0, 0.12, 0.0] },
         ],
       },
-      valley: {
-        url: '/reality/scans/valley.spz',
-        label: 'Alpine Valley 3DGS Environment (6.4 MB .spz)',
-        pos: [0, 0.6, 0],
-        flip: true,
-        views: [
-          { pos: [0.0, 0.85, 2.2], target: [0.0, 0.25, -1.2] },
-          { pos: [-1.1, 0.55, 1.4], target: [0.2, 0.2, -1.5] },
-          { pos: [1.5, 1.05, 1.5], target: [-0.2, 0.3, -1.0] },
-        ],
-      },
     };
 
-    let activeSceneKey = 'bonsai';
+    let activeSceneKey = 'garden';
     let currentSplat = null;
     let flipped = true;
     let camAnim = null;
 
     function flyToIndex(idx) {
-      const views = SCENES[activeSceneKey]?.views || SCENES.bonsai.views;
+      const views = SCENES[activeSceneKey]?.views || SCENES.garden.views;
       const v = views[idx] || views[0];
       camAnim = {
         startPos: camera.position.clone(),
@@ -263,8 +263,8 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // Load Studio Bonsai real-world capture by default
-    loadSplat(SCENES.bonsai);
+    // Load Real-World Outdoor Garden capture by default
+    loadSplat(SCENES.garden);
 
     function tick() {
       requestAnimationFrame(tick);

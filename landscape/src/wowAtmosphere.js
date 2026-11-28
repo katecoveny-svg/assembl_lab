@@ -31,8 +31,117 @@ export class WowAtmosphereEngine {
 
     this._buildSunMotes();
     this._buildCoastalWaterHorizon();
+    this._buildTussockMeadow();
     this._loadRealManuGLBs();
     this._loadPhotogrammetryBotanicals();
+  }
+
+  // Ported from Theo Tillberg (codevember-2026/27 Burrow): 5-segment arching blades, folded midrib specular normals,
+  // dark root AO & backlit sun translucency across the coastal meadow (excluding house/pool pad).
+  _buildTussockMeadow() {
+    const groundY = (x, z) => (this.terrainEngine ? this.terrainEngine.getHeight(x, z) : 0);
+    const SEG = 5;
+    const pos = [], idx = [];
+    for (let i = 0; i <= SEG; i++) {
+      const t = i / SEG;
+      pos.push(-0.5, t, 0, 0.5, t, 0);
+      if (i < SEG) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+    }
+    const g = new THREE.InstancedBufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pos), 3));
+    g.setIndex(idx);
+
+    const root = [], shape = [], look = [];
+    let seed = 272026;
+    const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+    const inPad = (x, z) => (x > -8.5 && x < 8.5 && z > -7.5 && z < 6.8);
+
+    for (let c = 0; c < 420; c++) {
+      const cx = -20 + rnd() * 40, cz = -16 + rnd() * 34;
+      if (inPad(cx, cz)) continue;
+      const big = 0.6 + rnd() * 0.95;
+      const tint = rnd();
+      const n = 20 + Math.floor(rnd() * 24);
+      for (let k = 0; k < n; k++) {
+        const a = rnd() * Math.PI * 2, r = rnd() * rnd() * 0.25 * big;
+        const bx = cx + Math.cos(a) * r, bz = cz + Math.sin(a) * r;
+        if (inPad(bx, bz)) continue;
+        root.push(bx, groundY(bx, bz) - 0.03, bz);
+        shape.push((0.24 + rnd() * 0.38) * big, 0.011 + rnd() * 0.013, 0.5 + rnd() * 1.4, a + (rnd() - 0.5) * 0.65);
+        look.push(tint * 0.72 + rnd() * 0.28, rnd());
+      }
+    }
+    for (let i = 0; i < 14000; i++) {
+      const bx = -20 + rnd() * 40, bz = -16 + rnd() * 34;
+      if (inPad(bx, bz)) continue;
+      root.push(bx, groundY(bx, bz) - 0.03, bz);
+      shape.push(0.10 + rnd() * rnd() * 0.22, 0.007 + rnd() * 0.008, 0.35 + rnd() * 1.15, rnd() * Math.PI * 2);
+      look.push(rnd(), rnd());
+    }
+    g.setAttribute('aRoot', new THREE.InstancedBufferAttribute(new Float32Array(root), 3));
+    g.setAttribute('aShape', new THREE.InstancedBufferAttribute(new Float32Array(shape), 4));
+    g.setAttribute('aLook', new THREE.InstancedBufferAttribute(new Float32Array(look), 2));
+    g.instanceCount = root.length / 3;
+
+    this._meadowTime = { value: 0 };
+    const mat = new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: this._meadowTime,
+        uSunDir: { value: new THREE.Vector3(0.55, 0.52, 0.65).normalize() },
+        uSunColor: { value: new THREE.Color(0xffe1b8) },
+      },
+      vertexShader: /* glsl */ `
+        attribute vec3 aRoot;
+        attribute vec4 aShape;
+        attribute vec2 aLook;
+        uniform float uTime;
+        varying vec3 vP; varying vec3 vN; varying vec3 vSide; varying float vT; varying float vX; varying vec2 vLook;
+        void main() {
+          float t = position.y;
+          float gust = 0.065 * sin(uTime * 1.05 + aRoot.x * 0.38 + aRoot.z * 0.29 + aLook.y * 6.28)
+                     + 0.025 * sin(uTime * 2.4 + aLook.y * 31.0);
+          float bend = max(0.08, aShape.z + gust);
+          vec3 d = vec3(cos(aShape.w), 0.0, sin(aShape.w));
+          vec3 side = vec3(-d.z, 0.0, d.x);
+          float a = bend * t;
+          vec3 c = aRoot + (d * (1.0 - cos(a)) + vec3(0.0, sin(a), 0.0)) * (aShape.x / bend);
+          vec3 tang = d * sin(a) + vec3(0.0, cos(a), 0.0);
+          vP = c + side * (position.x * aShape.y * (1.0 - 0.9 * t * t));
+          vN = cross(side, tang);
+          vSide = side; vT = t; vX = position.x * 2.0; vLook = aLook;
+          gl_Position = projectionMatrix * viewMatrix * vec4(vP, 1.0);
+        }
+      `,
+      fragmentShader: /* glsl */ `
+        uniform vec3 uSunDir;
+        uniform vec3 uSunColor;
+        varying vec3 vP; varying vec3 vN; varying vec3 vSide; varying float vT; varying float vX; varying vec2 vLook;
+        void main() {
+          vec3 N = normalize(vN);
+          if (!gl_FrontFacing) N = -N;
+          N = normalize(N + vSide * vX * 0.55 * (gl_FrontFacing ? 1.0 : -1.0));
+          vec3 green = mix(vec3(0.05, 0.09, 0.028), vec3(0.105, 0.14, 0.048), vLook.x);
+          vec3 straw = vec3(0.32, 0.26, 0.13);
+          float dry = smoothstep(0.52, 0.94, vLook.x + 0.35 * fract(vLook.y * 7.7));
+          vec3 alb = mix(green, straw, max(dry, smoothstep(0.72, 1.0, vT) * 0.62));
+          alb = mix(straw * 0.42, alb, smoothstep(0.0, 0.28, vT));
+          alb *= 0.86 + 0.28 * fract(vLook.y * 13.3);
+          float ao = mix(0.24, 1.0, smoothstep(0.0, 0.55, vT));
+          vec3 L = normalize(uSunDir);
+          vec3 V = normalize(cameraPosition - vP);
+          float ndl = max(dot(N, L), 0.0);
+          float back = pow(max(dot(-V, L), 0.0), 3.0) * 0.55 * (0.35 + 0.65 * vT);
+          vec3 H = normalize(L + V);
+          float spec = pow(max(dot(N, H), 0.0), 28.0) * 0.18 * vT;
+          vec3 col = alb * (vec3(0.30, 0.34, 0.38) * ao + uSunColor * (ndl * 0.95 + back)) + uSunColor * spec;
+          gl_FragColor = vec4(col, 1.0);
+        }
+      `,
+      side: THREE.DoubleSide,
+    });
+    const mesh = new THREE.Mesh(g, mat);
+    mesh.frustumCulled = false;
+    this.group.add(mesh);
   }
 
   _loadPhotogrammetryBotanicals() {
@@ -308,6 +417,7 @@ export class WowAtmosphereEngine {
   update(dt, elapsed, isPhotoMode = false) {
     this.group.visible = !isPhotoMode;
     if (isPhotoMode) return;
+    if (this._meadowTime) this._meadowTime.value = elapsed;
 
     if (this._motes && this._moteBase) {
       const attr = this._motes.geometry.attributes.position;
