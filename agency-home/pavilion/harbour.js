@@ -3,7 +3,7 @@ import * as T from './harbour-vendor/three.module.min.js';
 import { Water } from './harbour-vendor/Water.js';
 
 // Metres. These are illustrative harbour ripples, deliberately not a weather feed.
-const waves=[[.10,.61,.62,.78,1.16],[.05,1.15,-.89,.46,1.64],[.021,2.27,.96,-.28,2.10]];
+const waves=[[.11,.58,.64,.77,1.18],[.055,1.12,-.88,.47,1.66],[.026,2.21,.95,-.31,2.12],[.014,3.85,-.42,-.91,2.85],[.009,5.40,.78,.62,3.45]];
 const number=x=>x.toFixed(5);
 const waveGL=waves.map(([a,k,dx,dz,w])=>number(a)+'*sin('+number(k)+'*dot(p,vec2('+number(dx)+','+number(dz)+'))-'+number(w)+'*s)').join('+');
 function swell(x,z,t){let y=0;for(const [a,k,dx,dz,w] of waves)y+=a*Math.sin(k*(x*dx+z*dz)-w*t);return y*(1-T.MathUtils.smoothstep(Math.abs(z),50,150))}
@@ -46,6 +46,96 @@ function makeBoat(scene){
  function sail(a,b,c,bulge,m){const p=[],ix=[],N=17,ids=[];function pos(u,v){const w=1-u-v;return [a[0]*w+b[0]*u+c[0]*v+bulge*9*u*v*w,a[1]*w+b[1]*u+c[1]*v,a[2]*w+b[2]*u+c[2]*v-(m===linen?1.06:0)*u*v/Math.max(.055,1-u)]};for(let i=0;i<=N;i++){ids[i]=[];for(let j=0;j<=N-i;j++){ids[i][j]=p.length/3;p.push(...pos(i/N,j/N));}}for(let i=0;i<N;i++)for(let j=0;j<N-i;j++){ix.push(ids[i][j],ids[i+1][j],ids[i][j+1]);if(j<N-i-1)ix.push(ids[i+1][j],ids[i+1][j+1],ids[i][j+1]);}sheet(p,ix,m);for(let t=1;t<=6;t++){let u=t/7;for(let i=0;i<8;i++){let q=pos(u,i/8*(1-u)),r=pos(u,(i+1)/8*(1-u));q[0]+=.005;r[0]+=.005;segment(q,r,.005,rope);}}}
  sail([.012,1.29,.41],[.018,6.47,.44],[.35,1.38,-2.63],.66,linen);sail([.02,.9,3.24],[.013,5.94,.78],[-.31,1.15,-.11],-.61,jib);
  segment([.35,1.28,-2.62],[.27,.51,-2.2],.018,rope);boat.rotation.y=-.99;return boat;
+}
+
+
+// Realistic swimming New Zealand Snapper (Tāmure) & Kingfish (Haku) cruising just beneath the Waitematā surface
+function makeNZFishSchool(scene){
+ const school=new T.Group();scene.add(school);
+ const snapperMat=new T.MeshStandardMaterial({color:0xd89aa0,roughness:.24,metalness:.58});
+ const snapperBelly=new T.MeshStandardMaterial({color:0xedf2f4,roughness:.20,metalness:.65});
+ const kingMat=new T.MeshStandardMaterial({color:0x2b6e75,roughness:.22,metalness:.62});
+ const goldStripe=new T.MeshStandardMaterial({color:0xc9b05a,roughness:.28,metalness:.48});
+ const finMat=new T.MeshStandardMaterial({color:0xb8c5c8,roughness:.45,metalness:.25,transparent:true,opacity:.78,side:T.DoubleSide});
+
+ function buildFish(isKing){
+  const g=new T.Group();
+  const pts=isKing
+   ? [new T.Vector2(.003,-.42),new T.Vector2(.032,-.28),new T.Vector2(.082,-.05),new T.Vector2(.088,.14),new T.Vector2(.062,.30),new T.Vector2(.018,.40),new T.Vector2(.003,.44)]
+   : [new T.Vector2(.003,-.28),new T.Vector2(.028,-.18),new T.Vector2(.086,-.02),new T.Vector2(.094,.09),new T.Vector2(.066,.20),new T.Vector2(.022,.26),new T.Vector2(.003,.29)];
+  const bodyGeo=new T.LatheGeometry(pts,14);
+  bodyGeo.rotateX(Math.PI*.5);
+  bodyGeo.scale(isKing?.56:.46,1.0,1.0);
+  const body=new T.Mesh(bodyGeo,isKing?kingMat:snapperMat);
+  g.add(body);
+
+  const belly=new T.Mesh(bodyGeo,snapperBelly);
+  belly.scale.set(.92,.65,.94);belly.position.y=isKing?-.026:-.028;g.add(belly);
+
+  if(isKing){
+   for(const s of [-1,1]){
+    const stripe=new T.Mesh(new T.BoxGeometry(.006,.016,.62),goldStripe);
+    stripe.position.set(s*.046,.004,0);g.add(stripe);
+   }
+  }
+
+  // Forked caudal tail fin (animated pivot)
+  const tailPivot=new T.Group();
+  tailPivot.position.set(0,0,isKing?-.39:-.26);
+  const tShape=new T.Shape();
+  const th=isKing?.14:.11, tl=isKing?.19:.14;
+  tShape.moveTo(0,0);tShape.lineTo(-tl,th);tShape.lineTo(-tl*.52,0);tShape.lineTo(-tl,-th);tShape.closePath();
+  const tGeo=new T.ShapeGeometry(tShape);tGeo.rotateY(Math.PI*.5);
+  tailPivot.add(new T.Mesh(tGeo,finMat));
+  g.add(tailPivot);
+
+  // Dorsal & pectoral fins
+  const dShape=new T.Shape();
+  dShape.moveTo(-.14,0);dShape.quadraticCurveTo(0,isKing?.085:.095,.14,0);dShape.closePath();
+  const dGeo=new T.ShapeGeometry(dShape);dGeo.rotateY(Math.PI*.5);
+  const dorsal=new T.Mesh(dGeo,finMat);dorsal.position.set(0,isKing?.072:.078,0);g.add(dorsal);
+
+  for(const s of [-1,1]){
+   const pec=new T.Mesh(new T.PlaneGeometry(.09,.042),finMat);
+   pec.position.set(s*(isKing?.052:.044),-.018,.08);
+   pec.rotation.set(.2,s*.55,s*-.25);g.add(pec);
+  }
+  return {g,tailPivot};
+ }
+
+ const fishes=[];
+ for(let i=0;i<14;i++){
+  const isKing=i<4;
+  const f=buildFish(isKing);
+  const sc=isKing?(1.15+Math.random()*.35):(0.82+Math.random()*.38);
+  f.g.scale.setScalar(sc);
+  school.add(f.g);
+  fishes.push({
+   ...f,
+   cx:(Math.random()-.5)*18+(isKing?4:-3),
+   cz:-14-Math.random()*26,
+   rx:4.5+Math.random()*6.5,
+   rz:2.8+Math.random()*4.5,
+   depth:-(0.28+Math.random()*0.68),
+   speed:(isKing?.48:.34)+Math.random()*.18,
+   phase:Math.random()*Math.PI*2,
+   dir:i%2===0?1:-1
+  });
+ }
+
+ return function updateFish(t, waterY){
+  for(const f of fishes){
+   const a=t*f.speed*f.dir+f.phase;
+   const x=f.cx+Math.cos(a)*f.rx;
+   const z=f.cz+Math.sin(a)*f.rz;
+   const nx=f.cx+Math.cos(a+.06*f.dir)*f.rx;
+   const nz=f.cz+Math.sin(a+.06*f.dir)*f.rz;
+   const y=waterY+f.depth+Math.sin(t*1.6+f.phase)*.05;
+   f.g.position.set(x,y,z);
+   f.g.lookAt(nx,y,nz);
+   f.tailPivot.rotation.y=Math.sin(t*10.5+f.phase)*.42;
+  }
+ };
 }
 
 export async function createHarbour(holder){
@@ -178,8 +268,11 @@ export async function createHarbour(holder){
    float ggx=a2/(3.141593*ggxDen*ggxDen);
    float visibility=0.5/max(nL*sqrt(nV*nV*(1.-a2)+a2)+nV*sqrt(nL*nL*(1.-a2)+a2),.001);
    float fresnelLight=.0204+.9796*pow(1.-clamp(dot(halfVector,eyeDirection),0.,1.),5.);
-   float glint=min(ggx*visibility*fresnelLight*nL,.72);
-   vec3 outgoingLight=(mix(body,reflected,.065+.76*reflectance)+sunColor*glint*.82)*(1.-contact)+vec3(.16,.20,.19)*min(wake,.18);
+   float glint=min(ggx*visibility*fresnelLight*nL,1.25);
+   float haze=smoothstep(65.,360.,surfaceDistance);
+   vec3 horizonMist=vec3(.74,.78,.82);
+   vec3 waterCol=(mix(body,reflected,.10+.80*reflectance)+sunColor*glint*1.18)*(1.-contact)+vec3(.20,.26,.25)*min(wake,.22);
+   vec3 outgoingLight=mix(waterCol,horizonMist,haze*.58);
   `);
  // A fixed, illustrative tide staff makes the selected height legible from the same camera.
  const staff=new T.Group(), datum=-1.65;
@@ -197,6 +290,7 @@ export async function createHarbour(holder){
  const scale=new T.CanvasTexture(marks);scale.colorSpace=T.SRGBColorSpace;scale.anisotropy=4;
  const face=new T.Mesh(new T.PlaneGeometry(.42,1120/240),new T.MeshStandardMaterial({map:scale,roughness:.7,side:T.DoubleSide}));
  face.position.set(0,datum+(1100-560)/240,.196);staff.add(face);staff.position.set(-2.15,0,-21);scene.add(staff);
+ const updateFish=makeNZFishSchool(scene);
  const boat=makeBoat(scene);boat.scale.setScalar(boatScale);boat.position.set(boatHome.x,0,boatHome.z);
  const grip=document.createElement('button');grip.className='boat-grip';grip.type='button';
  const hint=document.createElement('span');hint.textContent='Drag boat';grip.append(hint);grip.setAttribute('aria-label','Drag the model boat, or use the arrow keys to move it. Home resets the boat.');
@@ -260,7 +354,7 @@ export async function createHarbour(holder){
  const pitch=(swell(x+Math.sin(yaw)*halfLength,z+Math.cos(yaw)*halfLength,clock)-swell(x-Math.sin(yaw)*halfLength,z-Math.cos(yaw)*halfLength,clock))/(2*halfLength);
  const roll=(swell(x+Math.cos(yaw)*halfBeam,z-Math.sin(yaw)*halfBeam,clock)-swell(x-Math.cos(yaw)*halfBeam,z+Math.sin(yaw)*halfBeam,clock))/(2*halfBeam);
  boat.rotation.order='YXZ';boat.rotation.x=-Math.atan(pitch);boat.rotation.z=Math.atan(roll);
- m.uniforms.hullCentre.value.set(x,z);m.uniforms.time.value=clock;renderer.render(scene,camera);
+ m.uniforms.hullCentre.value.set(x,z);m.uniforms.time.value=clock;if(typeof updateFish==="function")updateFish(clock,water.position.y);renderer.render(scene,camera);
  if(!ready){
   if(shaderFailed){renderer.dispose();throw new Error('Harbour shader did not compile')}
   const gl=renderer.getContext(), pixel=new Uint8Array(4);

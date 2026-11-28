@@ -1476,11 +1476,15 @@ export async function mountImmersiveStage(host, ctx = {}, opts = { fullPage: fal
       };
       scene.background = skies.golden;
       scene.environment = envs.golden;
+      scene.environmentIntensity = 1.32;
 
       const sectionPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 20);
 
       // Lighting: crisp architectural sun shadows for brise-soleil bars + warm interior + dynamic hearth light
-      const hemi = new THREE.HemisphereLight(0xfbe8d4, 0x45493a, 0.62);
+      const hemi = new THREE.HemisphereLight(0xfbe8d4, 0x45493a, 0.72);
+      const warmBounce = new THREE.PointLight(0xffcb8c, 5.2, 16, 1.5);
+      warmBounce.position.set(-0.6, 2.55, -0.4);
+      scene.add(warmBounce);
       const sun = new THREE.DirectionalLight(0xffcf99, 3.7);
       sun.castShadow = true;
       sun.shadow.mapSize.set(2048, 2048);
