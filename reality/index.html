@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>assembl. — Reality Capture 3DGS Showcase</title>
+  <title>assembl. — Reality Capture 3DGS Walkthrough</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -28,7 +28,7 @@
     * { box-sizing: border-box; }
     html, body {
       margin: 0; height: 100%; overflow: hidden;
-      background: #ECE5DF; color: var(--plum);
+      background: #140f12; color: var(--plum);
       font-family: "Instrument Sans", system-ui, sans-serif;
     }
     #viewer-wrap { position: fixed; inset: 0; }
@@ -38,7 +38,7 @@
       background: rgba(255, 253, 251, 0.9); backdrop-filter: blur(14px);
       border: 1px solid var(--line); border-radius: 999px;
       padding: 8px 14px 8px 18px;
-      box-shadow: 0 12px 30px -18px rgba(36, 11, 33, 0.25);
+      box-shadow: 0 12px 30px -18px rgba(36, 11, 33, 0.35);
     }
     .brand { font-size: 20px; font-weight: 600; letter-spacing: -0.04em; color: var(--plum); text-decoration: none; }
     .brand .dot { color: var(--rose); }
@@ -53,28 +53,25 @@
     .pill:hover { border-color: rgba(36, 11, 33, 0.35); background: #fff; }
     .pill.active, .pill.primary { background: var(--plum); color: var(--paper); border-color: var(--plum); }
     .card {
-      position: fixed; right: 18px; top: 76px; width: 326px; max-width: calc(100vw - 36px); z-index: 10;
-      background: rgba(246, 241, 237, 0.94); backdrop-filter: blur(14px);
-      border: 1px solid var(--line); border-radius: 20px; padding: 18px;
-      box-shadow: 0 18px 42px -24px rgba(36, 11, 33, 0.32);
+      position: fixed; right: 18px; top: 76px; width: 312px; max-width: calc(100vw - 36px); z-index: 10;
+      background: rgba(246, 241, 237, 0.92); backdrop-filter: blur(14px);
+      border: 1px solid var(--line); border-radius: 20px; padding: 16px;
+      box-shadow: 0 18px 42px -24px rgba(36, 11, 33, 0.45);
+      transition: opacity 0.2s ease, transform 0.2s ease;
     }
-    .card h1 { margin: 6px 0 8px; font-size: 21px; line-height: 1.14; letter-spacing: -0.03em; font-weight: 600; }
-    .card p { margin: 0 0 12px; font-size: 13.5px; line-height: 1.48; color: var(--mulberry); }
+    .card.collapsed { display: none; }
+    .card h1 { margin: 6px 0 8px; font-size: 20px; line-height: 1.14; letter-spacing: -0.03em; font-weight: 600; }
+    .card p { margin: 0 0 12px; font-size: 13px; line-height: 1.48; color: var(--mulberry); }
     .drop-zone {
       display: block; width: 100%;
       border: 1.5px dashed rgba(36, 11, 33, 0.28); border-radius: 14px; background: var(--paper);
-      padding: 14px 12px; text-align: center; cursor: pointer; margin: 0 0 12px;
+      padding: 13px 12px; text-align: center; cursor: pointer; margin: 0 0 12px;
       transition: border-color 0.15s ease, background 0.15s ease;
     }
     .drop-zone:hover, .drop-zone.over { border-color: var(--plum); background: #fff; }
-    .drop-zone strong { display: block; font-size: 13.5px; color: var(--plum); margin-bottom: 4px; }
-    .drop-zone span { display: block; font-size: 12px; color: var(--mulberry); }
-    .step-list { list-style: none; padding: 0; margin: 0 0 14px; display: grid; gap: 8px; }
-    .step-list li {
-      background: var(--paper); border: 1px solid var(--line); border-radius: 12px;
-      padding: 9px 12px; font-size: 12.5px; line-height: 1.4; color: var(--plum);
-    }
-    .step-list b { display: block; font-size: 10.5px; font-family: "IBM Plex Mono", monospace; letter-spacing: 0.06em; color: var(--mulberry); margin-bottom: 2px; }
+    .drop-zone strong { display: block; font-size: 13px; color: var(--plum); margin-bottom: 3px; }
+    .drop-zone span { display: block; font-size: 11.5px; color: var(--mulberry); }
+    .scene-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px; }
     .cam-bar {
       position: fixed; left: 18px; bottom: 58px; z-index: 10;
       display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
@@ -84,7 +81,7 @@
       background: rgba(255, 253, 251, 0.92); backdrop-filter: blur(12px);
       border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px;
       font: 500 11.5px/1 "IBM Plex Mono", monospace; color: var(--plum);
-      box-shadow: 0 8px 22px -14px rgba(36, 11, 33, 0.25);
+      box-shadow: 0 8px 22px -14px rgba(36, 11, 33, 0.35);
     }
   </style>
 </head>
@@ -97,41 +94,40 @@
       <span class="mono">Reality Capture · 3DGS</span>
     </div>
     <nav class="pill-group">
+      <button class="pill" id="btn-toggle-card">Hide Info</button>
       <a class="pill" href="/landscape/">Garden &amp; Pool Studio ↗</a>
       <a class="pill" href="/architecture/">Walk the Architecture ↗</a>
       <a class="pill primary" href="/architecture/#/envelope">Check NZ Section ↗</a>
     </nav>
   </header>
 
-  <aside class="card">
-    <span class="mono">Capture Reality · Design Live</span>
-    <h1>Walk the real space in 60 seconds.</h1>
-    <p>Currently showing a real 465k-Gaussian showroom scan. Capture any room, showroom or NZ site on an iPhone, clean in SuperSplat, and drop it straight here.</p>
+  <aside class="card" id="info-card">
+    <span class="mono">Photographic 3D Walkthrough</span>
+    <h1>Walk the real space in your browser.</h1>
+    <p>Explore real 3D Gaussian Splat environments with true photographic lighting and reflections, or drop your own SuperSplat iPhone scan straight in.</p>
+    <div class="scene-tabs">
+      <button class="pill active" data-scene="bonsai">Studio Bonsai</button>
+      <button class="pill" data-scene="valley">Alpine Valley</button>
+    </div>
     <label class="drop-zone" id="drop-zone">
       <input type="file" id="splat-file" accept=".spz,.splat,.ply,.ksplat,.sog" hidden />
       <strong>+ Drop SuperSplat Scan (.spz / .splat / .ply)</strong>
       <span>Runs locally in your browser · zero upload wait</span>
     </label>
-    <ul class="step-list">
-      <li><b>01 · REALITY CONTEXT</b>True photographic lighting, reflections &amp; real-world surroundings.</li>
-      <li><b>02 · EDITABLE DESIGN</b>Layer 3D native gardens, pools &amp; pavilions inside the scan in our studio.</li>
-      <li><b>03 · FASTER APPROVALS</b>Share one browser link for instant client sign-off on phone or desktop.</li>
-    </ul>
     <div class="pill-group">
-      <button class="pill" id="btn-flip-y" title="Flip upside-down COLMAP/OpenCV exports">Flip Y</button>
+      <button class="pill" id="btn-flip-y" title="Flip upside-down exports">Flip Y</button>
       <button class="pill" id="btn-reset-cam">Reset View</button>
-      <a class="pill primary" href="/landscape/">Open Planting Studio ↗</a>
+      <a class="pill primary" href="/landscape/">Planting Studio ↗</a>
     </div>
   </aside>
 
   <div class="cam-bar" id="cam-bar">
-    <button class="pill active" data-cam="hero">Hero 3/4</button>
-    <button class="pill" data-cam="front">Front</button>
-    <button class="pill" data-cam="profile">Side Profile</button>
-    <button class="pill" data-cam="rear">Rear 3/4</button>
+    <button class="pill active" data-cam="0">Wide View</button>
+    <button class="pill" data-cam="1">Close Detail</button>
+    <button class="pill" data-cam="2">Side Angle</button>
   </div>
 
-  <div class="status-bar" id="status-bar">Loading 465k-Gaussian showroom scan (.spz)…</div>
+  <div class="status-bar" id="status-bar">Loading photographic 3DGS scene…</div>
 
   <script type="module">
     import * as THREE from 'three';
@@ -144,63 +140,52 @@
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.02;
+    renderer.toneMappingExposure = 1.05;
     wrap.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#ECE5DF');
-    scene.fog = new THREE.Fog('#ECE5DF', 14, 34);
+    scene.background = new THREE.Color('#140f12');
 
-    // Subtle sunlit studio floor + soft contact shadow under the scan
-    const floor = new THREE.Mesh(
-      new THREE.CircleGeometry(18, 64),
-      new THREE.MeshBasicMaterial({ color: '#E4DCD5' })
-    );
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.y = -0.008;
-    scene.add(floor);
-
-    const shadowCanvas = document.createElement('canvas');
-    shadowCanvas.width = 256;
-    shadowCanvas.height = 256;
-    const sctx = shadowCanvas.getContext('2d');
-    const grad = sctx.createRadialGradient(128, 128, 22, 128, 128, 124);
-    grad.addColorStop(0, 'rgba(36, 11, 33, 0.34)');
-    grad.addColorStop(0.55, 'rgba(36, 11, 33, 0.14)');
-    grad.addColorStop(1, 'rgba(36, 11, 33, 0)');
-    sctx.fillStyle = grad;
-    sctx.fillRect(0, 0, 256, 256);
-    const shadowTex = new THREE.CanvasTexture(shadowCanvas);
-    const contactShadow = new THREE.Mesh(
-      new THREE.PlaneGeometry(5.2, 2.9),
-      new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false })
-    );
-    contactShadow.rotation.x = -Math.PI / 2;
-    contactShadow.position.y = -0.002;
-    scene.add(contactShadow);
-
-    const VIEWS = {
-      hero:    { pos: [4.34, 1.85, 3.04], target: [0.0, 0.53, 0.0] },
-      front:   { pos: [4.79, 1.12, 0.51], target: [1.17, 0.54, 0.0] },
-      profile: { pos: [0.0,  1.00, 4.95], target: [0.0, 0.56, 0.0] },
-      rear:    { pos: [-4.35, 1.66, 2.72], target: [0.0, 0.56, 0.0] },
-    };
-
-    const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.05, 120);
-    camera.position.set(...VIEWS.hero.pos);
-
+    const camera = new THREE.PerspectiveCamera(56, window.innerWidth / window.innerHeight, 0.05, 160);
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.06;
-    controls.minDistance = 1.6;
-    controls.maxDistance = 14.0;
-    controls.minPolarAngle = THREE.MathUtils.degToRad(15);
-    controls.maxPolarAngle = THREE.MathUtils.degToRad(86);
-    controls.target.set(...VIEWS.hero.target);
+    controls.minDistance = 0.25;
+    controls.maxDistance = 12.0;
 
+    const SCENES = {
+      bonsai: {
+        url: '/reality/scans/bonsai-interior.splat',
+        label: 'Real-World Studio Capture · Bonsai (8.3 MB .splat)',
+        pos: [0, 0, 0],
+        flip: true,
+        views: [
+          { pos: [2.15, 0.85, 2.75], target: [0.15, 0.12, 0.0] },
+          { pos: [1.1, 0.55, 1.55], target: [0.05, 0.1, 0.0] },
+          { pos: [-2.05, 0.95, 2.25], target: [0.0, 0.12, 0.0] },
+        ],
+      },
+      valley: {
+        url: '/reality/scans/valley.spz',
+        label: 'Alpine Valley 3DGS Environment (6.4 MB .spz)',
+        pos: [0, 0.6, 0],
+        flip: true,
+        views: [
+          { pos: [0.0, 0.85, 2.2], target: [0.0, 0.25, -1.2] },
+          { pos: [-1.1, 0.55, 1.4], target: [0.2, 0.2, -1.5] },
+          { pos: [1.5, 1.05, 1.5], target: [-0.2, 0.3, -1.0] },
+        ],
+      },
+    };
+
+    let activeSceneKey = 'bonsai';
+    let currentSplat = null;
+    let flipped = true;
     let camAnim = null;
-    function flyTo(key) {
-      const v = VIEWS[key] || VIEWS.hero;
+
+    function flyToIndex(idx) {
+      const views = SCENES[activeSceneKey]?.views || SCENES.bonsai.views;
+      const v = views[idx] || views[0];
       camAnim = {
         startPos: camera.position.clone(),
         endPos: new THREE.Vector3(...v.pos),
@@ -208,15 +193,10 @@
         endTarget: new THREE.Vector3(...v.target),
         t: 0,
       };
-      document.querySelectorAll('#cam-bar .pill').forEach((b) => b.classList.toggle('active', b.dataset.cam === key));
+      document.querySelectorAll('#cam-bar .pill').forEach((b, i) => b.classList.toggle('active', i === idx));
     }
-    document.querySelectorAll('#cam-bar .pill').forEach((btn) => {
-      btn.addEventListener('click', () => flyTo(btn.dataset.cam));
-    });
 
-    let currentSplat = null;
-    let flipped = false;
-    async function loadSplatUrl(url, label, isCustomFile = false) {
+    async function loadSplat({ url, label, pos = [0, 0, 0], flip = true, views }) {
       statusEl.textContent = `Loading ${label}…`;
       if (currentSplat) {
         scene.remove(currentSplat);
@@ -224,36 +204,57 @@
       }
       try {
         currentSplat = new SplatMesh({ url });
-        flipped = false;
-        currentSplat.rotation.x = 0;
+        flipped = flip;
+        currentSplat.quaternion.set(flip ? 1 : 0, 0, 0, flip ? 0 : 1);
+        currentSplat.position.set(...pos);
         scene.add(currentSplat);
         await currentSplat.initialized;
-        contactShadow.visible = !isCustomFile;
-        const count = currentSplat.packedSplats?.numSplats ?? currentSplat.numSplats ?? 465903;
-        statusEl.textContent = `Live 3DGS · ${label} (${count.toLocaleString()} Gaussians) · Drag to orbit`;
+        const v0 = (views && views[0]) || { pos: [0.25, 0.15, 1.35], target: [0, -0.05, -0.8] };
+        camera.position.set(...v0.pos);
+        controls.target.set(...v0.target);
+        controls.update();
+        document.querySelectorAll('#cam-bar .pill').forEach((b, i) => b.classList.toggle('active', i === 0));
+        statusEl.textContent = `Live 3DGS · ${label} · Drag to look · Scroll to move`;
       } catch (err) {
         statusEl.textContent = `Could not load ${label}: ${err?.message || err}`;
       }
     }
 
-    loadSplatUrl('/capture/example/mx5-rf-sample.spz', 'Showroom Scan · MX-5 RF');
+    document.querySelectorAll('[data-scene]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        activeSceneKey = btn.dataset.scene;
+        document.querySelectorAll('[data-scene]').forEach((b) => b.classList.toggle('active', b === btn));
+        loadSplat(SCENES[activeSceneKey]);
+      });
+    });
+
+    document.querySelectorAll('#cam-bar .pill').forEach((btn) => {
+      btn.addEventListener('click', () => flyToIndex(Number(btn.dataset.cam)));
+    });
+
+    const card = document.getElementById('info-card');
+    const toggleBtn = document.getElementById('btn-toggle-card');
+    toggleBtn.addEventListener('click', () => {
+      const collapsed = card.classList.toggle('collapsed');
+      toggleBtn.textContent = collapsed ? 'Show Info' : 'Hide Info';
+    });
 
     const fileInput = document.getElementById('splat-file');
     const dropZone = document.getElementById('drop-zone');
     const handleFile = (file) => {
       if (!file) return;
       const objUrl = URL.createObjectURL(file);
-      loadSplatUrl(objUrl, file.name, true);
+      loadSplat({ url: objUrl, label: file.name, pos: [0, 0, 0], flip: true });
     };
     fileInput.addEventListener('change', (e) => handleFile(e.target.files?.[0]));
     ['dragenter', 'dragover'].forEach((ev) => dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.add('over'); }));
     ['dragleave', 'drop'].forEach((ev) => dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.remove('over'); }));
     dropZone.addEventListener('drop', (e) => handleFile(e.dataTransfer?.files?.[0]));
-    document.getElementById('btn-reset-cam').addEventListener('click', () => flyTo('hero'));
+    document.getElementById('btn-reset-cam').addEventListener('click', () => flyToIndex(0));
     document.getElementById('btn-flip-y').addEventListener('click', () => {
       if (!currentSplat) return;
       flipped = !flipped;
-      currentSplat.rotation.x = flipped ? Math.PI : 0;
+      currentSplat.quaternion.set(flipped ? 1 : 0, 0, 0, flipped ? 0 : 1);
     });
 
     window.addEventListener('resize', () => {
@@ -261,6 +262,9 @@
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
+
+    // Load Studio Bonsai real-world capture by default
+    loadSplat(SCENES.bonsai);
 
     function tick() {
       requestAnimationFrame(tick);
