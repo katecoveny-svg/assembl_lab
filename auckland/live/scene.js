@@ -111,15 +111,17 @@ export async function createWorld(canvas, { phone = false, capture = false, time
     const twilight = Math.max(0, 1 - Math.abs(s.elevation + 3) / 7);
     night = 1 - T.MathUtils.smoothstep(s.elevation, -8, 1);
     nightSky.material.uniforms.uA.value = T.MathUtils.clamp((-s.elevation - 3) / 9, 0, 1);
-    sun.intensity = day * (2.75 - cloud * 1.42); sun.color.set('#fff4e5').lerp(new T.Color('#ffb36b'), golden * 0.8);
-    hemi.intensity = 0.1 + twilight * 0.3 + day * (0.36 + cloud * 0.27); hemi.color.set('#cfe0ff').lerp(new T.Color('#1d2a44'), night);
-    hemi.groundColor.set('#5d5a4c').lerp(new T.Color('#111318'), night);
-    scene.fog.color.set('#bcc9d4').lerp(new T.Color('#e6c3a3'), golden * day * 0.6).lerp(new T.Color('#0b1119'), night).lerp(new T.Color('#b4bac0'), cloud * day * 0.4);
-    renderer.toneMappingExposure = 0.9 - cloud * day * 0.18 + night * 0.23; haze.material.uniforms.uC.value.copy(scene.fog.color);
+    sun.intensity = day * (2.75 - cloud * 1.42) + night * 0.42;
+    sun.color.set('#fff4e5').lerp(new T.Color('#ffb36b'), golden * 0.8).lerp(new T.Color('#8fb2e6'), night * 0.85);
+    hemi.intensity = 0.42 + twilight * 0.32 + day * (0.48 + cloud * 0.25);
+    hemi.color.set('#cfe0ff').lerp(new T.Color('#5a78a6'), night);
+    hemi.groundColor.set('#5d5a4c').lerp(new T.Color('#242c38'), night);
+    scene.fog.color.set('#bcc9d4').lerp(new T.Color('#e6c3a3'), golden * day * 0.6).lerp(new T.Color('#131e2c'), night).lerp(new T.Color('#b4bac0'), cloud * day * 0.4);
+    renderer.toneMappingExposure = 0.96 - cloud * day * 0.14 + night * 0.28; haze.material.uniforms.uC.value.copy(scene.fog.color);
     sky.visible = true; sun.userData.dir = dir;
     if (envRT) envRT.dispose(); envRT = pmrem.fromScene(skyScene, 0, 1, 2000); scene.environment = envRT.texture;
-    scene.environmentIntensity = 0.05 + twilight * 0.35 + day * 0.45;
-    fleet.setNight(night); bMat.userData.uNight.value = night; gMat.userData.uNight.value = night;
+    scene.environmentIntensity = 0.34 + twilight * 0.32 + day * 0.48;
+    fleet.setNight(night); bMat.userData.uNight.value = night; gMat.userData.uNight.value = night; wMat.userData.uNight.value = night;
     return s;
   }
 
@@ -174,8 +176,9 @@ export async function createWorld(canvas, { phone = false, capture = false, time
 
   // ---------------------------------------------------------------- the sea
   const wn = waterNormals(phone ? 128 : 192); wn.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-  const wMat = new T.MeshStandardMaterial({ color: '#305958', roughness: 0.25, metalness: 0.0, normalMap: wn, normalScale: new T.Vector2(0.19, 0.19), envMapIntensity: 1.0 });
+  const wMat = new T.MeshStandardMaterial({ color: '#305958', roughness: 0.22, metalness: 0.06, normalMap: wn, normalScale: new T.Vector2(0.22, 0.22), envMapIntensity: 1.25 });
   wMat.userData.t = { value: 0 };
+  wMat.userData.uNight = { value: 0 };
   // One quarter-resolution, throttled planar sampling pass; no extra pass on phones.
   const reflection = (phone || !renderer.extensions.has('EXT_color_buffer_float')) ? null : new Reflector(new T.PlaneGeometry(1, 1), { textureWidth: 480, textureHeight: 270, multisample: 0, clipBias: 0.002 });
   const reflected = { value: 0 };
@@ -185,13 +188,14 @@ export async function createWorld(canvas, { phone = false, capture = false, time
 
   wMat.onBeforeCompile = (s) => {
     s.uniforms.uT = wMat.userData.t;
+    s.uniforms.uNight = wMat.userData.uNight;
     s.uniforms.uShore = { value: tex };
     if (reflection) {
       s.uniforms.uMirror = { value: reflection.getRenderTarget().texture };
       s.uniforms.uReflect = reflected; s.uniforms.uMirrorMatrix = { value: reflectionMatrix };
     }
     s.vertexShader = s.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;');
-    s.fragmentShader = s.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nuniform float uT;\nuniform sampler2D uShore;' + (reflection ? '\nuniform sampler2D uMirror; uniform float uReflect; uniform mat4 uMirrorMatrix;' : ''))
+    s.fragmentShader = s.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nuniform float uT;\nuniform float uNight;\nuniform sampler2D uShore;' + (reflection ? '\nuniform sampler2D uMirror; uniform float uReflect; uniform mat4 uMirrorMatrix;' : ''))
       .replace('#include <normal_fragment_maps>', `
         vec2 drift = vec2(sin(vWPos.z * 0.019 + vWPos.x * 0.004), cos(vWPos.x * 0.017 - vWPos.z * 0.003));
         vec2 wa = vWPos.xz / 32.7 + drift * 0.12 + vec2(uT * 0.013, uT * 0.003),
@@ -236,6 +240,12 @@ export async function createWorld(canvas, { phone = false, capture = false, time
       if (uReflect > 0.0 && edge > 0.0) {
         vec3 localReflection = texture2D(uMirror, clamp(reflUV,vec2(0.003),vec2(0.997))).rgb;
         outgoingLight = mix(outgoingLight, localReflection * vec3(.62,.72,.70), min(.52,fresnel*.82) * uReflect * edge);
+      }
+      if (uNight > 0.01) {
+        float nightGlint = pow(clamp(dot(mapN, normalize(vec3(0.28, 0.55, 0.78))), 0.0, 1.0), 18.0);
+        vec3 nightHarbour = mix(vec3(0.032, 0.068, 0.095), vec3(0.11, 0.19, 0.27), clamp(fresnel * 1.45, 0.0, 1.0));
+        nightHarbour += vec3(0.32, 0.25, 0.16) * coast * 0.28 + vec3(0.22, 0.34, 0.48) * nightGlint * 0.45;
+        outgoingLight = max(outgoingLight, nightHarbour * uNight);
       }
       #include <opaque_fragment>`);
   };

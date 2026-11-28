@@ -32,6 +32,53 @@ export class WowAtmosphereEngine {
     this._buildSunMotes();
     this._buildCoastalWaterHorizon();
     this._loadRealManuGLBs();
+    this._loadPhotogrammetryBotanicals();
+  }
+
+  _loadPhotogrammetryBotanicals() {
+    const groundY = (x, z) => (this.terrainEngine ? this.terrainEngine.getHeight(x, z) : 0);
+    const loader = new GLTFLoader();
+    const loadOne = (url, targetH, placements) => {
+      loader.load(url, (gltf) => {
+        const root = gltf.scene || gltf.scenes?.[0];
+        if (!root) return;
+        root.updateMatrixWorld(true);
+        const box = new THREE.Box3().setFromObject(root);
+        const h = Math.max(0.05, box.max.y - box.min.y);
+        const sc = targetH / h;
+        root.scale.setScalar(sc);
+        box.setFromObject(root);
+        root.position.y -= box.min.y;
+        root.traverse((o) => {
+          if (o.isMesh) {
+            o.castShadow = true;
+            o.receiveShadow = true;
+            if (o.material && o.material.transparent && o.material.alphaTest === 0) {
+              o.material.alphaTest = 0.35;
+            }
+          }
+        });
+        for (const [px, pz, s, ry] of placements) {
+          const inst = root.clone(true);
+          inst.position.set(px, groundY(px, pz) - 0.04, pz);
+          inst.rotation.y = ry;
+          inst.scale.multiplyScalar(s);
+          this.group.add(inst);
+        }
+      }, undefined, () => {});
+    };
+
+    loadOne('/assets/pbr/models/fern_02/fern_02.gltf', 0.95, [
+      [-6.8, 4.2, 1.05, 0.4], [-5.4, 5.8, 0.92, 1.9], [6.4, 4.6, 1.1, 3.1],
+      [7.8, 2.2, 0.96, 0.8], [-8.2, -1.8, 1.08, 2.6], [8.5, -3.2, 1.0, 4.5],
+      [-3.6, 7.6, 0.88, 1.2], [4.2, 7.8, 0.94, 5.1],
+    ]);
+    loadOne('/assets/pbr/models/island_tree_01/island_tree_01.gltf', 4.8, [
+      [-11.8, -5.6, 1.0, 0.5], [12.4, -4.8, 1.08, 2.7], [-12.2, 5.2, 0.92, 4.0],
+    ]);
+    loadOne('/assets/pbr/models/coast_rocks_01/coast_rocks_01.gltf', 1.25, [
+      [-8.8, 7.4, 1.1, 0.3], [9.2, 6.8, 0.95, 2.2], [-10.5, -8.2, 1.05, 3.9],
+    ]);
   }
 
   async _loadRealManuGLBs() {

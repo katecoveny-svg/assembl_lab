@@ -42,7 +42,7 @@ switchView.href = alternate.href;
 switchView.textContent = listOnly ? 'Open 3D city' : 'Use list view';
 document.body.classList.toggle('list-only', listOnly);
 if (!listOnly) try {
-  const { createWorld } = await import('./scene.js?v=4f8baf28ac');
+  const { createWorld } = await import('./scene.js?v=20261129a');
   S.world = await createWorld(canvas, { phone, capture: qs.has('capture'), timeMs: skyMs });
   window.liveWorld = S.world;
 } catch (e) { console.error(e); document.body.classList.add('list-only'); switchView.textContent = 'Retry 3D city'; alternate.searchParams.set('view', '3d'); switchView.href = alternate.href; $('#detail').innerHTML = `<p class="note warn">The 3D city could not start in this browser (${esc(e.message)}). The search and lists below still work.</p>`; }
@@ -461,6 +461,31 @@ function wireUi() {
   document.querySelectorAll('[data-view]').forEach((b) => b.onclick = () => {
     const w = S.world, view = w?.views[b.dataset.view]; if (!view) return; w.unfollow(); w.setView(view);
   });
+  const skyBtn = $('#akl-sky');
+  if (skyBtn) {
+    const skyPresets = [
+      { id: 'live', label: '☀ Light: Live', hm: null },
+      { id: 'golden', label: '🌇 Light: Golden', hm: '17:45:00' },
+      { id: 'day', label: '☀ Light: Day', hm: '13:30:00' },
+    ];
+    let skyIdx = 0;
+    skyBtn.onclick = () => {
+      skyIdx = (skyIdx + 1) % skyPresets.length;
+      const p = skyPresets[skyIdx];
+      skyBtn.textContent = p.label;
+      if (!S.world) return;
+      if (!p.hm) {
+        skyNote = '';
+        S.world.setTime(Date.now(), S.weather?.cloudPct ?? null);
+      } else {
+        const today = X.nzServiceDate(Date.now()).replace(/-/g, '');
+        const ms = X.gtfsTimeToEpoch(today, p.hm) * 1000;
+        skyNote = ` · sky preview set to ${p.hm.slice(0, 5)} NZT`;
+        S.world.setTime(ms, 18);
+      }
+      renderTruth();
+    };
+  }
   canvas.addEventListener('keydown', () => S.world?.stopFlight());
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') S.world?.stopFlight(); });
   $('#grip').onclick = () => setPanelSmall(!$('#panel').classList.contains('small'));

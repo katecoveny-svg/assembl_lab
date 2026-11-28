@@ -1478,6 +1478,27 @@ export async function mountImmersiveStage(host, ctx = {}, opts = { fullPage: fal
       scene.environment = envs.golden;
       scene.environmentIntensity = 1.32;
 
+      // Real CC0 Poly Haven 1K Coastal Sunlit HDRI (upgrades PMREM IBL & sky reflections)
+      import('../../assets/vendor/three/addons/loaders/HDRLoader.js')
+        .then(({ HDRLoader }) => {
+          if (stopped) return;
+          const hdrLoader = new HDRLoader();
+          hdrLoader.load('/assets/pbr/coastal_sun.hdr', (hdrTex) => {
+            if (stopped) { hdrTex.dispose?.(); return; }
+            hdrTex.mapping = THREE.EquirectangularReflectionMapping;
+            const envTex = pmrem.fromEquirectangular(hdrTex).texture;
+            envs.golden = envTex;
+            envs.day = envTex;
+            skies.golden = hdrTex;
+            scene.environment = envTex;
+            scene.background = hdrTex;
+            scene.backgroundBlurriness = 0.025;
+            scene.backgroundIntensity = 0.92;
+            scene.environmentIntensity = 1.18;
+          });
+        })
+        .catch(() => {});
+
       const sectionPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 20);
 
       // Lighting: crisp architectural sun shadows for brise-soleil bars + warm interior + dynamic hearth light
@@ -1669,6 +1690,43 @@ export async function mountImmersiveStage(host, ctx = {}, opts = { fullPage: fal
         roughness: 0.62,
         envMapIntensity: 0.78,
       });
+
+      // Upgrade architectural surfaces with real photographic CC0 Poly Haven 1K PBR maps (Diffuse + Normal + Roughness)
+      {
+        const texLoader = new THREE.TextureLoader();
+        const loadPbr = (folder, repX, repY, mats, tintHex, normalScale = 0.85) => {
+          const setup = (t, srgb) => {
+            t.wrapS = t.wrapT = THREE.RepeatWrapping;
+            t.repeat.set(repX, repY);
+            t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+            if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+            return t;
+          };
+          const diff = setup(texLoader.load(`/assets/pbr/${folder}/diff.jpg`), true);
+          const nor = setup(texLoader.load(`/assets/pbr/${folder}/nor.jpg`), false);
+          const rough = setup(texLoader.load(`/assets/pbr/${folder}/rough.jpg`), false);
+          if (texSets[folder]) {
+            texSets[folder].map = diff;
+            texSets[folder].bumpMap = nor;
+            texSets[folder].roughnessMap = rough;
+          }
+          for (const m of mats) {
+            if (!m) continue;
+            m.map = diff;
+            m.normalMap = nor;
+            m.normalScale = new THREE.Vector2(normalScale, normalScale);
+            m.roughnessMap = rough;
+            m.bumpMap = null;
+            if (tintHex != null) m.color.setHex(tintHex);
+            m.needsUpdate = true;
+          }
+        };
+        loadPbr('cedar', 3.5, 3.5, [claddingMat, cedarBattenMat], 0xffffff, 0.95);
+        loadPbr('charred', 3.5, 3.5, [], null, 0.95);
+        loadPbr('concrete', 3.0, 2.5, [boardConcreteMat, concreteMat], 0xf2eee8, 0.9);
+        loadPbr('travertine', 4.5, 4.5, [travertineMat], 0xfaf5ee, 0.75);
+        loadPbr('kwila', 4.0, 4.0, [kwilaMat], 0xf2e4d8, 0.9);
+      }
 
       const firthPaverMat = new THREE.MeshStandardMaterial({
         color: 0x9fa3a8,
@@ -2760,6 +2818,88 @@ export async function mountImmersiveStage(host, ctx = {}, opts = { fullPage: fal
           tuiGlb.rotation.y = 0.85;
           scene.add(tuiGlb);
         }
+
+        // Wave 2B: Real CC0 Poly Haven photogrammetry botanicals & coastal basalt boulders
+        try {
+          const { GLTFLoader } = await import('../../assets/vendor/three/addons/loaders/GLTFLoader.js');
+          if (!stopped) {
+            const gltfLoader = new GLTFLoader();
+            const loadScan = (url, targetH) =>
+              new Promise((resolve) => {
+                gltfLoader.load(
+                  url,
+                  (gltf) => {
+                    if (stopped) return resolve(null);
+                    const root = gltf.scene;
+                    root.traverse((o) => {
+                      if (o.isMesh) {
+                        o.castShadow = true;
+                        o.receiveShadow = true;
+                        if (o.material) {
+                          o.material.envMapIntensity = 1.05;
+                          if (o.material.alphaTest === 0 && o.material.transparent) o.material.alphaTest = 0.35;
+                        }
+                      }
+                    });
+                    const box = new THREE.Box3().setFromObject(root);
+                    const h = Math.max(0.05, box.max.y - box.min.y);
+                    const sc = targetH / h;
+                    root.scale.setScalar(sc);
+                    box.setFromObject(root);
+                    root.position.y -= box.min.y;
+                    const wrap = new THREE.Group();
+                    wrap.add(root);
+                    resolve(wrap);
+                  },
+                  undefined,
+                  () => resolve(null)
+                );
+              });
+
+            const [fernScan, islandTreeScan, rockScan] = await Promise.all([
+              loadScan('/assets/pbr/models/fern_02/fern_02.gltf', 0.92),
+              loadScan('/assets/pbr/models/island_tree_01/island_tree_01.gltf', 4.6),
+              loadScan('/assets/pbr/models/coast_rocks_01/coast_rocks_01.gltf', 1.35),
+            ]);
+            if (!stopped) {
+              if (fernScan) {
+                for (const [fx, fz, sc, ry] of [
+                  [-8.6, 6.2, 1.05, 0.3], [-9.2, 7.6, 0.9, 1.8], [-8.8, 9.8, 1.15, 3.1],
+                  [10.2, 6.4, 0.95, 0.9], [10.6, 8.1, 1.1, 2.4], [4.1, 10.6, 0.85, 4.2],
+                  [-5.2, 11.2, 1.0, 1.1], [-1.8, 11.4, 0.92, 5.0],
+                ]) {
+                  const f = fernScan.clone(true);
+                  f.position.set(fx, terrainHeight(fx, fz) - 0.04, fz);
+                  f.rotation.y = ry;
+                  f.scale.multiplyScalar(sc);
+                  scene.add(f);
+                }
+              }
+              if (islandTreeScan) {
+                for (const [tx, tz, sc, ry] of [
+                  [13.4, 2.8, 1.05, 0.6], [-14.2, -3.4, 0.95, 2.9], [12.8, -8.5, 1.12, 4.1],
+                ]) {
+                  const t = islandTreeScan.clone(true);
+                  t.position.set(tx, terrainHeight(tx, tz) - 0.08, tz);
+                  t.rotation.y = ry;
+                  t.scale.multiplyScalar(sc);
+                  scene.add(t);
+                }
+              }
+              if (rockScan) {
+                for (const [rx, rz, sc, ry] of [
+                  [-10.4, 11.5, 1.15, 0.4], [11.6, 10.4, 0.92, 2.1], [-12.6, 4.8, 1.05, 3.7],
+                ]) {
+                  const r = rockScan.clone(true);
+                  r.position.set(rx, terrainHeight(rx, rz) - 0.18, rz);
+                  r.rotation.y = ry;
+                  r.scale.multiplyScalar(sc);
+                  scene.add(r);
+                }
+              }
+            }
+          }
+        } catch {}
       })();
 
       // 5. True Volumetric 3D Aotearoa Coastal Headland Flora (BotanicalMeshBuilder + GPU Coastal Wind + Backlit SSS)
